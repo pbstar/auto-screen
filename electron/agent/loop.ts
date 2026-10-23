@@ -17,7 +17,7 @@ import { FailureGuard, type PauseGate } from './control'
 
 export const MAX_STEPS = 30
 /** 动作执行后界面未必立刻重绘，截图前留一点时间，免得模型读到旧画面 */
-const SETTLE_MS = 300
+const SETTLE_MS = 150
 /** 会移动鼠标或敲键盘的工具，执行期间暂停人工接管检测 */
 const INPUT_TOOLS = new Set(['click', 'move', 'drag', 'scroll', 'type', 'key'])
 /** 这些工具的落点会标在下一张截图上 */
@@ -63,6 +63,8 @@ interface RunContext {
   error?: string
   lastText: string | null
   mark: ClickMark | null
+  /** 上一步是否动过鼠标键盘，没动过就不用等重绘 */
+  dirty: boolean
 }
 
 export async function runAgent(options: RunOptions): Promise<RunOutcome> {
@@ -110,7 +112,8 @@ async function waitWhilePaused(ctx: RunContext): Promise<boolean> {
 
 async function runStep(ctx: RunContext, step: number): Promise<AgentRunReason | null> {
   ctx.steps = step
-  if (step > 1) await delay(SETTLE_MS)
+  if (step > 1 && ctx.dirty) await delay(SETTLE_MS)
+  ctx.dirty = false
   const shot = await annotateCapture(captureWindow(ctx.windowId), ctx.mark)
   ctx.saveShot(step, shot.dataUrl)
   appendShot(ctx.messages, ctx.shots, shot, step)
@@ -166,6 +169,7 @@ async function runOneTool(
   ctx.emit({ type: 'tool_started', step, callId: call.id, name, input })
 
   const outcome = await withBusy(ctx, name, () => invokeTool(name, input, context))
+  if (INPUT_TOOLS.has(name)) ctx.dirty = true
   ctx.messages.push({ role: 'tool', tool_call_id: call.id, content: outcome.text })
   ctx.emit({
     type: 'tool_finished',
@@ -268,5 +272,6 @@ function createContext(options: RunOptions): RunContext {
     steps: 0,
     lastText: null,
     mark: null,
+    dirty: false,
   }
 }
