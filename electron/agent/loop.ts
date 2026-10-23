@@ -1,7 +1,7 @@
 import type { AgentEventPayload, AgentRunReason, TokenUsage } from '../../src/shared/agent'
 import type { ToolContext } from '../../src/shared/types'
 import { captureWindow } from '../../src/core/screen'
-import { annotateCapture, type AnnotatedShot } from './annotate'
+import { annotateCapture, type AnnotatedShot, type ClickMark } from './annotate'
 import { appendShot, truncate, type ShotRef } from './history'
 import {
   describeError,
@@ -20,6 +20,8 @@ export const MAX_STEPS = 30
 const SETTLE_MS = 300
 /** 会移动鼠标或敲键盘的工具，执行期间暂停人工接管检测 */
 const INPUT_TOOLS = new Set(['click', 'move', 'drag', 'scroll', 'type', 'key'])
+/** 这些工具的落点会标在下一张截图上 */
+const MARK_TOOLS = new Set(['click', 'move', 'drag'])
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
@@ -60,6 +62,7 @@ interface RunContext {
   steps: number
   error?: string
   lastText: string | null
+  mark: ClickMark | null
 }
 
 export async function runAgent(options: RunOptions): Promise<RunOutcome> {
@@ -108,7 +111,7 @@ async function waitWhilePaused(ctx: RunContext): Promise<boolean> {
 async function runStep(ctx: RunContext, step: number): Promise<AgentRunReason | null> {
   ctx.steps = step
   if (step > 1) await delay(SETTLE_MS)
-  const shot = await annotateCapture(captureWindow(ctx.windowId))
+  const shot = await annotateCapture(captureWindow(ctx.windowId), ctx.mark)
   ctx.saveShot(step, shot.dataUrl)
   appendShot(ctx.messages, ctx.shots, shot, step)
   ctx.emit({ type: 'shot', step, image: shot.thumb, width: shot.width, height: shot.height })
@@ -173,7 +176,29 @@ async function runOneTool(
     isError: outcome.isError,
     durationMs: Date.now() - startedAt,
   })
+  if (!outcome.isError) {
+    const mark = markOf(name, input, context)
+    if (mark) ctx.mark = mark
+  }
   return { ...outcome, input }
+}
+
+/** 把指针动作的落点换算成截图坐标，和工具内部的对齐规则保持一致 */
+function markOf(
+  name: string,
+  input: Record<string, unknown>,
+  context: ToolContext,
+): ClickMark | null {
+  if (!MARK_TOOLS.has(name)) return null
+  const dragging = name === 'drag'
+  const x = Number(dragging ? input.toX : input.x)
+  const y = Number(dragging ? input.toY : input.y)
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null
+  return { x: snap(x, context.imageWidth), y: snap(y, context.imageHeight) }
+}
+
+function snap(value: number, max: number): number {
+  return Math.min(max, Math.max(0, Math.round(value / 10) * 10))
 }
 
 /** 鼠标键盘由 Agent 自己动的时候，按住接管检测，避免误判 */
@@ -242,5 +267,6 @@ function createContext(options: RunOptions): RunContext {
     usage: { prompt: 0, completion: 0 },
     steps: 0,
     lastText: null,
+    mark: null,
   }
 }

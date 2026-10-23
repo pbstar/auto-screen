@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { GRID } from '@shared/ipc'
+import { GRID, gridMajor } from '@shared/ipc'
 
 interface Props {
   imageWidth: number
@@ -16,17 +16,20 @@ export default function PreviewGrid({
   displayHeight,
   visible,
 }: Props) {
+  // 和发给模型的标注图用同一套主格步长，人与模型读到的格子一致
+  const major = gridMajor(Math.max(imageWidth, imageHeight))
+
   const majorX = useMemo(() => {
     const values: number[] = []
-    for (let x = 0; x <= imageWidth; x += GRID.major) values.push(x)
+    for (let x = 0; x <= imageWidth; x += major) values.push(x)
     return values
-  }, [imageWidth])
+  }, [imageWidth, major])
 
   const majorY = useMemo(() => {
     const values: number[] = []
-    for (let y = 0; y <= imageHeight; y += GRID.major) values.push(y)
+    for (let y = 0; y <= imageHeight; y += major) values.push(y)
     return values
-  }, [imageHeight])
+  }, [imageHeight, major])
 
   const minorStepX = (GRID.minor / imageWidth) * displayWidth
   const minorStepY = (GRID.minor / imageHeight) * displayHeight
@@ -50,8 +53,8 @@ export default function PreviewGrid({
   const px = (x: number) => (x / imageWidth) * displayWidth
   const py = (y: number) => (y / imageHeight) * displayHeight
   const showLabels = Math.min(
-    (GRID.major / imageWidth) * displayWidth,
-    (GRID.major / imageHeight) * displayHeight,
+    (major / imageWidth) * displayWidth,
+    (major / imageHeight) * displayHeight,
   ) >= 24
 
   return (
@@ -87,7 +90,7 @@ export default function PreviewGrid({
           x1={px(x)}
           y1={0}
           x2={px(x)}
-          y2={x % GRID.major === 0 ? 10 : 4}
+          y2={x % major === 0 ? 10 : 4}
           stroke="rgba(255,82,82,0.7)"
           strokeWidth={1}
         />
@@ -97,7 +100,7 @@ export default function PreviewGrid({
           key={`ty-${y}`}
           x1={0}
           y1={py(y)}
-          x2={y % GRID.major === 0 ? 10 : 4}
+          x2={y % major === 0 ? 10 : 4}
           y2={py(y)}
           stroke="rgba(255,82,82,0.7)"
           strokeWidth={1}
