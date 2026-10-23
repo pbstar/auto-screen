@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { AgentEvent, TokenUsage } from '@shared/agent'
+import type { AgentEvent, PauseReason, TokenUsage } from '@shared/agent'
 
 const api = window.autoScreen
 const MAX_ITEMS = 300
@@ -18,8 +18,10 @@ export interface TimelineItem {
 }
 
 export interface AgentRunState {
-  status: 'idle' | 'running' | 'stopping'
+  status: 'idle' | 'running' | 'paused' | 'stopping'
   runId: string
+  /** 由谁暂停：手动还是检测到人工操作 */
+  pauseReason: PauseReason | null
   step: number
   maxSteps: number
   usage: TokenUsage
@@ -31,6 +33,7 @@ export interface AgentRunState {
 const INITIAL: AgentRunState = {
   status: 'idle',
   runId: '',
+  pauseReason: null,
   step: 0,
   maxSteps: 30,
   usage: EMPTY_USAGE,
@@ -65,7 +68,8 @@ export function useAgentRun() {
       const status = result.data
       setState((previous) => ({
         ...previous,
-        status: status.running ? 'running' : 'idle',
+        status: status.running ? (status.pauseReason ? 'paused' : 'running') : 'idle',
+        pauseReason: status.pauseReason,
         step: status.step,
         maxSteps: status.maxSteps,
         usage: status.usage,
@@ -89,7 +93,21 @@ export function useAgentRun() {
     }
   }, [])
 
-  return { state, start, stop }
+  const pause = useCallback(async () => {
+    const result = await api.pauseAgent()
+    if (!result.ok) {
+      setState((previous) => ({ ...previous, error: result.error }))
+    }
+  }, [])
+
+  const resume = useCallback(async () => {
+    const result = await api.resumeAgent()
+    if (!result.ok) {
+      setState((previous) => ({ ...previous, error: result.error }))
+    }
+  }, [])
+
+  return { state, start, stop, pause, resume }
 }
 
 function applyEvent(state: AgentRunState, event: AgentEvent): AgentRunState {
@@ -142,12 +160,17 @@ function applyEvent(state: AgentRunState, event: AgentEvent): AgentRunState {
       }
     case 'usage':
       return { ...state, usage: event.usage }
+    case 'paused':
+      return { ...state, status: 'paused', pauseReason: event.reason }
+    case 'resumed':
+      return { ...state, status: 'running', pauseReason: null }
     case 'stopping':
       return { ...state, status: 'stopping' }
     case 'finished':
       return {
         ...state,
         status: 'idle',
+        pauseReason: null,
         step: event.steps,
         usage: event.usage,
         error: event.error ?? reasonText(event.reason),

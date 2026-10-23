@@ -13,10 +13,13 @@ import {
 } from './llm'
 import { buildSystemPrompt } from './prompt'
 import { executeTool } from './registry'
+import type { PauseGate } from './control'
 
 export const MAX_STEPS = 30
 const MAX_FAILURES = 3
 const NO_HIDE = new Set(['wait', 'list_windows'])
+/** 会移动鼠标或敲键盘的工具，执行期间暂停人工接管检测 */
+const INPUT_TOOLS = new Set(['click', 'move', 'drag', 'scroll', 'type', 'key'])
 
 type Emit = (payload: AgentEventPayload) => void
 type Hide = <T>(hide: boolean, action: () => Promise<T>) => Promise<T>
@@ -29,6 +32,9 @@ export interface RunOptions {
   hide: Hide
   /** 把标注后的完整截图落到运行记录里，供大图查看 */
   saveShot: (step: number, dataUrl: string) => void
+  gate: PauseGate
+  /** 标记鼠标键盘正在被 Agent 使用 */
+  busy: (on: boolean) => void
 }
 
 export interface RunOutcome {
@@ -46,6 +52,8 @@ interface RunContext {
   emit: Emit
   hide: Hide
   saveShot: (step: number, dataUrl: string) => void
+  gate: PauseGate
+  busy: (on: boolean) => void
   messages: AgentMessage[]
   shots: ShotRef[]
   usage: TokenUsage
@@ -84,11 +92,17 @@ export async function runAgent(options: RunOptions): Promise<RunOutcome> {
 
 async function runLoop(ctx: RunContext): Promise<AgentRunReason> {
   while (ctx.steps < MAX_STEPS) {
-    if (ctx.signal.aborted) return 'stopped'
+    if (!(await waitWhilePaused(ctx))) return 'stopped'
     const outcome = await runStep(ctx, ctx.steps + 1)
     if (outcome) return outcome
   }
   return 'max_steps'
+}
+
+/** 暂停在步骤边界生效：挂起期间既不截图也不调模型 */
+async function waitWhilePaused(ctx: RunContext): Promise<boolean> {
+  await ctx.gate.wait(ctx.signal)
+  return !ctx.signal.aborted
 }
 
 async function runStep(ctx: RunContext, step: number): Promise<AgentRunReason | null> {
@@ -125,7 +139,7 @@ async function runToolCalls(
   }
 
   for (const call of calls) {
-    if (ctx.signal.aborted) return 'stopped'
+    if (!(await waitWhilePaused(ctx))) return 'stopped'
     const result = await runOneTool(ctx, call, context, step)
     ctx.failures = result.isError ? ctx.failures + 1 : 0
     if (ctx.failures >= MAX_FAILURES) return 'failed'
@@ -144,7 +158,7 @@ async function runOneTool(
   const startedAt = Date.now()
   ctx.emit({ type: 'tool_started', step, callId: call.id, name, input })
 
-  const outcome = await invokeTool(ctx, name, input, context)
+  const outcome = await withBusy(ctx, name, () => invokeTool(ctx, name, input, context))
   ctx.messages.push({ role: 'tool', tool_call_id: call.id, content: outcome.text })
   ctx.emit({
     type: 'tool_finished',
@@ -156,6 +170,17 @@ async function runOneTool(
     durationMs: Date.now() - startedAt,
   })
   return outcome
+}
+
+/** 鼠标键盘由 Agent 自己动的时候，按住接管检测，避免误判 */
+async function withBusy<T>(ctx: RunContext, name: string, action: () => Promise<T>): Promise<T> {
+  if (!INPUT_TOOLS.has(name)) return action()
+  ctx.busy(true)
+  try {
+    return await action()
+  } finally {
+    ctx.busy(false)
+  }
 }
 
 async function invokeTool(
@@ -205,6 +230,8 @@ function createContext(options: RunOptions): RunContext {
     emit: options.emit,
     hide: options.hide,
     saveShot: options.saveShot,
+    gate: options.gate,
+    busy: options.busy,
     messages: [
       { role: 'system', content: buildSystemPrompt() },
       { role: 'user', content: options.task },

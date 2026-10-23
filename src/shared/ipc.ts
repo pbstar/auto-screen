@@ -5,6 +5,8 @@ export const IPC = {
   permissions: 'app:permissions',
   agentStart: 'agent:start',
   agentStop: 'agent:stop',
+  agentPause: 'agent:pause',
+  agentResume: 'agent:resume',
   agentStatus: 'agent:status',
   agentEvent: 'agent:event',
   runsList: 'runs:list',

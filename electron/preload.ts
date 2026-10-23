@@ -11,6 +11,8 @@ const api: AutoScreenApi = {
   permissions: () => ipcRenderer.invoke(IPC.permissions),
   startAgent: (request: AgentStartRequest) => ipcRenderer.invoke(IPC.agentStart, request),
   stopAgent: () => ipcRenderer.invoke(IPC.agentStop),
+  pauseAgent: () => ipcRenderer.invoke(IPC.agentPause),
+  resumeAgent: () => ipcRenderer.invoke(IPC.agentResume),
   agentStatus: () => ipcRenderer.invoke(IPC.agentStatus),
   onAgentEvent: (listener: (event: AgentEvent) => void) => {
     const handler = (_event: IpcRendererEvent, payload: AgentEvent) => listener(payload)

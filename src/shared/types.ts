@@ -85,6 +85,8 @@ export interface AutoScreenApi {
   permissions(): Promise<IpcResult<PermissionStatus>>
   startAgent(request: AgentStartRequest): Promise<IpcResult<null>>
   stopAgent(): Promise<IpcResult<null>>
+  pauseAgent(): Promise<IpcResult<null>>
+  resumeAgent(): Promise<IpcResult<null>>
   agentStatus(): Promise<IpcResult<AgentStatus>>
   /** 返回取消订阅函数 */
   onAgentEvent(listener: (event: AgentEvent) => void): () => void

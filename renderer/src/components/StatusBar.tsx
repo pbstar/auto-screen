@@ -12,6 +12,7 @@ interface Props {
 const AGENT_LABELS: Record<AgentRunState['status'], string> = {
   idle: '空闲',
   running: '运行中',
+  paused: '已暂停',
   stopping: '停止中',
 }
 

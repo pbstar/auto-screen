@@ -114,6 +114,8 @@ export default function App() {
               await agent.start(selectedId, task)
             }}
             onStop={() => void agent.stop()}
+            onPause={() => void agent.pause()}
+            onResume={() => void agent.resume()}
           />
           <Timeline items={agent.state.items} runId={agent.state.runId} />
           <ReferencePanel />

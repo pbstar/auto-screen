@@ -5,6 +5,9 @@ export interface TokenUsage {
 
 export type AgentRunReason = 'completed' | 'stopped' | 'max_steps' | 'failed'
 
+/** user = 手动暂停，human = 检测到人工操作鼠标 */
+export type PauseReason = 'user' | 'human'
+
 export interface AgentStartRequest {
   windowId: number
   task: string
@@ -12,6 +15,8 @@ export interface AgentStartRequest {
 
 export interface AgentStatus {
   running: boolean
+  /** 非空表示当前处于暂停，并说明是谁暂停的 */
+  pauseReason: PauseReason | null
   step: number
   maxSteps: number
   usage: TokenUsage
@@ -55,6 +60,8 @@ export type AgentEvent =
       durationMs: number
     })
   | (AgentEventBase & { type: 'usage'; usage: TokenUsage })
+  | (AgentEventBase & { type: 'paused'; reason: PauseReason })
+  | (AgentEventBase & { type: 'resumed' })
   | (AgentEventBase & { type: 'stopping' })
   | (AgentEventBase & {
       type: 'finished'

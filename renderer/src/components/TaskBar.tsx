@@ -9,6 +9,8 @@ interface Props {
   state: AgentRunState
   onStart: (task: string) => Promise<void>
   onStop: () => void
+  onPause: () => void
+  onResume: () => void
 }
 
 function formatTokens(usage: TokenUsage): string {
@@ -16,11 +18,19 @@ function formatTokens(usage: TokenUsage): string {
   return total >= 1000 ? `${(total / 1000).toFixed(1)}k` : String(total)
 }
 
-export default function TaskBar({ windowSelected, state, onStart, onStop }: Props) {
+export default function TaskBar({
+  windowSelected,
+  state,
+  onStart,
+  onStop,
+  onPause,
+  onResume,
+}: Props) {
   const [task, setTask] = useState('')
   // 主进程的 started 事件回来前按钮仍可点，用本地标记挡住重复提交
   const [submitting, setSubmitting] = useState(false)
   const running = state.status !== 'idle'
+  const paused = state.status === 'paused'
   const canStart = windowSelected && task.trim().length > 0 && !running && state.configReady
 
   const start = async () => {
@@ -67,20 +77,42 @@ export default function TaskBar({ windowSelected, state, onStart, onStop }: Prop
         </Typography>
         <Box sx={{ flex: 1 }} />
         {running ? (
-          <Button
-            color="error"
-            variant="outlined"
-            disabled={state.status === 'stopping'}
-            onClick={onStop}
-          >
-            {state.status === 'stopping' ? '停止中…' : '停止'}
-          </Button>
+          <Stack direction="row" spacing={1}>
+            {paused ? (
+              <Button variant="outlined" onClick={onResume}>
+                继续
+              </Button>
+            ) : (
+              <Button
+                variant="outlined"
+                disabled={state.status === 'stopping'}
+                onClick={onPause}
+              >
+                暂停
+              </Button>
+            )}
+            <Button
+              color="error"
+              variant="outlined"
+              disabled={state.status === 'stopping'}
+              onClick={onStop}
+            >
+              {state.status === 'stopping' ? '终止中…' : '终止'}
+            </Button>
+          </Stack>
         ) : (
           <Button variant="contained" disabled={!canStart || submitting} onClick={() => void start()}>
             开始
           </Button>
         )}
       </Stack>
+      {paused && (
+        <Typography variant="caption" sx={{ display: 'block', mt: 0.75, color: 'warning.main' }}>
+          {state.pauseReason === 'human'
+            ? '检测到人工操作鼠标，已暂停；处理完点「继续」'
+            : '已暂停，点「继续」恢复执行'}
+        </Typography>
+      )}
       {!state.configReady && (
         <Typography variant="caption" sx={{ display: 'block', mt: 0.75, color: 'warning.main' }}>
           未配置 DEEPSEEK_API_KEY，请先填写 .env

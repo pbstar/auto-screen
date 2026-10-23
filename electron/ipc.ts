@@ -5,7 +5,7 @@ import type { IpcResult, PermissionStatus } from '../src/shared/types'
 import { listWindows } from '../src/core/screen'
 import { setStreamTarget } from './capture-stream'
 import { listToolSummaries } from './agent/registry'
-import { agentStatus, startAgent, stopAgent } from './agent/service'
+import { agentStatus, pauseAgent, resumeAgent, startAgent, stopAgent } from './agent/service'
 import { listRuns, readRun, readShot, runsRoot } from './run-store'
 
 function ok<T>(data: T): IpcResult<T> {
@@ -84,6 +84,24 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null): 
   ipcMain.handle(IPC.agentStop, () => {
     try {
       stopAgent(getMainWindow)
+      return ok(null)
+    } catch (error) {
+      return fail(error)
+    }
+  })
+
+  ipcMain.handle(IPC.agentPause, () => {
+    try {
+      pauseAgent(getMainWindow)
+      return ok(null)
+    } catch (error) {
+      return fail(error)
+    }
+  })
+
+  ipcMain.handle(IPC.agentResume, () => {
+    try {
+      resumeAgent(getMainWindow)
       return ok(null)
     } catch (error) {
       return fail(error)

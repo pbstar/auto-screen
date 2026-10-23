@@ -9,8 +9,10 @@ import type {
 } from '../../src/shared/agent'
 import { IPC } from '../../src/shared/ipc'
 import { withWindowHidden } from '../../src/core/safety'
+import { createPointerWatcher, type PointerWatcher } from '../../src/core/pointer'
 import { configReady, readModelConfig } from '../config'
 import { appendLog, createRun, finishRun, saveShot } from '../run-store'
+import { PauseGate } from './control'
 import { describeError } from './llm'
 import { MAX_STEPS, runAgent } from './loop'
 
@@ -19,6 +21,8 @@ type WindowGetter = () => BrowserWindow | null
 interface ActiveRun {
   runId: string
   controller: AbortController
+  gate: PauseGate
+  watcher: PointerWatcher
 }
 
 let active: ActiveRun | null = null
@@ -35,7 +39,12 @@ export function startAgent(getWindow: WindowGetter, request: AgentStartRequest):
   const runId = randomUUID()
   const controller = new AbortController()
   const startedAt = Date.now()
-  active = { runId, controller }
+  const gate = new PauseGate()
+  const watcher = createPointerWatcher(() => {
+    if (!gate.pause('human')) return
+    broadcast(getWindow(), runId, { type: 'paused', reason: 'human' })
+  })
+  active = { runId, controller, gate, watcher }
   seq = 0
   lastStep = 0
   lastUsage = { prompt: 0, completion: 0 }
@@ -49,6 +58,8 @@ export function startAgent(getWindow: WindowGetter, request: AgentStartRequest):
     emit: (payload) => broadcast(getWindow(), runId, payload),
     hide: (hide, action) => withWindowHidden(getWindow(), hide, action),
     saveShot: (step, dataUrl) => saveShot(runId, step, dataUrl),
+    gate,
+    busy: (on) => watcher.markBusy(on),
   })
     .then((outcome) => {
       broadcast(getWindow(), runId, {
@@ -77,6 +88,8 @@ export function startAgent(getWindow: WindowGetter, request: AgentStartRequest):
       finishRun(runId, 'failed')
     })
     .finally(() => {
+      watcher.stop()
+      gate.resume()
       active = null
     })
 }
@@ -84,12 +97,27 @@ export function startAgent(getWindow: WindowGetter, request: AgentStartRequest):
 export function stopAgent(getWindow: WindowGetter): void {
   if (!active) return
   broadcast(getWindow(), active.runId, { type: 'stopping' })
+  active.gate.resume()
   active.controller.abort()
+}
+
+export function pauseAgent(getWindow: WindowGetter): void {
+  if (!active) return
+  if (!active.gate.pause('user')) return
+  broadcast(getWindow(), active.runId, { type: 'paused', reason: 'user' })
+}
+
+export function resumeAgent(getWindow: WindowGetter): void {
+  if (!active) return
+  if (!active.gate.resume()) return
+  void active.watcher.resync()
+  broadcast(getWindow(), active.runId, { type: 'resumed' })
 }
 
 export function agentStatus(): AgentStatus {
   return {
     running: active !== null,
+    pauseReason: active?.gate.paused ?? null,
     step: lastStep,
     maxSteps: MAX_STEPS,
     usage: lastUsage,
@@ -145,6 +173,12 @@ function logEvent(runId: string, payload: AgentEventPayload): void {
       break
     case 'stopping':
       appendLog(runId, '收到停止指令')
+      break
+    case 'paused':
+      appendLog(runId, payload.reason === 'human' ? '检测到人工操作，已暂停' : '手动暂停')
+      break
+    case 'resumed':
+      appendLog(runId, '继续执行')
       break
   }
 }
