@@ -134,12 +134,14 @@ export async function resumeAgent(getWindow: WindowGetter): Promise<void> {
 }
 
 export function agentStatus(): AgentStatus {
+  // 空闲时上一轮的步数/tokens 已经没有对应的截图进度，清零，免得新会话里只剩读数
+  const running = active !== null
   return {
-    running: active !== null,
+    running,
     pauseReason: active?.gate.paused ?? null,
-    step: lastStep,
+    step: running ? lastStep : 0,
     maxSteps: MAX_STEPS,
-    usage: lastUsage,
+    usage: running ? lastUsage : { prompt: 0, completion: 0 },
     configReady: configReady(),
   }
 }
