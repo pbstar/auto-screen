@@ -35,9 +35,9 @@ electron/agent/registry.ts
 tools/*.ts  →  src/core/input.ts / screen.ts
 ```
 
-`hideWindow` 默认开启：动作前隐藏本窗口约 250ms，结束后恢复，避免鼠标落回自己身上。`wait` 这类不产生鼠标键盘动作的工具可以传 `false`。
+`hideWindow` 默认开启：动作前隐藏本窗口约 250ms，结束后恢复，避免鼠标落回自己身上。`wait` / `list_windows` 这类不产生鼠标键盘动作的工具不需要隐藏。
 
-注意：`executeTool()` 本身不处理窗口显隐，这是调用方的责任。IPC 通道已经包好了 `withWindowHidden`；M2 的 Agent 循环直接调用 `executeTool()` 时，也要自己包一层。
+注意：`executeTool()` 本身不处理窗口显隐，这是调用方的责任。IPC 通道和 M2 的 `agent/service.ts` 都已经包好了 `withWindowHidden`。
 
 ## ToolContext
 
@@ -81,9 +81,11 @@ interface ToolResult {
 | `click` | `x, y, button?, count?` | 是 | 单击 / 双击 / 右键，`count` 取值 1~2 |
 | `drag` | `fromX, fromY, toX, toY` | 是 | 按住左键从起点拖到终点 |
 | `scroll` | `x, y, direction, amount?` | 是 | 在指定位置上下滚动，`amount` 1~10，默认 3 |
+| `move` | `x, y` | 否 | 只移动不点击，用于悬停展开菜单 |
 | `type` | `text` | 否 | 输入文本到当前焦点，执行前先 `click` 聚焦 |
 | `key` | `combo` | 否 | 组合键，`mod` 在 macOS 为 Cmd、Windows 为 Ctrl |
 | `wait` | `ms` | 否 | 等待 0~5000ms |
+| `list_windows` | — | 否 | 列出可操作窗口，不需要坐标 |
 
 参数校验在 `helpers.ts`：缺失或非法数字直接抛错，坐标对齐到 10px 并裁剪到截图范围内，`count` / `amount` 裁剪到规定范围，未知枚举值直接报错；未知工具名由 registry 报错。
 

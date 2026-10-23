@@ -4,6 +4,10 @@ export const IPC = {
   executeTool: 'tools:execute',
   copyText: 'clipboard:write',
   permissions: 'app:permissions',
+  agentStart: 'agent:start',
+  agentStop: 'agent:stop',
+  agentStatus: 'agent:status',
+  agentEvent: 'agent:event',
 } as const
 
 export const GRID = {

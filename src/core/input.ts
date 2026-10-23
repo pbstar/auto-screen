@@ -181,6 +181,20 @@ export async function clickAt(
   return { x, y, unit }
 }
 
+export async function moveAt(
+  physicalPoint: { x: number; y: number },
+  scaleFactor: number,
+  unitMode: UnitMode,
+): Promise<ClickResult> {
+  const unit = await resolveUnitMode(unitMode, scaleFactor)
+  const physicalPerUnit = unit === 'logical' ? scaleFactor || 1 : 1
+  const x = physicalPoint.x / physicalPerUnit
+  const y = physicalPoint.y / physicalPerUnit
+
+  await mouse.setPosition(new Point(x, y))
+  return { x, y, unit }
+}
+
 export async function dragAt(
   from: { x: number; y: number },
   to: { x: number; y: number },

@@ -1,11 +1,13 @@
 import { Box, Chip, Typography } from '@mui/material'
 import type { CaptureResult, PermissionStatus, WindowInfo } from '@shared/types'
+import type { AgentRunState } from '../hooks/useAgentRun'
 
 interface Props {
   permissions: PermissionStatus | null
   capture: CaptureResult | null
   selectedWindow: WindowInfo | null
   lastAction: string
+  agent: AgentRunState
 }
 
 const SCREEN_LABELS: Record<string, string> = {
@@ -16,7 +18,24 @@ const SCREEN_LABELS: Record<string, string> = {
   unknown: '未知',
 }
 
-export default function StatusBar({ permissions, capture, selectedWindow, lastAction }: Props) {
+const AGENT_LABELS: Record<AgentRunState['status'], string> = {
+  idle: '空闲',
+  running: '运行中',
+  stopping: '停止中',
+}
+
+function formatTokens(agent: AgentRunState): string {
+  const total = agent.usage.prompt + agent.usage.completion
+  return total >= 1000 ? `${(total / 1000).toFixed(1)}k` : String(total)
+}
+
+export default function StatusBar({
+  permissions,
+  capture,
+  selectedWindow,
+  lastAction,
+  agent,
+}: Props) {
   return (
     <Box
       sx={{
@@ -32,7 +51,7 @@ export default function StatusBar({ permissions, capture, selectedWindow, lastAc
       }}
     >
       <Typography variant="caption" color="text.secondary">
-        Auto Screen · M1
+        Auto Screen · M2
       </Typography>
 
       {permissions?.platform === 'darwin' ? (
@@ -53,6 +72,18 @@ export default function StatusBar({ permissions, capture, selectedWindow, lastAc
       ) : (
         <Chip size="small" variant="outlined" label="系统权限：无需额外授权" />
       )}
+
+      <Chip
+        size="small"
+        variant="outlined"
+        color={agent.status === 'idle' ? 'default' : 'success'}
+        label={`Agent：${AGENT_LABELS[agent.status]}`}
+      />
+      <Chip
+        size="small"
+        variant="outlined"
+        label={`步骤 ${agent.step}/${agent.maxSteps} · tokens ${formatTokens(agent)}`}
+      />
 
       {selectedWindow && (
         <Chip

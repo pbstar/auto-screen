@@ -1,5 +1,6 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import { IPC } from '../src/shared/ipc'
+import type { AgentEvent, AgentStartRequest } from '../src/shared/agent'
 import type { AutoScreenApi, ToolExecuteRequest } from '../src/shared/types'
 
 const api: AutoScreenApi = {
@@ -9,6 +10,14 @@ const api: AutoScreenApi = {
     ipcRenderer.invoke(IPC.executeTool, request),
   copyText: (text: string) => ipcRenderer.invoke(IPC.copyText, text),
   permissions: () => ipcRenderer.invoke(IPC.permissions),
+  startAgent: (request: AgentStartRequest) => ipcRenderer.invoke(IPC.agentStart, request),
+  stopAgent: () => ipcRenderer.invoke(IPC.agentStop),
+  agentStatus: () => ipcRenderer.invoke(IPC.agentStatus),
+  onAgentEvent: (listener: (event: AgentEvent) => void) => {
+    const handler = (_event: IpcRendererEvent, payload: AgentEvent) => listener(payload)
+    ipcRenderer.on(IPC.agentEvent, handler)
+    return () => ipcRenderer.removeListener(IPC.agentEvent, handler)
+  },
 }
 
 contextBridge.exposeInMainWorld('autoScreen', api)

@@ -1,9 +1,11 @@
 import { BrowserWindow, clipboard, ipcMain, systemPreferences } from 'electron'
 import { IPC } from '../src/shared/ipc'
+import type { AgentStartRequest } from '../src/shared/agent'
 import type { IpcResult, PermissionStatus, ToolExecuteRequest } from '../src/shared/types'
 import { captureWindow, listWindows } from '../src/core/screen'
 import { withWindowHidden } from '../src/core/safety'
 import { executeTool } from './agent/registry'
+import { agentStatus, startAgent, stopAgent } from './agent/service'
 
 function ok<T>(data: T): IpcResult<T> {
   return { ok: true, data }
@@ -76,6 +78,32 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null): 
   ipcMain.handle(IPC.permissions, () => {
     try {
       return ok(getPermissions())
+    } catch (error) {
+      return fail(error)
+    }
+  })
+
+  ipcMain.handle(IPC.agentStart, (_event, request: AgentStartRequest) => {
+    try {
+      startAgent(getMainWindow, request)
+      return ok(null)
+    } catch (error) {
+      return fail(error)
+    }
+  })
+
+  ipcMain.handle(IPC.agentStop, () => {
+    try {
+      stopAgent(getMainWindow)
+      return ok(null)
+    } catch (error) {
+      return fail(error)
+    }
+  })
+
+  ipcMain.handle(IPC.agentStatus, () => {
+    try {
+      return ok(agentStatus())
     } catch (error) {
       return fail(error)
     }

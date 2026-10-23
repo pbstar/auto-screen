@@ -1,0 +1,111 @@
+import OpenAI from 'openai'
+import type { TokenUsage } from '../../src/shared/agent'
+import { readModelConfig, type ModelConfig } from '../config'
+import { listToolSchemas } from './registry'
+
+export type ContentPart =
+  | { type: 'text'; text: string }
+  | { type: 'image_url'; image_url: { url: string; detail?: 'high' } }
+
+export interface ToolCall {
+  id: string
+  type: 'function'
+  function: { name: string; arguments: string }
+}
+
+/** Agent 自己的消息模型，避免 OpenAI SDK 的严格类型渗透到循环里 */
+export type AgentMessage =
+  | { role: 'system'; content: string }
+  | { role: 'user'; content: string | ContentPart[] }
+  | {
+      role: 'assistant'
+      content: string | null
+      reasoning_content?: string
+      tool_calls?: ToolCall[]
+    }
+  | { role: 'tool'; tool_call_id: string; content: string }
+
+export interface AssistantTurn {
+  content: string | null
+  reasoning: string | null
+  toolCalls: ToolCall[]
+  usage: TokenUsage
+}
+
+type ChatParams = Parameters<OpenAI['chat']['completions']['create']>[0]
+
+let cached: { apiKey: string; baseUrl: string; sdk: OpenAI } | null = null
+
+function getClient(cfg: ModelConfig): OpenAI {
+  if (!cached || cached.apiKey !== cfg.apiKey || cached.baseUrl !== cfg.baseUrl) {
+    cached = {
+      apiKey: cfg.apiKey,
+      baseUrl: cfg.baseUrl,
+      sdk: new OpenAI({
+        apiKey: cfg.apiKey,
+        baseURL: cfg.baseUrl,
+        maxRetries: 1,
+        timeout: 120_000,
+      }),
+    }
+  }
+  return cached.sdk
+}
+
+/**
+ * thinking / reasoning_effort 是 DeepSeek 的扩展参数，OpenAI SDK 类型里没有。
+ * 这里集中做一次断言，其它模块只面对 AgentMessage。
+ */
+export async function requestAssistantTurn(
+  messages: AgentMessage[],
+  signal: AbortSignal,
+): Promise<AssistantTurn> {
+  const cfg = readModelConfig()
+  const params = {
+    model: cfg.model,
+    messages,
+    tools: listToolSchemas(),
+    tool_choice: 'auto',
+    max_tokens: 8192,
+    thinking: { type: 'enabled' },
+    reasoning_effort: cfg.reasoningEffort,
+  } as unknown as ChatParams
+
+  const completion = await getClient(cfg).chat.completions.create(params, { signal })
+  if (!('choices' in completion)) {
+    throw new Error('模型返回了流式响应，M2 只支持非流式')
+  }
+  const message = completion.choices[0]?.message
+  if (!message) {
+    throw new Error('模型没有返回消息')
+  }
+
+  const extra = message as typeof message & { reasoning_content?: string }
+  return {
+    content: message.content ?? null,
+    reasoning: extra.reasoning_content ?? null,
+    toolCalls: (message.tool_calls ?? []) as ToolCall[],
+    usage: {
+      prompt: completion.usage?.prompt_tokens ?? 0,
+      completion: completion.usage?.completion_tokens ?? 0,
+    },
+  }
+}
+
+export function isAbortError(error: unknown): boolean {
+  return (
+    error instanceof OpenAI.APIUserAbortError ||
+    (error instanceof Error && error.name === 'AbortError')
+  )
+}
+
+export function describeError(error: unknown): string {
+  if (error instanceof OpenAI.APIError) {
+    if (error.status === 401) return '模型接口鉴权失败，请检查 DEEPSEEK_API_KEY'
+    if (error.status === 402) return '模型账户余额不足'
+    if (error.status === 429) return '模型请求过于频繁，请稍后再试'
+    if (error.status === 400) return `模型接口参数错误：${error.message}`
+    return `模型接口错误（${error.status}）：${error.message}`
+  }
+  return error instanceof Error ? error.message : String(error)
+}

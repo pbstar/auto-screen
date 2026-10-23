@@ -9,12 +9,15 @@ import type {
   ToolContext,
   WindowInfo,
 } from '@shared/types'
-import WindowSelect from './components/WindowSelect'
-import SkillList from './components/SkillList'
+import SidePanel from './components/SidePanel'
 import ScreenPreview from './components/ScreenPreview'
 import type { DragRange, ImagePoint } from './components/preview-types'
 import ActionPanel from './components/ActionPanel'
+import PanelTabs from './components/PanelTabs'
+import TaskBar from './components/TaskBar'
+import Timeline from './components/Timeline'
 import StatusBar from './components/StatusBar'
+import { useAgentRun } from './hooks/useAgentRun'
 
 const api = window.autoScreen
 
@@ -40,6 +43,7 @@ export default function App() {
   const [error, setError] = useState('')
   const [lastAction, setLastAction] = useState('')
   const captureSeq = useRef(0)
+  const agent = useAgentRun()
 
   const selectedWindow = useMemo(
     () => windows.find((win) => win.id === selectedId) ?? null,
@@ -227,22 +231,7 @@ export default function App() {
       )}
 
       <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
-        <Box
-          sx={{
-            width: 260,
-            flex: 'none',
-            borderRight: 1,
-            borderColor: 'divider',
-            overflow: 'auto',
-            p: 1.5,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2,
-          }}
-        >
-          <WindowSelect windows={windows} selectedId={selectedId} onSelect={setSelectedId} />
-          <SkillList />
-        </Box>
+        <SidePanel windows={windows} selectedId={selectedId} onSelect={setSelectedId} />
 
         <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
           <ScreenPreview
@@ -262,20 +251,34 @@ export default function App() {
             flex: 'none',
             borderLeft: 1,
             borderColor: 'divider',
-            overflow: 'auto',
-            p: 1.5,
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: 0,
           }}
         >
-          <ActionPanel
-            capture={capture}
-            picked={picked}
-            dragRange={dragRange}
-            onPickedChange={setPicked}
-            onClear={clearSelection}
-            busy={busy}
-            onClick={handleClick}
-            onDrag={handleDrag}
-            onScroll={handleScroll}
+          <TaskBar
+            windowSelected={selectedId != null}
+            state={agent.state}
+            onStart={(task) => {
+              if (selectedId != null) void agent.start(selectedId, task)
+            }}
+            onStop={() => void agent.stop()}
+          />
+          <PanelTabs
+            timeline={<Timeline items={agent.state.items} />}
+            manual={
+              <ActionPanel
+                capture={capture}
+                picked={picked}
+                dragRange={dragRange}
+                onPickedChange={setPicked}
+                onClear={clearSelection}
+                busy={busy}
+                onClick={handleClick}
+                onDrag={handleDrag}
+                onScroll={handleScroll}
+              />
+            }
           />
         </Box>
       </Box>
@@ -285,6 +288,7 @@ export default function App() {
         capture={capture}
         selectedWindow={selectedWindow}
         lastAction={lastAction}
+        agent={agent.state}
       />
     </Box>
   )

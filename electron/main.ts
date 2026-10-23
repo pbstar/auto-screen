@@ -1,6 +1,8 @@
 import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'node:path'
 import { registerIpcHandlers } from './ipc'
+import { stopAgent } from './agent/service'
+import { loadEnv } from './config'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -21,6 +23,7 @@ function createWindow(): void {
   })
 
   mainWindow.on('closed', () => {
+    stopAgent(() => null)
     mainWindow = null
   })
 
@@ -37,12 +40,17 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  loadEnv()
   registerIpcHandlers(() => mainWindow)
   createWindow()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
+})
+
+app.on('before-quit', () => {
+  stopAgent(() => mainWindow)
 })
 
 app.on('window-all-closed', () => {

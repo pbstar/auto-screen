@@ -1,3 +1,5 @@
+import type { AgentEvent, AgentStartRequest, AgentStatus } from './agent'
+
 export interface MonitorInfo {
   x: number
   y: number
@@ -67,4 +69,9 @@ export interface AutoScreenApi {
   executeTool(request: ToolExecuteRequest): Promise<IpcResult<ToolResult>>
   copyText(text: string): Promise<IpcResult<null>>
   permissions(): Promise<IpcResult<PermissionStatus>>
+  startAgent(request: AgentStartRequest): Promise<IpcResult<null>>
+  stopAgent(): Promise<IpcResult<null>>
+  agentStatus(): Promise<IpcResult<AgentStatus>>
+  /** 返回取消订阅函数 */
+  onAgentEvent(listener: (event: AgentEvent) => void): () => void
 }
