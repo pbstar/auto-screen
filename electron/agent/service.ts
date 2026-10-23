@@ -14,7 +14,7 @@ import { configReady, readModelConfig } from '../config'
 import { appendLog, createRun, finishRun, saveShot } from '../run-store'
 import { PauseGate } from './control'
 import { describeError } from './llm'
-import { MAX_STEPS, runAgent } from './loop'
+import { MAX_STEPS, heavyEffort, runAgent } from './loop'
 
 type WindowGetter = () => BrowserWindow | null
 
@@ -47,7 +47,11 @@ export async function startAgent(
   const startedAt = Date.now()
   // 先建运行目录：写盘失败就直接报错，不要留下一个「运行中」的空壳
   createRun(runId, task, request.windowId)
-  appendLog(runId, `模型：${config.model} · 思考强度 ${config.reasoningEffort}`)
+  const heavy = heavyEffort(config.reasoningEffort)
+  appendLog(
+    runId,
+    `模型：${config.model} · 思考强度 首步/失败恢复 ${heavy} · 常规 ${config.reasoningEffort}`,
+  )
 
   const gate = new PauseGate()
   const watcher = createPointerWatcher(() => {
@@ -185,7 +189,11 @@ function logEvent(runId: string, payload: AgentEventPayload): void {
       )
       break
     case 'usage':
-      appendLog(runId, `用量 prompt=${payload.usage.prompt} completion=${payload.usage.completion}`)
+      appendLog(
+        runId,
+        `用量 prompt=${payload.usage.prompt} completion=${payload.usage.completion}` +
+          ` · effort=${payload.effort}`,
+      )
       break
     case 'stopping':
       appendLog(runId, '收到停止指令')

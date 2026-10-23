@@ -2,8 +2,9 @@ import { app } from 'electron'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import dotenv from 'dotenv'
+import type { ReasoningEffort } from '../src/shared/agent'
 
-export type ReasoningEffort = 'low' | 'high' | 'max'
+export type { ReasoningEffort }
 
 export interface ModelConfig {
   apiKey: string

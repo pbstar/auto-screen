@@ -3,6 +3,9 @@ export interface TokenUsage {
   completion: number
 }
 
+/** 思考强度，DeepSeek 的 reasoning_effort；实际用哪一档由循环按步骤决定 */
+export type ReasoningEffort = 'low' | 'high' | 'max'
+
 export type AgentRunReason = 'completed' | 'stopped' | 'max_steps' | 'failed'
 
 /** user = 手动暂停，human = 检测到人工操作鼠标 */
@@ -59,7 +62,7 @@ export type AgentEvent =
       isError: boolean
       durationMs: number
     })
-  | (AgentEventBase & { type: 'usage'; usage: TokenUsage })
+  | (AgentEventBase & { type: 'usage'; usage: TokenUsage; effort: ReasoningEffort })
   | (AgentEventBase & { type: 'paused'; reason: PauseReason })
   | (AgentEventBase & { type: 'resumed' })
   | (AgentEventBase & { type: 'stopping' })
