@@ -18,7 +18,7 @@ export default function SkillList() {
       {SKILLS.map((skill) => (
         <Box
           key={skill.name}
-          sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, py: 0.4 }}
+          sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, py: 0.45 }}
         >
           <Typography sx={{ fontSize: 12, width: 76, flex: 'none', color: 'text.secondary' }}>
             {skill.name}

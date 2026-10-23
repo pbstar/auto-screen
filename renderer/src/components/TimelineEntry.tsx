@@ -1,15 +1,15 @@
 import { Box, Typography } from '@mui/material'
 import type { TimelineItem } from '../hooks/useAgentRun'
-import { MONO_FONT } from '../theme'
+import { CANVAS, HAIRLINE, MONO_FONT, SIGNAL } from '../theme'
 
 function dotColor(item: TimelineItem): string {
-  if (item.kind === 'reply') return '#2563eb'
+  if (item.kind === 'reply') return SIGNAL
   if (item.kind === 'tool') {
-    if (item.status === 'error') return '#dc2626'
-    if (item.status === 'running') return '#9ca3af'
-    return '#16a34a'
+    if (item.status === 'error') return '#cf2e2e'
+    if (item.status === 'running') return '#b6bdc8'
+    return '#12895a'
   }
-  return '#c4c9d1'
+  return '#c9d1db'
 }
 
 interface Props {
@@ -22,29 +22,30 @@ export default function TimelineEntry({ item, onPreview }: Props) {
     <Box
       sx={{
         position: 'relative',
-        pl: 2.25,
+        pl: 2,
         pb: 1.25,
         '&::before': {
           content: '""',
           position: 'absolute',
           left: '3.5px',
-          top: 13,
+          top: 15,
           bottom: 0,
           width: '1px',
-          bgcolor: '#e6e8eb',
+          bgcolor: HAIRLINE,
         },
-        '&:last-child::before': { display: 'none' },
+        '&:last-of-type::before': { display: 'none' },
       }}
     >
       <Box
         sx={{
           position: 'absolute',
-          left: 0,
-          top: 5,
-          width: 8,
-          height: 8,
+          left: 0.5,
+          top: 6,
+          width: 7,
+          height: 7,
           borderRadius: '50%',
           bgcolor: dotColor(item),
+          boxShadow: '0 0 0 2px #ffffff',
         }}
       />
       {item.kind === 'shot' && <ShotEntry item={item} onPreview={onPreview} />}
@@ -57,8 +58,15 @@ export default function TimelineEntry({ item, onPreview }: Props) {
 function ShotEntry({ item, onPreview }: Props) {
   return (
     <>
-      <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: MONO_FONT }}>
-        第 {item.step} 步 · 截图 {item.detail}
+      <Typography
+        sx={{
+          fontFamily: MONO_FONT,
+          fontSize: 11,
+          color: 'text.secondary',
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        第 {item.step} 步 · {item.detail}
       </Typography>
       <Box
         component="img"
@@ -67,17 +75,17 @@ function ShotEntry({ item, onPreview }: Props) {
         onClick={() => onPreview(item)}
         sx={{
           display: 'block',
-          height: 96,
+          height: 92,
           width: 'auto',
           maxWidth: '100%',
           objectFit: 'contain',
-          mt: 0.5,
+          mt: 0.75,
           borderRadius: '4px',
-          border: 1,
-          borderColor: 'divider',
-          bgcolor: '#f6f7f9',
+          bgcolor: CANVAS,
+          boxShadow: `0 0 0 1px ${HAIRLINE}`,
           cursor: 'pointer',
-          '&:hover': { borderColor: 'primary.main' },
+          transition: 'box-shadow 120ms ease',
+          '&:hover': { boxShadow: `0 0 0 1px ${SIGNAL}, 0 4px 12px rgba(15, 23, 42, 0.08)` },
         }}
       />
     </>
@@ -86,8 +94,17 @@ function ShotEntry({ item, onPreview }: Props) {
 
 function ReplyEntry({ item }: { item: TimelineItem }) {
   return (
-    <Box sx={{ bgcolor: '#f6f7f9', borderRadius: '4px', px: 1.25, py: 0.75 }}>
-      <Typography sx={{ fontSize: 12.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+    <Box
+      sx={{
+        bgcolor: 'background.paper',
+        border: 1,
+        borderColor: 'divider',
+        borderRadius: '6px',
+        px: 1.25,
+        py: 0.875,
+      }}
+    >
+      <Typography sx={{ fontSize: 12.5, lineHeight: 1.65, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
         {item.text}
       </Typography>
     </Box>
@@ -102,15 +119,22 @@ function ToolEntry({ item }: { item: TimelineItem }) {
           {item.name}
         </Typography>
         <Box sx={{ flex: 1 }} />
-        <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: MONO_FONT }}>
+        <Typography
+          sx={{
+            fontFamily: MONO_FONT,
+            fontSize: 11,
+            color: 'text.disabled',
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
           {item.durationMs != null ? `${item.durationMs}ms` : '…'}
         </Typography>
       </Box>
       <Typography
-        variant="caption"
         sx={{
           display: 'block',
           fontFamily: MONO_FONT,
+          fontSize: 11,
           color: 'text.secondary',
           overflow: 'hidden',
           textOverflow: 'ellipsis',

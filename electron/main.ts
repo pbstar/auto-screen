@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, Menu, shell } from 'electron'
 import { join } from 'node:path'
 import { registerIpcHandlers } from './ipc'
 import { registerStreamHandler } from './capture-stream'
@@ -42,6 +42,8 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   loadEnv()
+  // Windows/Linux 的默认菜单没有任何有用项，还占一条横向空间；macOS 的菜单栏是系统级的，保留
+  if (process.platform !== 'darwin') Menu.setApplicationMenu(null)
   registerStreamHandler()
   registerIpcHandlers(() => mainWindow)
   createWindow()

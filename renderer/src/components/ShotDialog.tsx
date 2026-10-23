@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Box, Dialog, DialogContent, DialogTitle } from '@mui/material'
 import type { TimelineItem } from '../hooks/useAgentRun'
+import { CANVAS } from '../theme'
 
 const api = window.autoScreen
 
@@ -51,7 +52,7 @@ export default function ShotDialog({ item, runId, onClose }: Props) {
             borderRadius: '4px',
             border: 1,
             borderColor: 'divider',
-            bgcolor: '#f6f7f9',
+            bgcolor: CANVAS,
           }}
         />
       </DialogContent>

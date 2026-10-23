@@ -11,7 +11,7 @@ import {
   Typography,
 } from '@mui/material'
 import type { RunMeta } from '@shared/types'
-import { MONO_FONT } from '../theme'
+import { CANVAS, MONO_FONT } from '../theme'
 
 const api = window.autoScreen
 
@@ -157,7 +157,7 @@ function LogText({ text }: { text: string }) {
         m: 0,
         p: 1.25,
         overflow: 'auto',
-        bgcolor: '#f6f7f9',
+        bgcolor: CANVAS,
         borderRadius: '6px',
         fontFamily: MONO_FONT,
         fontSize: 11.5,

@@ -7,6 +7,7 @@ import { MONO_FONT } from '../theme'
 interface Props {
   windowSelected: boolean
   state: AgentRunState
+  onOpenLogs: () => void
   onStart: (task: string) => Promise<void>
   onStop: () => void
   onPause: () => void
@@ -21,6 +22,7 @@ function formatTokens(usage: TokenUsage): string {
 export default function TaskBar({
   windowSelected,
   state,
+  onOpenLogs,
   onStart,
   onStop,
   onPause,
@@ -45,9 +47,18 @@ export default function TaskBar({
 
   return (
     <Box sx={{ p: 1.5, flex: 'none', borderBottom: 1, borderColor: 'divider' }}>
-      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-        任务
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', height: 20 }}>
+        <Typography sx={{ fontSize: 12, fontWeight: 600 }}>任务</Typography>
+        <Box sx={{ flex: 1 }} />
+        {/* 自带内边距，负外边距让文字和下面内容的 12px 右边界对齐 */}
+        <Button
+          size="small"
+          onClick={onOpenLogs}
+          sx={{ color: 'text.secondary', px: 1, mr: -1, minWidth: 0 }}
+        >
+          日志
+        </Button>
+      </Box>
       <TextField
         fullWidth
         multiline
@@ -61,18 +72,26 @@ export default function TaskBar({
         }}
         disabled={running}
         sx={{
-          mt: 0.5,
+          mt: 0.75,
           '& .MuiOutlinedInput-root': {
-            bgcolor: '#f6f7f9',
+            bgcolor: 'background.paper',
             fontSize: 13,
-            '& fieldset': { borderColor: 'transparent' },
-            '&:hover fieldset': { borderColor: '#d4d7dd' },
-            '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+            lineHeight: 1.6,
+            '& fieldset': { borderColor: 'divider' },
+            '&:hover fieldset': { borderColor: '#c9d1db' },
+            '&.Mui-focused fieldset': { borderColor: 'text.primary', borderWidth: 1 },
           },
         }}
       />
-      <Stack direction="row" spacing={1} sx={{ mt: 1, alignItems: 'center' }}>
-        <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: MONO_FONT }}>
+      <Stack direction="row" spacing={1} sx={{ mt: 1.25, alignItems: 'center' }}>
+        <Typography
+          sx={{
+            fontFamily: MONO_FONT,
+            fontSize: 11,
+            color: 'text.secondary',
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
           {state.step}/{state.maxSteps} 步 · {formatTokens(state.usage)} tokens
         </Typography>
         <Box sx={{ flex: 1 }} />

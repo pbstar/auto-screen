@@ -1,12 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Alert, Box } from '@mui/material'
 import type { IpcResult, PermissionStatus, WindowInfo } from '@shared/types'
-import TopBar from './components/TopBar'
 import ScreenPreview from './components/ScreenPreview'
 import TaskBar from './components/TaskBar'
 import Timeline from './components/Timeline'
 import ReferencePanel from './components/ReferencePanel'
-import StatusBar from './components/StatusBar'
 import LogDialog from './components/LogDialog'
 import { useAgentRun } from './hooks/useAgentRun'
 
@@ -30,11 +28,6 @@ export default function App() {
   const [logOpen, setLogOpen] = useState(false)
   const [error, setError] = useState('')
   const agent = useAgentRun()
-
-  const selectedWindow = useMemo(
-    () => windows.find((win) => win.id === selectedId) ?? null,
-    [windows, selectedId],
-  )
 
   const loadWindows = useCallback(async () => {
     try {
@@ -67,15 +60,6 @@ export default function App() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
-      <TopBar
-        windows={windows}
-        selectedId={selectedId}
-        windowLocked={agent.state.status !== 'idle'}
-        onSelect={setSelectedId}
-        onRefreshWindows={() => void loadWindows()}
-        onOpenLogs={() => setLogOpen(true)}
-      />
-
       {permissionWarning && (
         <Alert severity="warning" square sx={{ py: 0.25 }}>
           需要「屏幕录制」和「辅助功能」权限。请到 系统设置 → 隐私与安全性 中授权，然后重启本应用。
@@ -90,25 +74,31 @@ export default function App() {
 
       <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
         <ScreenPreview
+          windows={windows}
           windowId={selectedId}
+          windowLocked={agent.state.status !== 'idle'}
+          onSelect={setSelectedId}
+          onRefreshWindows={() => void loadWindows()}
           gridVisible={gridVisible}
           onGridVisibleChange={setGridVisible}
         />
 
         <Box
           sx={{
-            width: 380,
+            width: 400,
             flex: 'none',
             borderLeft: 1,
             borderColor: 'divider',
             display: 'flex',
             flexDirection: 'column',
             minHeight: 0,
+            bgcolor: 'background.paper',
           }}
         >
           <TaskBar
             windowSelected={selectedId != null}
             state={agent.state}
+            onOpenLogs={() => setLogOpen(true)}
             onStart={async (task) => {
               if (selectedId == null) return
               await agent.start(selectedId, task)
@@ -121,12 +111,6 @@ export default function App() {
           <ReferencePanel />
         </Box>
       </Box>
-
-      <StatusBar
-        permissions={permissions}
-        selectedWindow={selectedWindow}
-        agent={agent.state}
-      />
 
       <LogDialog open={logOpen} onClose={() => setLogOpen(false)} />
     </Box>

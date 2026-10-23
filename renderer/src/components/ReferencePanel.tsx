@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Box, Button } from '@mui/material'
 import type { ToolSummary } from '@shared/types'
+import { MONO_FONT } from '../theme'
 import ToolList from './ToolList'
 import SkillList from './SkillList'
 
@@ -23,19 +24,15 @@ export default function ReferencePanel() {
 
   return (
     <Box sx={{ flex: 'none', borderTop: 1, borderColor: 'divider' }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, height: 34, px: 1.5 }}>
-        <TabButton active={tab === 'tools'} onClick={() => setTab('tools')}>
-          {tools.length > 0 ? `工具 ${tools.length}` : '工具'}
-        </TabButton>
-        <TabButton active={tab === 'skills'} onClick={() => setTab('skills')}>
-          技能 3
-        </TabButton>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, height: 36, px: 1.5 }}>
+        <TabButton active={tab === 'tools'} onClick={() => setTab('tools')} label="工具" count={tools.length} />
+        <TabButton active={tab === 'skills'} onClick={() => setTab('skills')} label="技能" count={3} />
         <Box sx={{ flex: 1 }} />
         <Button
           size="small"
           color="inherit"
           onClick={() => setCollapsed((value) => !value)}
-          sx={{ minWidth: 0, px: 0.75, color: 'text.secondary' }}
+          sx={{ minWidth: 0, px: 1, mr: -1, fontSize: 11, color: 'text.secondary' }}
         >
           {collapsed ? '展开' : '收起'}
         </Button>
@@ -52,10 +49,11 @@ export default function ReferencePanel() {
 interface TabButtonProps {
   active: boolean
   onClick: () => void
-  children: React.ReactNode
+  label: string
+  count: number
 }
 
-function TabButton({ active, onClick, children }: TabButtonProps) {
+function TabButton({ active, onClick, label, count }: TabButtonProps) {
   return (
     <Button
       size="small"
@@ -63,14 +61,26 @@ function TabButton({ active, onClick, children }: TabButtonProps) {
       onClick={onClick}
       sx={{
         minWidth: 0,
-        px: 0.75,
-        borderRadius: '4px',
+        px: 1,
+        height: 36,
+        borderRadius: 0,
+        fontSize: 12,
         fontWeight: active ? 600 : 500,
         color: active ? 'text.primary' : 'text.secondary',
-        bgcolor: active ? '#f0f1f3' : 'transparent',
+        borderBottom: '2px solid',
+        borderColor: active ? 'text.primary' : 'transparent',
+        '&:hover': { bgcolor: 'transparent', color: 'text.primary' },
       }}
     >
-      {children}
+      {label}
+      {count > 0 && (
+        <Box
+          component="span"
+          sx={{ ml: 0.5, fontFamily: MONO_FONT, fontSize: 11, fontWeight: 400, color: 'text.disabled' }}
+        >
+          {count}
+        </Box>
+      )}
     </Button>
   )
 }

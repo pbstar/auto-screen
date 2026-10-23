@@ -19,14 +19,26 @@ export default function Timeline({ items, runId }: Props) {
   }, [items.length])
 
   return (
-    <Box ref={containerRef} sx={{ flex: 1, minHeight: 0, overflowY: 'auto', px: 1.5, py: 1.25 }}>
+    <Box ref={containerRef} sx={{ flex: 1, minHeight: 0, overflowY: 'auto', px: 1.5, py: 1.5 }}>
       {items.length === 0 ? (
-        <Typography
-          variant="caption"
-          sx={{ display: 'block', color: 'text.secondary', mt: 1.5, textAlign: 'center' }}
+        <Box
+          sx={{
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            px: 3,
+          }}
         >
-          输入任务并开始，这里会逐步显示截图与动作
-        </Typography>
+          <Typography sx={{ fontSize: 12.5, fontWeight: 500 }}>还没有开始</Typography>
+          <Typography variant="caption" sx={{ mt: 0.75, color: 'text.secondary' }}>
+            输入任务后点「开始」
+            <br />
+            每一步的截图和动作会出现在这里
+          </Typography>
+        </Box>
       ) : (
         items.map((item) => (
           <TimelineEntry key={item.id} item={item} onPreview={setPreview} />

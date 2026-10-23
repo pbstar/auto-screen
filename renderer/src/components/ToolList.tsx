@@ -27,9 +27,9 @@ export default function ToolList({ tools, error }: Props) {
   return (
     <>
       {tools.map((tool) => (
-        <Box key={tool.name} sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, py: 0.4 }}>
+        <Box key={tool.name} sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, py: 0.45 }}>
           <Typography
-            sx={{ fontFamily: MONO_FONT, fontSize: 11.5, width: 76, flex: 'none', fontWeight: 600 }}
+            sx={{ fontFamily: MONO_FONT, fontSize: 12, width: 76, flex: 'none', fontWeight: 600 }}
           >
             {tool.name}
           </Typography>

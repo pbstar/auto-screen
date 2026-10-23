@@ -14,7 +14,7 @@ function labelOf(win: WindowInfo): string {
   return `${win.appName} · ${win.title || '无标题窗口'}`
 }
 
-/** 放在顶栏，宽度受限于工具栏，收起态单行截断 */
+/** 放在预览区工具栏，宽度固定，收起态单行截断 */
 export default function WindowSelect({ windows, selectedId, disabled, onSelect, onOpen }: Props) {
   const selected = windows.find((win) => win.id === selectedId) ?? null
 
@@ -31,7 +31,21 @@ export default function WindowSelect({ windows, selectedId, disabled, onSelect, 
           {selected ? labelOf(selected) : '未选择窗口'}
         </Typography>
       )}
-      sx={{ width: 240, '& .MuiSelect-select': { py: 0.75 } }}
+      sx={{
+        minWidth: 160,
+        maxWidth: 280,
+        width: 'fit-content',
+        borderRadius: '6px',
+        transition: 'background-color 120ms ease, box-shadow 120ms ease',
+        '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+        '&:hover': { bgcolor: 'rgba(15, 23, 42, 0.045)' },
+        '&.Mui-focused': {
+          bgcolor: 'rgba(15, 23, 42, 0.045)',
+          boxShadow: 'inset 0 0 0 1px #c9d1db',
+        },
+        '& .MuiSelect-select': { py: 0.75, pl: 1, pr: 3.5 },
+        '& .MuiSelect-icon': { right: 6, color: 'text.disabled' },
+      }}
     >
       {windows.map((win) => (
         <MenuItem key={win.id} value={win.id}>
