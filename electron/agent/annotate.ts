@@ -9,10 +9,18 @@ import type { CaptureResult } from '../../src/shared/types'
 
 const MAX_EDGE = 1280
 const THUMB_EDGE = 360
+/** 内容四周的留白：坐标数字画在这里，不压界面。16px 放不下三位数加刻度，用 20px */
+const MARGIN = 20
+const MARGIN_COLOR = '#111827'
+const FRAME_COLOR = '#ffffff'
 const GRID_COLOR = 'rgba(255, 82, 82, 0.4)'
+const TICK_COLOR = 'rgba(255, 255, 255, 0.5)'
 const CELL_COLOR = 'rgba(255, 255, 255, 0.045)'
 const LABEL_COLOR = '#ffcdd2'
 const MARK_COLOR = '#22d3ee'
+/** 顶部数字居中不挤，左侧要给三位数留够宽度 */
+const TOP_FONT = '9px sans-serif'
+const SIDE_FONT = '8px sans-serif'
 
 /** 上一次指针动作的落点，画在下一张截图上，模型据此判断有没有点偏 */
 export interface ClickMark {
@@ -21,18 +29,18 @@ export interface ClickMark {
 }
 
 export interface AnnotatedShot {
-  /** 发给模型的 PNG data URL */
+  /** 发给模型的 PNG data URL（含四周留白） */
   dataUrl: string
   /** 时间线用的 JPEG 缩略图 */
   thumb: string
-  /** 模型坐标系宽高，工具上下文必须用这两个值 */
+  /** 白框内窗口内容的宽，坐标与工具上下文都用这个尺寸 */
   width: number
   height: number
 }
 
 /**
- * 缩放截图并叠加坐标辅助层。画布不加页边距，原图左上角严格映射到 (0, 0)，
- * 因此模型在标注图上读到的坐标可以按同一比例换算回屏幕。
+ * 缩放截图并叠加坐标辅助层。窗口内容从 (MARGIN, MARGIN) 开始，
+ * 白框内的左上角仍然是坐标原点 (0, 0)，框外的留白只放刻度不参与坐标。
  */
 export async function annotateCapture(
   capture: CaptureResult,
@@ -43,21 +51,24 @@ export async function annotateCapture(
   const height = Math.max(1, Math.round(capture.height * scale))
   const source = await loadImage(Buffer.from(capture.image.split(',')[1] ?? '', 'base64'))
 
-  const canvas = createCanvas(width, height)
+  const canvas = createCanvas(width + MARGIN * 2, height + MARGIN * 2)
   const ctx = canvas.getContext('2d')
+  ctx.fillStyle = MARGIN_COLOR
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
   ctx.imageSmoothingQuality = 'high'
-  ctx.drawImage(source, 0, 0, width, height)
+  ctx.drawImage(source, MARGIN, MARGIN, width, height)
 
   const major = gridMajor(Math.max(width, height))
   drawCells(ctx, width, height, major)
   drawGrid(ctx, width, height, major)
   drawTicks(ctx, width, height, major)
   drawLabels(ctx, width, height, major)
+  drawFrame(ctx, width, height)
   if (mark) drawMark(ctx, width, height, mark)
 
   return {
     dataUrl: `data:image/png;base64,${canvas.toBuffer('image/png').toString('base64')}`,
-    thumb: makeThumb(canvas, width, height),
+    thumb: makeThumb(canvas, canvas.width, canvas.height),
     width,
     height,
   }
@@ -70,7 +81,9 @@ function drawCells(ctx: SKRSContext2D, width: number, height: number, major: num
   for (let x = 0, col = 0; x < width; x += major, col += 1) {
     for (let y = 0, row = 0; y < height; y += major, row += 1) {
       if ((col + row) % 2 === 0) continue
-      ctx.fillRect(x, y, Math.min(major, width - x), Math.min(major, height - y))
+      const right = Math.min(major, width - x)
+      const bottom = Math.min(major, height - y)
+      ctx.fillRect(MARGIN + x, MARGIN + y, right, bottom)
     }
   }
   ctx.restore()
@@ -83,49 +96,61 @@ function drawGrid(ctx: SKRSContext2D, width: number, height: number, major: numb
   ctx.setLineDash([4, 4])
   ctx.beginPath()
   for (let x = major; x < width; x += major) {
-    ctx.moveTo(x + 0.5, 0)
-    ctx.lineTo(x + 0.5, height)
+    ctx.moveTo(MARGIN + x + 0.5, MARGIN)
+    ctx.lineTo(MARGIN + x + 0.5, MARGIN + height)
   }
   for (let y = major; y < height; y += major) {
-    ctx.moveTo(0, y + 0.5)
-    ctx.lineTo(width, y + 0.5)
+    ctx.moveTo(MARGIN, MARGIN + y + 0.5)
+    ctx.lineTo(MARGIN + width, MARGIN + y + 0.5)
   }
   ctx.stroke()
   ctx.restore()
 }
 
+/** 刻度画在白框外侧的留白里，指回内容边缘但不遮挡内容 */
 function drawTicks(ctx: SKRSContext2D, width: number, height: number, major: number): void {
-  const lenOf = (value: number) => (value % major === 0 ? 8 : 4)
+  const lenOf = (value: number) => (value % major === 0 ? 6 : 4)
   ctx.save()
-  ctx.strokeStyle = GRID_COLOR
+  ctx.strokeStyle = TICK_COLOR
   ctx.lineWidth = 1
   ctx.beginPath()
   for (let x = GRID.minor; x < width; x += GRID.minor) {
-    ctx.moveTo(x + 0.5, 0)
-    ctx.lineTo(x + 0.5, lenOf(x))
+    ctx.moveTo(MARGIN + x + 0.5, MARGIN)
+    ctx.lineTo(MARGIN + x + 0.5, MARGIN - lenOf(x))
   }
   for (let y = GRID.minor; y < height; y += GRID.minor) {
-    ctx.moveTo(0, y + 0.5)
-    ctx.lineTo(lenOf(y), y + 0.5)
+    ctx.moveTo(MARGIN, MARGIN + y + 0.5)
+    ctx.lineTo(MARGIN - lenOf(y), MARGIN + y + 0.5)
   }
   ctx.stroke()
   ctx.restore()
 }
 
-function drawText(ctx: SKRSContext2D, text: string, x: number, y: number): void {
-  ctx.strokeText(text, x, y)
-  ctx.fillText(text, x, y)
-}
-
-/** 每条主格线都标绝对坐标，模型不用再靠数刻度推算 */
+/** 每条主格线都在留白里标绝对坐标，模型不用靠数刻度推算 */
 function drawLabels(ctx: SKRSContext2D, width: number, height: number, major: number): void {
   ctx.save()
-  ctx.font = '12px sans-serif'
   ctx.fillStyle = LABEL_COLOR
-  ctx.strokeStyle = 'rgba(0, 0, 0, 0.55)'
-  ctx.lineWidth = 3
-  for (let x = major; x < width; x += major) drawText(ctx, String(x), x + 3, 14)
-  for (let y = major; y < height; y += major) drawText(ctx, String(y), 3, y + 14)
+  ctx.font = TOP_FONT
+  ctx.textAlign = 'center'
+  for (let x = major; x < width; x += major) {
+    ctx.fillText(String(x), MARGIN + x, MARGIN - 8)
+  }
+  ctx.font = SIDE_FONT
+  ctx.textAlign = 'right'
+  for (let y = major; y < height; y += major) {
+    ctx.fillText(String(y), MARGIN - 7, MARGIN + y + 3)
+  }
+  // 原点单独标一个 0，钉住坐标起点
+  ctx.font = TOP_FONT
+  ctx.fillText('0', MARGIN - 7, MARGIN - 8)
+  ctx.restore()
+}
+
+function drawFrame(ctx: SKRSContext2D, width: number, height: number): void {
+  ctx.save()
+  ctx.strokeStyle = FRAME_COLOR
+  ctx.lineWidth = 2
+  ctx.strokeRect(MARGIN - 1, MARGIN - 1, width + 2, height + 2)
   ctx.restore()
 }
 
@@ -136,7 +161,8 @@ function drawMark(
   height: number,
   mark: ClickMark,
 ): void {
-  const { x, y } = mark
+  const x = MARGIN + mark.x
+  const y = MARGIN + mark.y
   ctx.save()
   ctx.strokeStyle = MARK_COLOR
   ctx.lineWidth = 2
@@ -148,14 +174,14 @@ function drawMark(
   ctx.lineTo(x, y + 22)
   ctx.stroke()
 
-  ctx.font = 'bold 12px sans-serif'
+  // 文字放进底部留白，别盖住窗口内容
+  ctx.font = 'bold 11px sans-serif'
   ctx.fillStyle = MARK_COLOR
-  ctx.strokeStyle = 'rgba(0, 0, 0, 0.75)'
-  ctx.lineWidth = 3
-  const label = `上次点击 (${x}, ${y})`
-  const labelX = Math.max(3, Math.min(x + 16, width - 120))
-  const labelY = Math.max(28, Math.min(y - 16, height - 6))
-  drawText(ctx, label, labelX, labelY)
+  const label = `上次点击 (${mark.x}, ${mark.y})`
+  const canvasWidth = width + MARGIN * 2
+  const labelX = Math.max(3, Math.min(x - 40, canvasWidth - 108))
+  const labelY = height + MARGIN * 2 - 4
+  ctx.fillText(label, labelX, labelY)
   ctx.restore()
 }
 

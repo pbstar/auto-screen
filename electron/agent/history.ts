@@ -21,7 +21,12 @@ export function appendShot(
   step: number,
 ): void {
   const content: ContentPart[] = [
-    { type: 'text', text: `第 ${step} 步截图，尺寸 ${shot.width}×${shot.height}，坐标以这张图为准。` },
+    {
+      type: 'text',
+      text:
+        `第 ${step} 步截图：白框内是目标窗口，内容 ${shot.width}×${shot.height}，` +
+        '坐标原点在白框左上角；框外深色留白里的数字只是刻度，不计入坐标。',
+    },
     { type: 'image_url', image_url: { url: shot.dataUrl, detail: 'high' } },
   ]
   messages.push({ role: 'user', content })
