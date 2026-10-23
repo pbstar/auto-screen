@@ -3,8 +3,8 @@ export interface TokenUsage {
   completion: number
 }
 
-/** 思考强度，DeepSeek 的 reasoning_effort；实际用哪一档由循环按步骤决定 */
-export type ReasoningEffort = 'low' | 'high' | 'max'
+/** 思考强度：第 1 步与失败恢复步用 high，其余步骤 low，策略固定在循环里，不做配置化 */
+export type ReasoningEffort = 'low' | 'high'
 
 export type AgentRunReason = 'completed' | 'stopped' | 'max_steps' | 'failed'
 

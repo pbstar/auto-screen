@@ -6,7 +6,6 @@ import type {
 } from '../../src/shared/agent'
 import type { ToolContext } from '../../src/shared/types'
 import { captureWindow } from '../../src/core/screen'
-import { readModelConfig } from '../config'
 import { annotateCapture, type AnnotatedShot, type ClickMark } from './annotate'
 import { appendShot, truncate, type ShotRef } from './history'
 import {
@@ -31,10 +30,8 @@ const MARK_TOOLS = new Set(['click', 'move', 'drag'])
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
-/** 高强度档位：配置已经是 max 就保持 max，否则提到 high */
-export function heavyEffort(base: ReasoningEffort): ReasoningEffort {
-  return base === 'max' ? 'max' : 'high'
-}
+export const HEAVY_EFFORT: ReasoningEffort = 'high'
+export const ROUTINE_EFFORT: ReasoningEffort = 'low'
 
 type Emit = (payload: AgentEventPayload) => void
 
@@ -76,8 +73,6 @@ interface RunContext {
   mark: ClickMark | null
   /** 上一步是否动过鼠标键盘，没动过就不用等重绘 */
   dirty: boolean
-  /** 配置里的常规思考强度，按步骤再决定要不要提高 */
-  baseEffort: ReasoningEffort
   /** 上一步是否有工具失败，失败后的下一步需要重新想 */
   failed: boolean
 }
@@ -130,7 +125,7 @@ async function runStep(ctx: RunContext, step: number): Promise<AgentRunReason | 
   if (step > 1 && ctx.dirty) await delay(SETTLE_MS)
   ctx.dirty = false
   // 第 1 步要读全屏拆任务、出错后要换策略，这两处值得多想；常规步骤只做即时判断
-  const effort = step === 1 || ctx.failed ? heavyEffort(ctx.baseEffort) : ctx.baseEffort
+  const effort = step === 1 || ctx.failed ? HEAVY_EFFORT : ROUTINE_EFFORT
   ctx.failed = false
   const shot = await annotateCapture(captureWindow(ctx.windowId), ctx.mark)
   ctx.saveShot(step, shot.dataUrl)
@@ -292,7 +287,6 @@ function createContext(options: RunOptions): RunContext {
     lastText: null,
     mark: null,
     dirty: false,
-    baseEffort: readModelConfig().reasoningEffort,
     failed: false,
   }
 }

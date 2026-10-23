@@ -55,12 +55,11 @@ function getClient(cfg: ModelConfig): OpenAI {
 /**
  * thinking / reasoning_effort 是 DeepSeek 的扩展参数，OpenAI SDK 类型里没有。
  * 这里集中做一次断言，其它模块只面对 AgentMessage。
- * effort 由循环按步骤传入，不传时用配置里的默认档。
  */
 export async function requestAssistantTurn(
   messages: AgentMessage[],
   signal: AbortSignal,
-  effort?: ReasoningEffort,
+  effort: ReasoningEffort,
 ): Promise<AssistantTurn> {
   const cfg = readModelConfig()
   const params = {
@@ -70,7 +69,7 @@ export async function requestAssistantTurn(
     tool_choice: 'auto',
     max_tokens: 8192,
     thinking: { type: 'enabled' },
-    reasoning_effort: effort ?? cfg.reasoningEffort,
+    reasoning_effort: effort,
   } as unknown as ChatParams
 
   const completion = await getClient(cfg).chat.completions.create(params, { signal })

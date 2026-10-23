@@ -33,7 +33,6 @@ cp .env.example .env
 DEEPSEEK_API_KEY=sk-...
 DEEPSEEK_BASE_URL=https://api.deepseek.com
 DEEPSEEK_MODEL=deepseek-flash
-DEEPSEEK_REASONING_EFFORT=low
 ```
 
 `.env` 不进仓库；没填 Key 时界面会提示，且不会启动 Agent。改完 `.env` 需要重启应用生效。

@@ -14,7 +14,7 @@ import { configReady, readModelConfig } from '../config'
 import { appendLog, createRun, finishRun, saveShot } from '../run-store'
 import { PauseGate } from './control'
 import { describeError } from './llm'
-import { MAX_STEPS, heavyEffort, runAgent } from './loop'
+import { HEAVY_EFFORT, MAX_STEPS, ROUTINE_EFFORT, runAgent } from './loop'
 
 type WindowGetter = () => BrowserWindow | null
 
@@ -47,10 +47,9 @@ export async function startAgent(
   const startedAt = Date.now()
   // 先建运行目录：写盘失败就直接报错，不要留下一个「运行中」的空壳
   createRun(runId, task, request.windowId)
-  const heavy = heavyEffort(config.reasoningEffort)
   appendLog(
     runId,
-    `模型：${config.model} · 思考强度 首步/失败恢复 ${heavy} · 常规 ${config.reasoningEffort}`,
+    `模型：${config.model} · 思考强度 首步/失败恢复 ${HEAVY_EFFORT} · 常规 ${ROUTINE_EFFORT}`,
   )
 
   const gate = new PauseGate()
