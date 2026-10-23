@@ -72,9 +72,9 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null): 
     }
   })
 
-  ipcMain.handle(IPC.agentStart, (_event, request: AgentStartRequest) => {
+  ipcMain.handle(IPC.agentStart, async (_event, request: AgentStartRequest) => {
     try {
-      startAgent(getMainWindow, request)
+      await startAgent(getMainWindow, request)
       return ok(null)
     } catch (error) {
       return fail(error)
@@ -99,9 +99,9 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null): 
     }
   })
 
-  ipcMain.handle(IPC.agentResume, () => {
+  ipcMain.handle(IPC.agentResume, async () => {
     try {
-      resumeAgent(getMainWindow)
+      await resumeAgent(getMainWindow)
       return ok(null)
     } catch (error) {
       return fail(error)

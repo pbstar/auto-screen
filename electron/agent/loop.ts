@@ -16,19 +16,16 @@ import { executeTool } from './registry'
 import { FailureGuard, type PauseGate } from './control'
 
 export const MAX_STEPS = 30
-const NO_HIDE = new Set(['wait', 'list_windows'])
 /** 会移动鼠标或敲键盘的工具，执行期间暂停人工接管检测 */
 const INPUT_TOOLS = new Set(['click', 'move', 'drag', 'scroll', 'type', 'key'])
 
 type Emit = (payload: AgentEventPayload) => void
-type Hide = <T>(hide: boolean, action: () => Promise<T>) => Promise<T>
 
 export interface RunOptions {
   windowId: number
   task: string
   signal: AbortSignal
   emit: Emit
-  hide: Hide
   /** 把标注后的完整截图落到运行记录里，供大图查看 */
   saveShot: (step: number, dataUrl: string) => void
   gate: PauseGate
@@ -49,7 +46,6 @@ interface RunContext {
   windowId: number
   signal: AbortSignal
   emit: Emit
-  hide: Hide
   saveShot: (step: number, dataUrl: string) => void
   gate: PauseGate
   guard: FailureGuard
@@ -161,7 +157,7 @@ async function runOneTool(
   const startedAt = Date.now()
   ctx.emit({ type: 'tool_started', step, callId: call.id, name, input })
 
-  const outcome = await withBusy(ctx, name, () => invokeTool(ctx, name, input, context))
+  const outcome = await withBusy(ctx, name, () => invokeTool(name, input, context))
   ctx.messages.push({ role: 'tool', tool_call_id: call.id, content: outcome.text })
   ctx.emit({
     type: 'tool_finished',
@@ -187,14 +183,12 @@ async function withBusy<T>(ctx: RunContext, name: string, action: () => Promise<
 }
 
 async function invokeTool(
-  ctx: RunContext,
   name: string,
   input: Record<string, unknown>,
   context: ToolContext,
 ): Promise<{ text: string; isError: boolean }> {
-  const action = () => executeTool(name, input, context)
   try {
-    const result = await (NO_HIDE.has(name) ? action() : ctx.hide(true, action))
+    const result = await executeTool(name, input, context)
     return { text: truncate(result.text), isError: Boolean(result.isError) }
   } catch (caught) {
     return { text: truncate(describeError(caught)), isError: true }
@@ -231,7 +225,6 @@ function createContext(options: RunOptions): RunContext {
     windowId: options.windowId,
     signal: options.signal,
     emit: options.emit,
-    hide: options.hide,
     saveShot: options.saveShot,
     gate: options.gate,
     guard: new FailureGuard(),

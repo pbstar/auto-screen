@@ -8,7 +8,7 @@ import type {
   TokenUsage,
 } from '../../src/shared/agent'
 import { IPC } from '../../src/shared/ipc'
-import { withWindowHidden } from '../../src/core/safety'
+import { activateWindow } from '../../src/core/safety'
 import { createPointerWatcher, type PointerWatcher } from '../../src/core/pointer'
 import { configReady, readModelConfig } from '../config'
 import { appendLog, createRun, finishRun, saveShot } from '../run-store'
@@ -20,6 +20,7 @@ type WindowGetter = () => BrowserWindow | null
 
 interface ActiveRun {
   runId: string
+  windowId: number
   controller: AbortController
   gate: PauseGate
   watcher: PointerWatcher
@@ -30,11 +31,16 @@ let seq = 0
 let lastStep = 0
 let lastUsage: TokenUsage = { prompt: 0, completion: 0 }
 
-export function startAgent(getWindow: WindowGetter, request: AgentStartRequest): void {
+export async function startAgent(
+  getWindow: WindowGetter,
+  request: AgentStartRequest,
+): Promise<void> {
   if (active) throw new Error('已有任务在运行，请先停止')
   const task = request.task.trim()
   if (!task) throw new Error('任务不能为空')
   const config = readModelConfig()
+  // 目标不在最前，鼠标就会点在自己身上；激活失败就不要开跑
+  await activateWindow(request.windowId)
 
   const runId = randomUUID()
   const controller = new AbortController()
@@ -48,7 +54,7 @@ export function startAgent(getWindow: WindowGetter, request: AgentStartRequest):
     if (!gate.pause('human')) return
     broadcast(getWindow(), runId, { type: 'paused', reason: 'human' })
   })
-  active = { runId, controller, gate, watcher }
+  active = { runId, windowId: request.windowId, controller, gate, watcher }
   seq = 0
   lastStep = 0
   lastUsage = { prompt: 0, completion: 0 }
@@ -58,7 +64,6 @@ export function startAgent(getWindow: WindowGetter, request: AgentStartRequest):
     task,
     signal: controller.signal,
     emit: (payload) => broadcast(getWindow(), runId, payload),
-    hide: (hide, action) => withWindowHidden(getWindow(), hide, action),
     saveShot: (step, dataUrl) => saveShot(runId, step, dataUrl),
     gate,
     busy: (on) => watcher.markBusy(on),
@@ -93,6 +98,12 @@ export function startAgent(getWindow: WindowGetter, request: AgentStartRequest):
       watcher.stop()
       gate.resume()
       active = null
+      // 运行期间目标窗口在最前，结束时把本窗口带回前台，用户能立刻看到结果
+      const win = getWindow()
+      if (win && !win.isDestroyed()) {
+        win.show()
+        win.focus()
+      }
     })
 }
 
@@ -109,11 +120,14 @@ export function pauseAgent(getWindow: WindowGetter): void {
   broadcast(getWindow(), active.runId, { type: 'paused', reason: 'user' })
 }
 
-export function resumeAgent(getWindow: WindowGetter): void {
-  if (!active) return
-  if (!active.gate.resume()) return
-  void active.watcher.resync()
-  broadcast(getWindow(), active.runId, { type: 'resumed' })
+export async function resumeAgent(getWindow: WindowGetter): Promise<void> {
+  const run = active
+  if (!run) return
+  // 先确保目标回到最前，失败就不恢复，免得动作落空
+  await activateWindow(run.windowId)
+  if (active !== run || !run.gate.resume()) return
+  void run.watcher.resync()
+  broadcast(getWindow(), run.runId, { type: 'resumed' })
 }
 
 export function agentStatus(): AgentStatus {
