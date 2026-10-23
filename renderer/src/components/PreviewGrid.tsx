@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { GRID, gridMajor } from '@shared/ipc'
+import { GRID, GRID_STYLE, gridMajor } from '@shared/ipc'
 
 interface Props {
   imageWidth: number
@@ -66,9 +66,9 @@ export default function PreviewGrid({
           y1={0}
           x2={px(x)}
           y2={displayHeight}
-          stroke="rgba(255,82,82,0.45)"
+          stroke={GRID_STYLE.line}
           strokeWidth={1}
-          strokeDasharray="4 4"
+          strokeDasharray={GRID_STYLE.dash.join(' ')}
         />
       ))}
       {majorY.map((y) => (
@@ -78,9 +78,9 @@ export default function PreviewGrid({
           y1={py(y)}
           x2={displayWidth}
           y2={py(y)}
-          stroke="rgba(255,82,82,0.45)"
+          stroke={GRID_STYLE.line}
           strokeWidth={1}
-          strokeDasharray="4 4"
+          strokeDasharray={GRID_STYLE.dash.join(' ')}
         />
       ))}
 
@@ -90,8 +90,8 @@ export default function PreviewGrid({
           x1={px(x)}
           y1={0}
           x2={px(x)}
-          y2={x % major === 0 ? 10 : 4}
-          stroke="rgba(255,82,82,0.7)"
+          y2={x % major === 0 ? GRID_STYLE.majorTick : GRID_STYLE.minorTick}
+          stroke={GRID_STYLE.tick}
           strokeWidth={1}
         />
       ))}
@@ -100,9 +100,9 @@ export default function PreviewGrid({
           key={`ty-${y}`}
           x1={0}
           y1={py(y)}
-          x2={y % major === 0 ? 10 : 4}
+          x2={y % major === 0 ? GRID_STYLE.majorTick : GRID_STYLE.minorTick}
           y2={py(y)}
-          stroke="rgba(255,82,82,0.7)"
+          stroke={GRID_STYLE.tick}
           strokeWidth={1}
         />
       ))}
@@ -114,29 +114,31 @@ export default function PreviewGrid({
             x={px(x) + 3}
             y={14}
             fontSize={11}
-            fill="#ff8a80"
-            stroke="rgba(0,0,0,0.85)"
-            strokeWidth={3}
+            fill={GRID_STYLE.label}
+            stroke={GRID_STYLE.labelStroke}
+            strokeWidth={GRID_STYLE.labelStrokeWidth}
             paintOrder="stroke"
           >
             {x}
           </text>
         ))}
       {showLabels &&
-        majorY.map((y) => (
-          <text
-            key={`ly-${y}`}
-            x={3}
-            y={py(y) - 3}
-            fontSize={11}
-            fill="#ff8a80"
-            stroke="rgba(0,0,0,0.85)"
-            strokeWidth={3}
-            paintOrder="stroke"
-          >
-            {y}
-          </text>
-        ))}
+        majorY
+          .filter((y) => y > 0)
+          .map((y) => (
+            <text
+              key={`ly-${y}`}
+              x={3}
+              y={py(y) + 14}
+              fontSize={11}
+              fill={GRID_STYLE.label}
+              stroke={GRID_STYLE.labelStroke}
+              strokeWidth={GRID_STYLE.labelStrokeWidth}
+              paintOrder="stroke"
+            >
+              {y}
+            </text>
+          ))}
     </g>
   )
 }

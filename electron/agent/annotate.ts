@@ -4,15 +4,11 @@ import {
   type Canvas,
   type SKRSContext2D,
 } from '@napi-rs/canvas'
-import { GRID, gridMajor } from '../../src/shared/ipc'
+import { GRID, GRID_STYLE, gridMajor } from '../../src/shared/ipc'
 import type { CaptureResult } from '../../src/shared/types'
 
 const MAX_EDGE = 1280
 const THUMB_EDGE = 360
-const GRID_COLOR = 'rgba(255, 82, 82, 0.4)'
-const TICK_COLOR = 'rgba(255, 82, 82, 0.7)'
-const CELL_COLOR = 'rgba(255, 255, 255, 0.045)'
-const LABEL_COLOR = '#ffcdd2'
 const MARK_COLOR = '#22d3ee'
 const LABEL_FONT = '11px sans-serif'
 /** 准星臂长，14px 的小十字，不盖按钮 */
@@ -53,7 +49,6 @@ export async function annotateCapture(
   ctx.drawImage(source, 0, 0, width, height)
 
   const major = gridMajor(Math.max(width, height))
-  drawCells(ctx, width, height, major)
   drawGrid(ctx, width, height, major)
   drawTicks(ctx, width, height, major)
   drawLabels(ctx, width, height, major)
@@ -67,26 +62,12 @@ export async function annotateCapture(
   }
 }
 
-/** 相邻主格交替铺一层极淡底色，数格子比数刻度线可靠 */
-function drawCells(ctx: SKRSContext2D, width: number, height: number, major: number): void {
-  ctx.save()
-  ctx.fillStyle = CELL_COLOR
-  for (let x = 0, col = 0; x < width; x += major, col += 1) {
-    for (let y = 0, row = 0; y < height; y += major, row += 1) {
-      if ((col + row) % 2 === 0) continue
-      const right = Math.min(major, width - x)
-      const bottom = Math.min(major, height - y)
-      ctx.fillRect(x, y, right, bottom)
-    }
-  }
-  ctx.restore()
-}
-
+/** 主格虚线，样式与界面预览同源 */
 function drawGrid(ctx: SKRSContext2D, width: number, height: number, major: number): void {
   ctx.save()
-  ctx.strokeStyle = GRID_COLOR
+  ctx.strokeStyle = GRID_STYLE.line
   ctx.lineWidth = 1
-  ctx.setLineDash([4, 4])
+  ctx.setLineDash([...GRID_STYLE.dash])
   ctx.beginPath()
   for (let x = major; x < width; x += major) {
     ctx.moveTo(x + 0.5, 0)
@@ -101,9 +82,10 @@ function drawGrid(ctx: SKRSContext2D, width: number, height: number, major: numb
 }
 
 function drawTicks(ctx: SKRSContext2D, width: number, height: number, major: number): void {
-  const lenOf = (value: number) => (value % major === 0 ? 8 : 4)
+  const lenOf = (value: number) =>
+    value % major === 0 ? GRID_STYLE.majorTick : GRID_STYLE.minorTick
   ctx.save()
-  ctx.strokeStyle = TICK_COLOR
+  ctx.strokeStyle = GRID_STYLE.tick
   ctx.lineWidth = 1
   ctx.beginPath()
   for (let x = GRID.minor; x < width; x += GRID.minor) {
@@ -123,13 +105,13 @@ function drawText(ctx: SKRSContext2D, text: string, x: number, y: number): void 
   ctx.fillText(text, x, y)
 }
 
-/** 每条主格线都标绝对坐标，模型不用靠数刻度推算 */
+/** 每条主格线都标绝对坐标，模型不用靠数刻度推算；标签统一落在线的下方 */
 function drawLabels(ctx: SKRSContext2D, width: number, height: number, major: number): void {
   ctx.save()
   ctx.font = LABEL_FONT
-  ctx.fillStyle = LABEL_COLOR
-  ctx.strokeStyle = 'rgba(0, 0, 0, 0.55)'
-  ctx.lineWidth = 3
+  ctx.fillStyle = GRID_STYLE.label
+  ctx.strokeStyle = GRID_STYLE.labelStroke
+  ctx.lineWidth = GRID_STYLE.labelStrokeWidth
   drawText(ctx, '0', 3, 14)
   for (let x = major; x < width; x += major) drawText(ctx, String(x), x + 3, 14)
   for (let y = major; y < height; y += major) drawText(ctx, String(y), 3, y + 14)

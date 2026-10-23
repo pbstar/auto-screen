@@ -27,3 +27,18 @@ export const GRID = {
 export function gridMajor(longEdge: number): number {
   return longEdge < 640 ? 50 : GRID.major
 }
+
+/**
+ * 预览（SVG）和发给模型的截图（canvas）各画一遍网格，
+ * 样式参数集中在这里，免得两边各写一套慢慢长歪。
+ */
+export const GRID_STYLE = {
+  line: 'rgba(255, 82, 82, 0.45)',
+  tick: 'rgba(255, 82, 82, 0.7)',
+  label: '#ff8a80',
+  labelStroke: 'rgba(0, 0, 0, 0.85)',
+  labelStrokeWidth: 3,
+  majorTick: 10,
+  minorTick: 4,
+  dash: [4, 4],
+} as const
