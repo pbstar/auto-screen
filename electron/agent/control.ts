@@ -36,3 +36,58 @@ export class PauseGate {
     }
   }
 }
+
+/** 环境性故障再试也没用，第一次就要报给人类 */
+const FATAL_PATTERNS = [/目标窗口不存在/, /辅助功能/, /权限/]
+/** 只对指针动作做原地重复检测：滚动、输入、等待重复是合理的 */
+const REPEAT_CHECKED = new Set(['click', 'move', 'drag'])
+const MAX_FAILURES = 2
+const MAX_REPEATS = 3
+
+/**
+ * 失败收敛：工具报错原本交给模型自己换策略，但模型常常原地重试，
+ * 十几步下来既没进展又烧 token。这里把「绝无可能成功」和「明显卡死」提前掐掉。
+ */
+export class FailureGuard {
+  private failures = 0
+  private lastSignature = ''
+  private repeats = 0
+
+  /** 返回终止原因；null 表示可以继续 */
+  observe(
+    name: string,
+    input: Record<string, unknown>,
+    text: string,
+    isError: boolean,
+  ): string | null {
+    this.trackRepeat(name, input)
+
+    if (isError) {
+      if (FATAL_PATTERNS.some((pattern) => pattern.test(text))) {
+        return `工具 ${name} 无法执行：${text}`
+      }
+      this.failures += 1
+      if (this.failures >= MAX_FAILURES) {
+        return `工具 ${name} 连续失败 ${this.failures} 次：${text}`
+      }
+    } else {
+      this.failures = 0
+    }
+
+    if (this.repeats >= MAX_REPEATS) {
+      return `模型连续 ${this.repeats} 次执行同一个 ${name}，没有进展，已终止`
+    }
+    return null
+  }
+
+  private trackRepeat(name: string, input: Record<string, unknown>): void {
+    const signature = `${name}:${JSON.stringify(input)}`
+    const same = signature === this.lastSignature
+    this.lastSignature = signature
+    if (!REPEAT_CHECKED.has(name)) {
+      this.repeats = 0
+      return
+    }
+    this.repeats = same ? this.repeats + 1 : 1
+  }
+}

@@ -13,10 +13,9 @@ import {
 } from './llm'
 import { buildSystemPrompt } from './prompt'
 import { executeTool } from './registry'
-import type { PauseGate } from './control'
+import { FailureGuard, type PauseGate } from './control'
 
 export const MAX_STEPS = 30
-const MAX_FAILURES = 3
 const NO_HIDE = new Set(['wait', 'list_windows'])
 /** 会移动鼠标或敲键盘的工具，执行期间暂停人工接管检测 */
 const INPUT_TOOLS = new Set(['click', 'move', 'drag', 'scroll', 'type', 'key'])
@@ -53,12 +52,13 @@ interface RunContext {
   hide: Hide
   saveShot: (step: number, dataUrl: string) => void
   gate: PauseGate
+  guard: FailureGuard
   busy: (on: boolean) => void
   messages: AgentMessage[]
   shots: ShotRef[]
   usage: TokenUsage
   steps: number
-  failures: number
+  error?: string
   lastText: string | null
 }
 
@@ -83,7 +83,7 @@ export async function runAgent(options: RunOptions): Promise<RunOutcome> {
   return {
     reason,
     text: ctx.lastText ?? undefined,
-    error,
+    error: error ?? ctx.error,
     steps: ctx.steps,
     usage: ctx.usage,
     durationMs: Date.now() - startedAt,
@@ -141,8 +141,11 @@ async function runToolCalls(
   for (const call of calls) {
     if (!(await waitWhilePaused(ctx))) return 'stopped'
     const result = await runOneTool(ctx, call, context, step)
-    ctx.failures = result.isError ? ctx.failures + 1 : 0
-    if (ctx.failures >= MAX_FAILURES) return 'failed'
+    const abort = ctx.guard.observe(call.function.name, result.input, result.text, result.isError)
+    if (abort) {
+      ctx.error = abort
+      return 'failed'
+    }
   }
   return null
 }
@@ -152,7 +155,7 @@ async function runOneTool(
   call: ToolCall,
   context: ToolContext,
   step: number,
-): Promise<{ isError: boolean }> {
+): Promise<{ text: string; isError: boolean; input: Record<string, unknown> }> {
   const name = call.function.name
   const input = parseArguments(call.function.arguments)
   const startedAt = Date.now()
@@ -169,7 +172,7 @@ async function runOneTool(
     isError: outcome.isError,
     durationMs: Date.now() - startedAt,
   })
-  return outcome
+  return { ...outcome, input }
 }
 
 /** 鼠标键盘由 Agent 自己动的时候，按住接管检测，避免误判 */
@@ -231,6 +234,7 @@ function createContext(options: RunOptions): RunContext {
     hide: options.hide,
     saveShot: options.saveShot,
     gate: options.gate,
+    guard: new FailureGuard(),
     busy: options.busy,
     messages: [
       { role: 'system', content: buildSystemPrompt() },
@@ -239,7 +243,6 @@ function createContext(options: RunOptions): RunContext {
     shots: [],
     usage: { prompt: 0, completion: 0 },
     steps: 0,
-    failures: 0,
     lastText: null,
   }
 }
