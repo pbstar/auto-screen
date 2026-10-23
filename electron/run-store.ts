@@ -52,7 +52,8 @@ function dirOf(runId: string): string | null {
 
 export function createRun(runId: string, task: string, windowId: number): void {
   const root = runsRoot()
-  const dir = join(root, stamp())
+  // 同一秒内连开两次会撞名，用 runId 前四位兜底
+  const dir = join(root, `${stamp()}-${runId.slice(0, 4)}`)
   mkdirSync(dir, { recursive: true })
   active = { runId, dir }
   writeMeta(dir, {
