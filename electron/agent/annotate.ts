@@ -10,7 +10,9 @@ import type { CaptureResult } from '../../src/shared/types'
 const MAX_EDGE = 1280
 const THUMB_EDGE = 360
 const MARK_COLOR = '#22d3ee'
-const LABEL_FONT = '11px sans-serif'
+const LABEL_FONT = 'bold 12px sans-serif'
+/** 标签基线到主格线的距离 */
+const LABEL_GAP = 15
 /** 准星臂长，14px 的小十字，不盖按钮 */
 const MARK_ARM = 7
 
@@ -112,9 +114,15 @@ function drawLabels(ctx: SKRSContext2D, width: number, height: number, major: nu
   ctx.fillStyle = GRID_STYLE.label
   ctx.strokeStyle = GRID_STYLE.labelStroke
   ctx.lineWidth = GRID_STYLE.labelStrokeWidth
-  drawText(ctx, '0', 3, 14)
-  for (let x = major; x < width; x += major) drawText(ctx, String(x), x + 3, 14)
-  for (let y = major; y < height; y += major) drawText(ctx, String(y), 3, y + 14)
+  ctx.lineJoin = 'round'
+  // 贴边的标签画不下就不画，挪位置会和相邻标签压在一起
+  const label = (text: string, x: number, y: number) => {
+    if (x + ctx.measureText(text).width + 2 > width || y + 2 > height) return
+    drawText(ctx, text, x, y)
+  }
+  label('0', 3, LABEL_GAP)
+  for (let x = major; x < width; x += major) label(String(x), x + 3, LABEL_GAP)
+  for (let y = major; y < height; y += major) label(String(y), 3, y + LABEL_GAP)
   ctx.restore()
 }
 

@@ -33,11 +33,11 @@ export function gridMajor(longEdge: number): number {
  * 样式参数集中在这里，免得两边各写一套慢慢长歪。
  */
 export const GRID_STYLE = {
-  line: 'rgba(255, 82, 82, 0.45)',
-  tick: 'rgba(255, 82, 82, 0.7)',
-  label: '#ff8a80',
-  labelStroke: 'rgba(0, 0, 0, 0.85)',
-  labelStrokeWidth: 3,
+  line: 'rgba(255, 82, 82, 0.55)',
+  tick: 'rgba(255, 82, 82, 0.75)',
+  label: '#ffffff',
+  labelStroke: 'rgba(0, 0, 0, 0.9)',
+  labelStrokeWidth: 2.5,
   majorTick: 10,
   minorTick: 4,
   dash: [4, 4],

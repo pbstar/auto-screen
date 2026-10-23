@@ -1,6 +1,12 @@
 import { useMemo } from 'react'
 import { GRID, GRID_STYLE, gridMajor } from '@shared/ipc'
 
+/** 和 canvas 标注图保持一致的标签字号与基线距离 */
+const LABEL_SIZE = 12
+const LABEL_GAP = 15
+/** SVG 里量不到实际文字宽度，粗体数字按 0.71em 估，比实测略宽一点，宁可早收 */
+const LABEL_CHAR = LABEL_SIZE * 0.71
+
 interface Props {
   imageWidth: number
   imageHeight: number
@@ -108,37 +114,49 @@ export default function PreviewGrid({
       ))}
 
       {showLabels &&
-        majorX.map((x) => (
-          <text
-            key={`lx-${x}`}
-            x={px(x) + 3}
-            y={14}
-            fontSize={11}
-            fill={GRID_STYLE.label}
-            stroke={GRID_STYLE.labelStroke}
-            strokeWidth={GRID_STYLE.labelStrokeWidth}
-            paintOrder="stroke"
-          >
-            {x}
-          </text>
-        ))}
-      {showLabels &&
-        majorY
-          .filter((y) => y > 0)
-          .map((y) => (
+        majorX.map((x) => {
+          const text = String(x)
+          // 贴右边的标签放不下就不画，往左挪会压到前一个标签
+          if (px(x) + 3 + text.length * LABEL_CHAR + 2 > displayWidth) return null
+          return (
             <text
-              key={`ly-${y}`}
-              x={3}
-              y={py(y) + 14}
-              fontSize={11}
+              key={`lx-${x}`}
+              x={px(x) + 3}
+              y={LABEL_GAP}
+              fontSize={LABEL_SIZE}
+              fontWeight="bold"
               fill={GRID_STYLE.label}
               stroke={GRID_STYLE.labelStroke}
               strokeWidth={GRID_STYLE.labelStrokeWidth}
+              strokeLinejoin="round"
               paintOrder="stroke"
             >
-              {y}
+              {x}
             </text>
-          ))}
+          )
+        })}
+      {showLabels &&
+        majorY
+          .filter((y) => y > 0)
+          .map((y) => {
+            if (py(y) + LABEL_GAP + 2 > displayHeight) return null
+            return (
+              <text
+                key={`ly-${y}`}
+                x={3}
+                y={py(y) + LABEL_GAP}
+                fontSize={LABEL_SIZE}
+                fontWeight="bold"
+                fill={GRID_STYLE.label}
+                stroke={GRID_STYLE.labelStroke}
+                strokeWidth={GRID_STYLE.labelStrokeWidth}
+                strokeLinejoin="round"
+                paintOrder="stroke"
+              >
+                {y}
+              </text>
+            )
+          })}
     </g>
   )
 }
