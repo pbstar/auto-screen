@@ -6,6 +6,8 @@ interface Props {
   selectedId: number | null
   disabled?: boolean
   onSelect: (id: number) => void
+  /** 展开时刷新窗口列表，新开的窗口不用再点按钮 */
+  onOpen?: () => void
 }
 
 function labelOf(win: WindowInfo): string {
@@ -13,7 +15,7 @@ function labelOf(win: WindowInfo): string {
 }
 
 /** 放在顶栏，宽度受限于工具栏，收起态单行截断 */
-export default function WindowSelect({ windows, selectedId, disabled, onSelect }: Props) {
+export default function WindowSelect({ windows, selectedId, disabled, onSelect, onOpen }: Props) {
   const selected = windows.find((win) => win.id === selectedId) ?? null
 
   return (
@@ -21,6 +23,7 @@ export default function WindowSelect({ windows, selectedId, disabled, onSelect }
       size="small"
       displayEmpty
       disabled={disabled}
+      onOpen={() => onOpen?.()}
       value={selectedId ?? ''}
       onChange={(event) => onSelect(Number(event.target.value))}
       renderValue={() => (

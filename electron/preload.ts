@@ -5,7 +5,8 @@ import type { AutoScreenApi } from '../src/shared/types'
 
 const api: AutoScreenApi = {
   listWindows: () => ipcRenderer.invoke(IPC.listWindows),
-  capture: (windowId: number) => ipcRenderer.invoke(IPC.capture, windowId),
+  setStreamTarget: (windowId: number | null) =>
+    ipcRenderer.invoke(IPC.streamTarget, windowId),
   listTools: () => ipcRenderer.invoke(IPC.toolsList),
   permissions: () => ipcRenderer.invoke(IPC.permissions),
   startAgent: (request: AgentStartRequest) => ipcRenderer.invoke(IPC.agentStart, request),

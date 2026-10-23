@@ -1,6 +1,7 @@
 import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'node:path'
 import { registerIpcHandlers } from './ipc'
+import { registerStreamHandler } from './capture-stream'
 import { stopAgent } from './agent/service'
 import { loadEnv } from './config'
 
@@ -41,6 +42,7 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   loadEnv()
+  registerStreamHandler()
   registerIpcHandlers(() => mainWindow)
   createWindow()
 

@@ -1,6 +1,6 @@
 export const IPC = {
   listWindows: 'windows:list',
-  capture: 'screen:capture',
+  streamTarget: 'stream:target',
   toolsList: 'tools:list',
   permissions: 'app:permissions',
   agentStart: 'agent:start',

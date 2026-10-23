@@ -63,7 +63,8 @@ export type IpcResult<T> = { ok: true; data: T } | { ok: false; error: string }
 
 export interface AutoScreenApi {
   listWindows(): Promise<IpcResult<WindowInfo[]>>
-  capture(windowId: number): Promise<IpcResult<CaptureResult>>
+  /** 设置 getDisplayMedia 要捕获的窗口，返回系统是否提供了画面源 */
+  setStreamTarget(windowId: number | null): Promise<IpcResult<boolean>>
   listTools(): Promise<IpcResult<ToolSummary[]>>
   permissions(): Promise<IpcResult<PermissionStatus>>
   startAgent(request: AgentStartRequest): Promise<IpcResult<null>>

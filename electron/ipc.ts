@@ -2,7 +2,8 @@ import { BrowserWindow, ipcMain, systemPreferences } from 'electron'
 import { IPC } from '../src/shared/ipc'
 import type { AgentStartRequest } from '../src/shared/agent'
 import type { IpcResult, PermissionStatus } from '../src/shared/types'
-import { captureWindow, listWindows } from '../src/core/screen'
+import { listWindows } from '../src/core/screen'
+import { setStreamTarget } from './capture-stream'
 import { listToolSummaries } from './agent/registry'
 import { agentStatus, startAgent, stopAgent } from './agent/service'
 
@@ -46,9 +47,9 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null): 
     }
   })
 
-  ipcMain.handle(IPC.capture, (_event, windowId: number) => {
+  ipcMain.handle(IPC.streamTarget, async (_event, windowId: number | null) => {
     try {
-      return ok(captureWindow(windowId))
+      return ok(await setStreamTarget(windowId))
     } catch (error) {
       return fail(error)
     }

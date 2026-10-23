@@ -1,11 +1,10 @@
 import { Box, Typography } from '@mui/material'
-import type { CaptureResult, PermissionStatus, WindowInfo } from '@shared/types'
+import type { PermissionStatus, WindowInfo } from '@shared/types'
 import type { AgentRunState } from '../hooks/useAgentRun'
 import { MONO_FONT } from '../theme'
 
 interface Props {
   permissions: PermissionStatus | null
-  capture: CaptureResult | null
   selectedWindow: WindowInfo | null
   agent: AgentRunState
 }
@@ -29,7 +28,7 @@ function formatTokens(agent: AgentRunState): string {
   return total >= 1000 ? `${(total / 1000).toFixed(1)}k` : String(total)
 }
 
-export default function StatusBar({ permissions, capture, selectedWindow, agent }: Props) {
+export default function StatusBar({ permissions, selectedWindow, agent }: Props) {
   const permission = permissionSummary(permissions)
 
   return (
@@ -66,11 +65,6 @@ export default function StatusBar({ permissions, capture, selectedWindow, agent 
       {selectedWindow && (
         <Typography variant="caption" sx={{ fontFamily: MONO_FONT }}>
           窗口 {selectedWindow.width}×{selectedWindow.height}
-        </Typography>
-      )}
-      {capture && (
-        <Typography variant="caption" sx={{ fontFamily: MONO_FONT }}>
-          截图 {capture.width}×{capture.height}
         </Typography>
       )}
       <Typography variant="caption" sx={{ color: 'text.disabled' }}>

@@ -1,26 +1,22 @@
-import { Box, Button, Typography } from '@mui/material'
+import { Box, Typography } from '@mui/material'
 import type { WindowInfo } from '@shared/types'
 import WindowSelect from './WindowSelect'
 
 interface Props {
   windows: WindowInfo[]
   selectedId: number | null
-  captureBusy: boolean
   /** 运行中切窗口会让预览与 Agent 指向不同目标，直接禁用 */
   windowLocked: boolean
   onSelect: (id: number) => void
   onRefreshWindows: () => void
-  onCapture: () => void
 }
 
 export default function TopBar({
   windows,
   selectedId,
-  captureBusy,
   windowLocked,
   onSelect,
   onRefreshWindows,
-  onCapture,
 }: Props) {
   return (
     <Box
@@ -45,14 +41,9 @@ export default function TopBar({
         selectedId={selectedId}
         disabled={windowLocked}
         onSelect={onSelect}
+        onOpen={onRefreshWindows}
       />
       <Box sx={{ flex: 1 }} />
-      <Button color="inherit" sx={{ color: 'text.secondary' }} onClick={onRefreshWindows}>
-        刷新窗口
-      </Button>
-      <Button variant="contained" disabled={selectedId == null || captureBusy} onClick={onCapture}>
-        截图
-      </Button>
     </Box>
   )
 }

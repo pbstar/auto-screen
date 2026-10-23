@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Alert, Box } from '@mui/material'
-import type { CaptureResult, IpcResult, PermissionStatus, WindowInfo } from '@shared/types'
+import type { IpcResult, PermissionStatus, WindowInfo } from '@shared/types'
 import TopBar from './components/TopBar'
 import ScreenPreview from './components/ScreenPreview'
 import TaskBar from './components/TaskBar'
@@ -24,12 +24,9 @@ function messageOf(error: unknown): string {
 export default function App() {
   const [windows, setWindows] = useState<WindowInfo[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
-  const [capture, setCapture] = useState<CaptureResult | null>(null)
   const [permissions, setPermissions] = useState<PermissionStatus | null>(null)
   const [gridVisible, setGridVisible] = useState(true)
-  const [captureBusy, setCaptureBusy] = useState(false)
   const [error, setError] = useState('')
-  const captureSeq = useRef(0)
   const agent = useAgentRun()
 
   const selectedWindow = useMemo(
@@ -51,23 +48,6 @@ export default function App() {
     }
   }, [])
 
-  const refreshCapture = useCallback(async (windowId: number) => {
-    const seq = ++captureSeq.current
-    setCaptureBusy(true)
-    try {
-      const data = await expectResult(api.capture(windowId))
-      if (seq !== captureSeq.current) return
-      setCapture(data)
-      setError('')
-    } catch (caught) {
-      if (seq !== captureSeq.current) return
-      setCapture(null)
-      setError(messageOf(caught))
-    } finally {
-      if (seq === captureSeq.current) setCaptureBusy(false)
-    }
-  }, [])
-
   useEffect(() => {
     void loadWindows()
     void (async () => {
@@ -79,14 +59,6 @@ export default function App() {
     })()
   }, [loadWindows])
 
-  useEffect(() => {
-    if (selectedId == null) {
-      setCapture(null)
-      return
-    }
-    void refreshCapture(selectedId)
-  }, [selectedId, refreshCapture])
-
   const permissionWarning =
     permissions?.platform === 'darwin' &&
     (permissions.screen !== 'granted' || !permissions.accessibility)
@@ -96,11 +68,9 @@ export default function App() {
       <TopBar
         windows={windows}
         selectedId={selectedId}
-        captureBusy={captureBusy}
         windowLocked={agent.state.status !== 'idle'}
         onSelect={setSelectedId}
         onRefreshWindows={() => void loadWindows()}
-        onCapture={() => selectedId != null && void refreshCapture(selectedId)}
       />
 
       {permissionWarning && (
@@ -117,7 +87,7 @@ export default function App() {
 
       <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
         <ScreenPreview
-          capture={capture}
+          windowId={selectedId}
           gridVisible={gridVisible}
           onGridVisibleChange={setGridVisible}
         />
@@ -149,7 +119,6 @@ export default function App() {
 
       <StatusBar
         permissions={permissions}
-        capture={capture}
         selectedWindow={selectedWindow}
         agent={agent.state}
       />
