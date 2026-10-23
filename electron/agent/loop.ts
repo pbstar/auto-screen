@@ -16,8 +16,12 @@ import { executeTool } from './registry'
 import { FailureGuard, type PauseGate } from './control'
 
 export const MAX_STEPS = 30
+/** 动作执行后界面未必立刻重绘，截图前留一点时间，免得模型读到旧画面 */
+const SETTLE_MS = 300
 /** 会移动鼠标或敲键盘的工具，执行期间暂停人工接管检测 */
 const INPUT_TOOLS = new Set(['click', 'move', 'drag', 'scroll', 'type', 'key'])
+
+const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
 type Emit = (payload: AgentEventPayload) => void
 
@@ -103,6 +107,7 @@ async function waitWhilePaused(ctx: RunContext): Promise<boolean> {
 
 async function runStep(ctx: RunContext, step: number): Promise<AgentRunReason | null> {
   ctx.steps = step
+  if (step > 1) await delay(SETTLE_MS)
   const shot = await annotateCapture(captureWindow(ctx.windowId))
   ctx.saveShot(step, shot.dataUrl)
   appendShot(ctx.messages, ctx.shots, shot, step)

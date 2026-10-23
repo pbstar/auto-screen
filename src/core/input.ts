@@ -29,7 +29,8 @@ interface ScrollResult {
   amount: number
 }
 
-mouse.config.autoDelayMs = 30
+// 光标刚跳到新位置就按下，目标应用可能还没处理完移动，第一次点击会被吞掉
+mouse.config.autoDelayMs = 80
 keyboard.config.autoDelayMs = 20
 
 const LETTER_KEYS: Record<string, Key> = {
