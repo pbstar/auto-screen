@@ -170,7 +170,7 @@ export default function ScreenPreview({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          bgcolor: '#0f0f0f',
+          bgcolor: 'grey.100',
           p: 1.5,
           overflow: 'hidden',
         }}
@@ -191,7 +191,7 @@ export default function ScreenPreview({
               width: layout.displayWidth,
               height: layout.displayHeight,
               cursor: 'crosshair',
-              outline: '1px solid rgba(255,255,255,0.18)',
+              outline: '1px solid rgba(0,0,0,0.12)',
               flex: 'none',
               touchAction: 'none',
             }}

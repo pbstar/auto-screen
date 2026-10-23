@@ -13,7 +13,7 @@ function createWindow(): void {
     minWidth: 1100,
     minHeight: 700,
     title: 'Auto Screen',
-    backgroundColor: '#121212',
+    backgroundColor: '#ffffff',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,

@@ -2,9 +2,9 @@ import { createTheme } from '@mui/material/styles'
 
 export const theme = createTheme({
   palette: {
-    mode: 'dark',
-    primary: { main: '#4c8dff' },
-    background: { default: '#121212', paper: '#1b1b1b' },
+    mode: 'light',
+    primary: { main: '#2563eb' },
+    background: { default: '#ffffff', paper: '#ffffff' },
   },
   shape: { borderRadius: 8 },
   typography: {
