@@ -1,14 +1,17 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Box, Typography } from '@mui/material'
 import type { TimelineItem } from '../hooks/useAgentRun'
 import TimelineEntry from './TimelineEntry'
+import ShotDialog from './ShotDialog'
 
 interface Props {
   items: TimelineItem[]
+  runId: string
 }
 
-export default function Timeline({ items }: Props) {
+export default function Timeline({ items, runId }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const [preview, setPreview] = useState<TimelineItem | null>(null)
 
   useEffect(() => {
     const element = containerRef.current
@@ -25,8 +28,11 @@ export default function Timeline({ items }: Props) {
           输入任务并开始，这里会逐步显示截图与动作
         </Typography>
       ) : (
-        items.map((item) => <TimelineEntry key={item.id} item={item} />)
+        items.map((item) => (
+          <TimelineEntry key={item.id} item={item} onPreview={setPreview} />
+        ))
       )}
+      <ShotDialog item={preview} runId={runId} onClose={() => setPreview(null)} />
     </Box>
   )
 }

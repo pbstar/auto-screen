@@ -19,6 +19,7 @@ export interface TimelineItem {
 
 export interface AgentRunState {
   status: 'idle' | 'running' | 'stopping'
+  runId: string
   step: number
   maxSteps: number
   usage: TokenUsage
@@ -29,6 +30,7 @@ export interface AgentRunState {
 
 const INITIAL: AgentRunState = {
   status: 'idle',
+  runId: '',
   step: 0,
   maxSteps: 30,
   usage: EMPTY_USAGE,
@@ -93,7 +95,15 @@ export function useAgentRun() {
 function applyEvent(state: AgentRunState, event: AgentEvent): AgentRunState {
   switch (event.type) {
     case 'started':
-      return { ...state, status: 'running', step: 0, usage: EMPTY_USAGE, items: [], error: '' }
+      return {
+        ...state,
+        status: 'running',
+        runId: event.runId,
+        step: 0,
+        usage: EMPTY_USAGE,
+        items: [],
+        error: '',
+      }
     case 'shot':
       return append(state, {
         id: `shot-${event.seq}`,

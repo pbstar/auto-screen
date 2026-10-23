@@ -12,7 +12,12 @@ function dotColor(item: TimelineItem): string {
   return '#c4c9d1'
 }
 
-export default function TimelineEntry({ item }: { item: TimelineItem }) {
+interface Props {
+  item: TimelineItem
+  onPreview: (item: TimelineItem) => void
+}
+
+export default function TimelineEntry({ item, onPreview }: Props) {
   return (
     <Box
       sx={{
@@ -42,14 +47,14 @@ export default function TimelineEntry({ item }: { item: TimelineItem }) {
           bgcolor: dotColor(item),
         }}
       />
-      {item.kind === 'shot' && <ShotEntry item={item} />}
+      {item.kind === 'shot' && <ShotEntry item={item} onPreview={onPreview} />}
       {item.kind === 'reply' && <ReplyEntry item={item} />}
       {item.kind === 'tool' && <ToolEntry item={item} />}
     </Box>
   )
 }
 
-function ShotEntry({ item }: { item: TimelineItem }) {
+function ShotEntry({ item, onPreview }: Props) {
   return (
     <>
       <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: MONO_FONT }}>
@@ -59,13 +64,20 @@ function ShotEntry({ item }: { item: TimelineItem }) {
         component="img"
         src={item.image}
         alt={`第 ${item.step} 步截图`}
+        onClick={() => onPreview(item)}
         sx={{
           display: 'block',
-          width: '100%',
+          height: 96,
+          width: 'auto',
+          maxWidth: '100%',
+          objectFit: 'contain',
           mt: 0.5,
           borderRadius: '4px',
           border: 1,
           borderColor: 'divider',
+          bgcolor: '#f6f7f9',
+          cursor: 'pointer',
+          '&:hover': { borderColor: 'primary.main' },
         }}
       />
     </>

@@ -115,7 +115,7 @@ export default function App() {
             }}
             onStop={() => void agent.stop()}
           />
-          <Timeline items={agent.state.items} />
+          <Timeline items={agent.state.items} runId={agent.state.runId} />
           <ReferencePanel />
         </Box>
       </Box>
