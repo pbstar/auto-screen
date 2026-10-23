@@ -9,8 +9,6 @@ import type { CaptureResult } from '../../src/shared/types'
 
 const MAX_EDGE = 1280
 const THUMB_EDGE = 360
-/** 内容四周的留白：坐标数字画在这里，不压界面。16px 放不下三位数加刻度，用 20px */
-const MARGIN = 20
 const MARGIN_COLOR = '#111827'
 const FRAME_COLOR = '#ffffff'
 const GRID_COLOR = 'rgba(255, 82, 82, 0.4)'
@@ -18,9 +16,23 @@ const TICK_COLOR = 'rgba(255, 255, 255, 0.5)'
 const CELL_COLOR = 'rgba(255, 255, 255, 0.045)'
 const LABEL_COLOR = '#ffcdd2'
 const MARK_COLOR = '#22d3ee'
-/** 顶部数字居中不挤，左侧要给三位数留够宽度 */
-const TOP_FONT = '9px sans-serif'
-const SIDE_FONT = '8px sans-serif'
+const LABEL_FONT = '9px sans-serif'
+const TICK_MAJOR = 6
+const TICK_MINOR = 4
+const LABEL_GAP = 3
+const TOP_MARGIN = 20
+/** 右边和下边不放数字，留一点把白框露出来就够 */
+const EDGE_MARGIN = 8
+/** 准星臂长，14px 的小十字，不盖按钮 */
+const MARK_ARM = 7
+
+/** 窗口内容在画布上的位置与尺寸 */
+interface Frame {
+  x: number
+  y: number
+  width: number
+  height: number
+}
 
 /** 上一次指针动作的落点，画在下一张截图上，模型据此判断有没有点偏 */
 export interface ClickMark {
@@ -39,8 +51,8 @@ export interface AnnotatedShot {
 }
 
 /**
- * 缩放截图并叠加坐标辅助层。窗口内容从 (MARGIN, MARGIN) 开始，
- * 白框内的左上角仍然是坐标原点 (0, 0)，框外的留白只放刻度不参与坐标。
+ * 缩放截图并叠加坐标辅助层。白框内的左上角是坐标原点 (0, 0)，
+ * 刻度和数字画在框外留白里，不遮挡界面内容。
  */
 export async function annotateCapture(
   capture: CaptureResult,
@@ -49,22 +61,24 @@ export async function annotateCapture(
   const scale = Math.min(1, MAX_EDGE / Math.max(capture.width, capture.height))
   const width = Math.max(1, Math.round(capture.width * scale))
   const height = Math.max(1, Math.round(capture.height * scale))
+  const major = gridMajor(Math.max(width, height))
+  const leftMargin = sideMargin(height, major)
   const source = await loadImage(Buffer.from(capture.image.split(',')[1] ?? '', 'base64'))
 
-  const canvas = createCanvas(width + MARGIN * 2, height + MARGIN * 2)
+  const canvas = createCanvas(width + leftMargin + EDGE_MARGIN, height + TOP_MARGIN + EDGE_MARGIN)
   const ctx = canvas.getContext('2d')
   ctx.fillStyle = MARGIN_COLOR
   ctx.fillRect(0, 0, canvas.width, canvas.height)
   ctx.imageSmoothingQuality = 'high'
-  ctx.drawImage(source, MARGIN, MARGIN, width, height)
 
-  const major = gridMajor(Math.max(width, height))
-  drawCells(ctx, width, height, major)
-  drawGrid(ctx, width, height, major)
-  drawTicks(ctx, width, height, major)
-  drawLabels(ctx, width, height, major)
-  drawFrame(ctx, width, height)
-  if (mark) drawMark(ctx, width, height, mark)
+  const frame: Frame = { x: leftMargin, y: TOP_MARGIN, width, height }
+  ctx.drawImage(source, frame.x, frame.y, width, height)
+  drawCells(ctx, frame, major)
+  drawGrid(ctx, frame, major)
+  drawTicks(ctx, frame, major)
+  drawLabels(ctx, frame, major)
+  drawFrame(ctx, frame)
+  if (mark) drawMark(ctx, frame, mark)
 
   return {
     dataUrl: `data:image/png;base64,${canvas.toBuffer('image/png').toString('base64')}`,
@@ -74,114 +88,109 @@ export async function annotateCapture(
   }
 }
 
+/** 左边距按最长坐标数字实测宽度算，四位数也不会被裁 */
+function sideMargin(height: number, major: number): number {
+  const widest = String(Math.floor((height - 1) / major) * major)
+  const probe = createCanvas(1, 1).getContext('2d')
+  probe.font = LABEL_FONT
+  const textWidth = Math.ceil(probe.measureText(widest).width)
+  return textWidth + TICK_MAJOR + LABEL_GAP + 1
+}
+
 /** 相邻主格交替铺一层极淡底色，数格子比数刻度线可靠 */
-function drawCells(ctx: SKRSContext2D, width: number, height: number, major: number): void {
+function drawCells(ctx: SKRSContext2D, frame: Frame, major: number): void {
   ctx.save()
   ctx.fillStyle = CELL_COLOR
-  for (let x = 0, col = 0; x < width; x += major, col += 1) {
-    for (let y = 0, row = 0; y < height; y += major, row += 1) {
+  for (let x = 0, col = 0; x < frame.width; x += major, col += 1) {
+    for (let y = 0, row = 0; y < frame.height; y += major, row += 1) {
       if ((col + row) % 2 === 0) continue
-      const right = Math.min(major, width - x)
-      const bottom = Math.min(major, height - y)
-      ctx.fillRect(MARGIN + x, MARGIN + y, right, bottom)
+      const right = Math.min(major, frame.width - x)
+      const bottom = Math.min(major, frame.height - y)
+      ctx.fillRect(frame.x + x, frame.y + y, right, bottom)
     }
   }
   ctx.restore()
 }
 
-function drawGrid(ctx: SKRSContext2D, width: number, height: number, major: number): void {
+function drawGrid(ctx: SKRSContext2D, frame: Frame, major: number): void {
   ctx.save()
   ctx.strokeStyle = GRID_COLOR
   ctx.lineWidth = 1
   ctx.setLineDash([4, 4])
   ctx.beginPath()
-  for (let x = major; x < width; x += major) {
-    ctx.moveTo(MARGIN + x + 0.5, MARGIN)
-    ctx.lineTo(MARGIN + x + 0.5, MARGIN + height)
+  for (let x = major; x < frame.width; x += major) {
+    ctx.moveTo(frame.x + x + 0.5, frame.y)
+    ctx.lineTo(frame.x + x + 0.5, frame.y + frame.height)
   }
-  for (let y = major; y < height; y += major) {
-    ctx.moveTo(MARGIN, MARGIN + y + 0.5)
-    ctx.lineTo(MARGIN + width, MARGIN + y + 0.5)
+  for (let y = major; y < frame.height; y += major) {
+    ctx.moveTo(frame.x, frame.y + y + 0.5)
+    ctx.lineTo(frame.x + frame.width, frame.y + y + 0.5)
   }
   ctx.stroke()
   ctx.restore()
 }
 
 /** 刻度画在白框外侧的留白里，指回内容边缘但不遮挡内容 */
-function drawTicks(ctx: SKRSContext2D, width: number, height: number, major: number): void {
-  const lenOf = (value: number) => (value % major === 0 ? 6 : 4)
+function drawTicks(ctx: SKRSContext2D, frame: Frame, major: number): void {
+  const lenOf = (value: number) => (value % major === 0 ? TICK_MAJOR : TICK_MINOR)
   ctx.save()
   ctx.strokeStyle = TICK_COLOR
   ctx.lineWidth = 1
   ctx.beginPath()
-  for (let x = GRID.minor; x < width; x += GRID.minor) {
-    ctx.moveTo(MARGIN + x + 0.5, MARGIN)
-    ctx.lineTo(MARGIN + x + 0.5, MARGIN - lenOf(x))
+  for (let x = GRID.minor; x < frame.width; x += GRID.minor) {
+    ctx.moveTo(frame.x + x + 0.5, frame.y)
+    ctx.lineTo(frame.x + x + 0.5, frame.y - lenOf(x))
   }
-  for (let y = GRID.minor; y < height; y += GRID.minor) {
-    ctx.moveTo(MARGIN, MARGIN + y + 0.5)
-    ctx.lineTo(MARGIN - lenOf(y), MARGIN + y + 0.5)
+  for (let y = GRID.minor; y < frame.height; y += GRID.minor) {
+    ctx.moveTo(frame.x, frame.y + y + 0.5)
+    ctx.lineTo(frame.x - lenOf(y), frame.y + y + 0.5)
   }
   ctx.stroke()
   ctx.restore()
 }
 
 /** 每条主格线都在留白里标绝对坐标，模型不用靠数刻度推算 */
-function drawLabels(ctx: SKRSContext2D, width: number, height: number, major: number): void {
+function drawLabels(ctx: SKRSContext2D, frame: Frame, major: number): void {
   ctx.save()
   ctx.fillStyle = LABEL_COLOR
-  ctx.font = TOP_FONT
+  ctx.font = LABEL_FONT
   ctx.textAlign = 'center'
-  for (let x = major; x < width; x += major) {
-    ctx.fillText(String(x), MARGIN + x, MARGIN - 8)
+  for (let x = major; x < frame.width; x += major) {
+    ctx.fillText(String(x), frame.x + x, frame.y - TICK_MAJOR - LABEL_GAP)
   }
-  ctx.font = SIDE_FONT
   ctx.textAlign = 'right'
-  for (let y = major; y < height; y += major) {
-    ctx.fillText(String(y), MARGIN - 7, MARGIN + y + 3)
+  for (let y = major; y < frame.height; y += major) {
+    ctx.fillText(String(y), frame.x - TICK_MAJOR - LABEL_GAP, frame.y + y + 3)
   }
   // 原点单独标一个 0，钉住坐标起点
-  ctx.font = TOP_FONT
-  ctx.fillText('0', MARGIN - 7, MARGIN - 8)
+  ctx.fillText('0', frame.x - TICK_MAJOR - LABEL_GAP, frame.y - TICK_MAJOR - LABEL_GAP)
   ctx.restore()
 }
 
-function drawFrame(ctx: SKRSContext2D, width: number, height: number): void {
+function drawFrame(ctx: SKRSContext2D, frame: Frame): void {
   ctx.save()
   ctx.strokeStyle = FRAME_COLOR
   ctx.lineWidth = 2
-  ctx.strokeRect(MARGIN - 1, MARGIN - 1, width + 2, height + 2)
+  ctx.strokeRect(frame.x - 1, frame.y - 1, frame.width + 2, frame.height + 2)
   ctx.restore()
 }
 
-/** 十字准星 + 坐标文字，标出上一次指针动作落在哪里 */
-function drawMark(
-  ctx: SKRSContext2D,
-  width: number,
-  height: number,
-  mark: ClickMark,
-): void {
-  const x = MARGIN + mark.x
-  const y = MARGIN + mark.y
+/** 小十字标出上一次指针动作的落点，够看清位置又不挡内容 */
+function drawMark(ctx: SKRSContext2D, frame: Frame, mark: ClickMark): void {
+  const x = frame.x + mark.x
+  const y = frame.y + mark.y
   ctx.save()
-  ctx.strokeStyle = MARK_COLOR
-  ctx.lineWidth = 2
-  ctx.beginPath()
-  ctx.arc(x, y, 12, 0, Math.PI * 2)
-  ctx.moveTo(x - 22, y)
-  ctx.lineTo(x + 22, y)
-  ctx.moveTo(x, y - 22)
-  ctx.lineTo(x, y + 22)
-  ctx.stroke()
-
-  // 文字放进底部留白，别盖住窗口内容
-  ctx.font = 'bold 11px sans-serif'
-  ctx.fillStyle = MARK_COLOR
-  const label = `上次点击 (${mark.x}, ${mark.y})`
-  const canvasWidth = width + MARGIN * 2
-  const labelX = Math.max(3, Math.min(x - 40, canvasWidth - 108))
-  const labelY = height + MARGIN * 2 - 4
-  ctx.fillText(label, labelX, labelY)
+  // 先描一道深色让它在浅色界面上也看得见
+  for (const [color, width] of [['rgba(0, 0, 0, 0.55)', 4], [MARK_COLOR, 2]] as const) {
+    ctx.strokeStyle = color
+    ctx.lineWidth = width
+    ctx.beginPath()
+    ctx.moveTo(x - MARK_ARM, y)
+    ctx.lineTo(x + MARK_ARM, y)
+    ctx.moveTo(x, y - MARK_ARM)
+    ctx.lineTo(x, y + MARK_ARM)
+    ctx.stroke()
+  }
   ctx.restore()
 }
 
