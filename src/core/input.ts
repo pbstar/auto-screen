@@ -223,7 +223,8 @@ export async function scrollAt(
   return { x, y, unit, amount }
 }
 
-export async function pasteText(text: string): Promise<void> {
+/** 走剪贴板再按 Mod+V：中文、emoji 和长文本都比逐键敲更稳。 */
+export async function typeText(text: string): Promise<void> {
   const previous = await clipboard.readText()
   await clipboard.writeText(text)
   const modKey = process.platform === 'darwin' ? Key.LeftCmd : Key.LeftControl

@@ -81,7 +81,7 @@ interface ToolResult {
 | `click` | `x, y, button?, count?` | 是 | 单击 / 双击 / 右键，`count` 取值 1~2 |
 | `drag` | `fromX, fromY, toX, toY` | 是 | 按住左键从起点拖到终点 |
 | `scroll` | `x, y, direction, amount?` | 是 | 在指定位置上下滚动，`amount` 1~10，默认 3 |
-| `type` | `text` | 否 | 剪贴板粘贴，中文安全；执行前应先 `click` 聚焦 |
+| `type` | `text` | 否 | 输入文本到当前焦点，执行前先 `click` 聚焦 |
 | `key` | `combo` | 否 | 组合键，`mod` 在 macOS 为 Cmd、Windows 为 Ctrl |
 | `wait` | `ms` | 否 | 等待 0~5000ms |
 
