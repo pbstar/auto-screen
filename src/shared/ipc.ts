@@ -1,8 +1,7 @@
 export const IPC = {
   listWindows: 'windows:list',
   capture: 'screen:capture',
-  executeTool: 'tools:execute',
-  copyText: 'clipboard:write',
+  toolsList: 'tools:list',
   permissions: 'app:permissions',
   agentStart: 'agent:start',
   agentStop: 'agent:stop',

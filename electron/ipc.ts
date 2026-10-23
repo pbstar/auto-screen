@@ -1,10 +1,9 @@
-import { BrowserWindow, clipboard, ipcMain, systemPreferences } from 'electron'
+import { BrowserWindow, ipcMain, systemPreferences } from 'electron'
 import { IPC } from '../src/shared/ipc'
 import type { AgentStartRequest } from '../src/shared/agent'
-import type { IpcResult, PermissionStatus, ToolExecuteRequest } from '../src/shared/types'
+import type { IpcResult, PermissionStatus } from '../src/shared/types'
 import { captureWindow, listWindows } from '../src/core/screen'
-import { withWindowHidden } from '../src/core/safety'
-import { executeTool } from './agent/registry'
+import { listToolSummaries } from './agent/registry'
 import { agentStatus, startAgent, stopAgent } from './agent/service'
 
 function ok<T>(data: T): IpcResult<T> {
@@ -55,21 +54,9 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null): 
     }
   })
 
-  ipcMain.handle(IPC.executeTool, async (_event, req: ToolExecuteRequest) => {
+  ipcMain.handle(IPC.toolsList, () => {
     try {
-      const result = await withWindowHidden(getMainWindow(), req.hideWindow !== false, () =>
-        executeTool(req.name, req.input, req.context),
-      )
-      return ok(result)
-    } catch (error) {
-      return fail(error)
-    }
-  })
-
-  ipcMain.handle(IPC.copyText, async (_event, text: string) => {
-    try {
-      await clipboard.writeText(text)
-      return ok(null)
+      return ok(listToolSummaries())
     } catch (error) {
       return fail(error)
     }

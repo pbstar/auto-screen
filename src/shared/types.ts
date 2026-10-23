@@ -30,7 +30,6 @@ export interface CaptureResult {
   window: WindowInfo
 }
 
-export type MouseButton = 'left' | 'right'
 export type UnitMode = 'auto' | 'physical' | 'logical'
 export type ScrollDirection = 'up' | 'down'
 
@@ -48,11 +47,10 @@ export interface ToolResult {
   isError?: boolean
 }
 
-export interface ToolExecuteRequest {
+/** 界面展示用的工具条目，不含 JSON Schema */
+export interface ToolSummary {
   name: string
-  input: Record<string, unknown>
-  context: ToolContext
-  hideWindow?: boolean
+  description: string
 }
 
 export interface PermissionStatus {
@@ -66,8 +64,7 @@ export type IpcResult<T> = { ok: true; data: T } | { ok: false; error: string }
 export interface AutoScreenApi {
   listWindows(): Promise<IpcResult<WindowInfo[]>>
   capture(windowId: number): Promise<IpcResult<CaptureResult>>
-  executeTool(request: ToolExecuteRequest): Promise<IpcResult<ToolResult>>
-  copyText(text: string): Promise<IpcResult<null>>
+  listTools(): Promise<IpcResult<ToolSummary[]>>
   permissions(): Promise<IpcResult<PermissionStatus>>
   startAgent(request: AgentStartRequest): Promise<IpcResult<null>>
   stopAgent(): Promise<IpcResult<null>>

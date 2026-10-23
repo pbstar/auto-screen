@@ -40,23 +40,21 @@ DEEPSEEK_REASONING_EFFORT=low
 
 ## 当前功能（M2）
 
-- 枚举并选择目标窗口，按窗口截屏
-- 预览区显示 10px 刻度标尺、100px 虚线网格，坐标按 10px 取整
-- 点击预览取点（坐标复制到剪贴板），按住拖动框选拖拽范围
-- 单击 / 双击 / 右键、拖拽、在取点位置向上/向下滚动
+- 顶栏下拉选择目标窗口，按窗口截屏
+- 预览区显示 10px 刻度标尺、100px 虚线网格，悬停读坐标，不响应点击
 - 输入一句任务，Agent 循环「截图 → 模型决策 → 执行工具 → 再截图」，最多 30 步，可随时停止
-- 右侧面板两个标签页：执行时间线（每步截图与工具调用）、手动操作
+- 右侧面板：任务输入、执行时间线（每步截图、模型回复与工具调用）、底部可折叠的工具与技能列表
 - 发给模型的截图叠加同样的标尺与网格，长边缩放到 1280
 
 ## 工具
 
-界面和 Agent 共用同一套工具注册表（`electron/agent/registry.ts`）：
+Agent 的动作能力来自 `electron/agent/registry.ts` 的工具注册表：
 
 - `click` / `drag` / `scroll` / `move`：鼠标动作
 - `type` / `key`：文本输入与组合键
 - `wait` / `list_windows`：等待与窗口查询
 
-所有动作统一通过 `executeTool(name, input, context)` 执行，模型侧使用 `listToolSchemas()` 生成的 function 定义。详细说明见 [electron/agent/tools/README.md](electron/agent/tools/README.md)。
+模型侧使用 `listToolSchemas()` 生成的 function 定义，统一通过 `executeTool(name, input, context)` 执行；界面上的工具列表来自 `listToolSummaries()`，只读展示。详细说明见 [electron/agent/tools/README.md](electron/agent/tools/README.md)。
 
 ## 尚未实现
 

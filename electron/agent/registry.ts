@@ -1,4 +1,4 @@
-import type { ToolContext, ToolResult } from '../../src/shared/types'
+import type { ToolContext, ToolResult, ToolSummary } from '../../src/shared/types'
 import { tools, type ToolDef } from './tools'
 
 const registry = new Map<string, ToolDef>(tools.map((tool) => [tool.name, tool]))
@@ -25,4 +25,9 @@ export function listToolSchemas() {
       parameters: tool.parameters,
     },
   }))
+}
+
+/** 界面展示用，不带 JSON Schema，避免把完整定义送到渲染进程 */
+export function listToolSummaries(): ToolSummary[] {
+  return tools.map(({ name, description }) => ({ name, description }))
 }
