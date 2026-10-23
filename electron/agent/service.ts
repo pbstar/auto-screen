@@ -39,6 +39,10 @@ export function startAgent(getWindow: WindowGetter, request: AgentStartRequest):
   const runId = randomUUID()
   const controller = new AbortController()
   const startedAt = Date.now()
+  // 先建运行目录：写盘失败就直接报错，不要留下一个「运行中」的空壳
+  createRun(runId, task, request.windowId)
+  appendLog(runId, `模型：${config.model} · 思考强度 ${config.reasoningEffort}`)
+
   const gate = new PauseGate()
   const watcher = createPointerWatcher(() => {
     if (!gate.pause('human')) return
@@ -48,8 +52,6 @@ export function startAgent(getWindow: WindowGetter, request: AgentStartRequest):
   seq = 0
   lastStep = 0
   lastUsage = { prompt: 0, completion: 0 }
-  createRun(runId, task, request.windowId)
-  appendLog(runId, `模型：${config.model} · 思考强度 ${config.reasoningEffort}`)
 
   void runAgent({
     windowId: request.windowId,
