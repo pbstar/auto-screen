@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Alert, AppBar, Box, Button, Chip, Toolbar, Typography } from '@mui/material'
+import { Alert, AppBar, Box, Button, Toolbar, Typography } from '@mui/material'
 import type {
   CaptureResult,
   IpcResult,
@@ -9,7 +9,7 @@ import type {
   ToolContext,
   WindowInfo,
 } from '@shared/types'
-import SidePanel from './components/SidePanel'
+import WindowSelect from './components/WindowSelect'
 import ScreenPreview from './components/ScreenPreview'
 import type { DragRange, ImagePoint } from './components/preview-types'
 import ActionPanel from './components/ActionPanel'
@@ -198,14 +198,7 @@ export default function App() {
           <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
             Auto Screen
           </Typography>
-          <Chip
-            size="small"
-            label={
-              selectedWindow
-                ? `${selectedWindow.appName} · ${selectedWindow.title || '无标题窗口'}`
-                : '未选择窗口'
-            }
-          />
+          <WindowSelect windows={windows} selectedId={selectedId} onSelect={setSelectedId} />
           <Box sx={{ flex: 1 }} />
           <Button onClick={() => void loadWindows()}>刷新窗口</Button>
           <Button
@@ -231,8 +224,6 @@ export default function App() {
       )}
 
       <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
-        <SidePanel windows={windows} selectedId={selectedId} onSelect={setSelectedId} />
-
         <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
           <ScreenPreview
             capture={capture}

@@ -176,7 +176,7 @@ export default function ScreenPreview({
         }}
       >
         {!capture || !layout ? (
-          <Typography color="text.secondary">选择左侧窗口后开始截屏</Typography>
+          <Typography color="text.secondary">在顶栏选择目标窗口后开始截屏</Typography>
         ) : (
           <Box
             onPointerDown={handlePointerDown}
