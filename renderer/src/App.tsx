@@ -7,6 +7,7 @@ import TaskBar from './components/TaskBar'
 import Timeline from './components/Timeline'
 import ReferencePanel from './components/ReferencePanel'
 import StatusBar from './components/StatusBar'
+import LogDialog from './components/LogDialog'
 import { useAgentRun } from './hooks/useAgentRun'
 
 const api = window.autoScreen
@@ -26,6 +27,7 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [permissions, setPermissions] = useState<PermissionStatus | null>(null)
   const [gridVisible, setGridVisible] = useState(true)
+  const [logOpen, setLogOpen] = useState(false)
   const [error, setError] = useState('')
   const agent = useAgentRun()
 
@@ -71,6 +73,7 @@ export default function App() {
         windowLocked={agent.state.status !== 'idle'}
         onSelect={setSelectedId}
         onRefreshWindows={() => void loadWindows()}
+        onOpenLogs={() => setLogOpen(true)}
       />
 
       {permissionWarning && (
@@ -122,6 +125,8 @@ export default function App() {
         selectedWindow={selectedWindow}
         agent={agent.state}
       />
+
+      <LogDialog open={logOpen} onClose={() => setLogOpen(false)} />
     </Box>
   )
 }

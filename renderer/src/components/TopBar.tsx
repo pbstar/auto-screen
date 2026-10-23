@@ -1,4 +1,4 @@
-import { Box, Typography } from '@mui/material'
+import { Box, Button, Typography } from '@mui/material'
 import type { WindowInfo } from '@shared/types'
 import WindowSelect from './WindowSelect'
 
@@ -9,6 +9,7 @@ interface Props {
   windowLocked: boolean
   onSelect: (id: number) => void
   onRefreshWindows: () => void
+  onOpenLogs: () => void
 }
 
 export default function TopBar({
@@ -17,6 +18,7 @@ export default function TopBar({
   windowLocked,
   onSelect,
   onRefreshWindows,
+  onOpenLogs,
 }: Props) {
   return (
     <Box
@@ -44,6 +46,9 @@ export default function TopBar({
         onOpen={onRefreshWindows}
       />
       <Box sx={{ flex: 1 }} />
+      <Button onClick={onOpenLogs} sx={{ color: 'text.secondary' }}>
+        日志
+      </Button>
     </Box>
   )
 }

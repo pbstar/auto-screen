@@ -59,6 +59,22 @@ export interface PermissionStatus {
   accessibility: boolean
 }
 
+/** 一次运行在磁盘上的记录 */
+export interface RunMeta {
+  /** 运行目录名，读取日志时作为标识 */
+  name: string
+  runId: string
+  task: string
+  startedAt: number
+  endedAt: number | null
+  reason: string | null
+}
+
+export interface RunLog {
+  meta: RunMeta | null
+  text: string
+}
+
 export type IpcResult<T> = { ok: true; data: T } | { ok: false; error: string }
 
 export interface AutoScreenApi {
@@ -72,4 +88,9 @@ export interface AutoScreenApi {
   agentStatus(): Promise<IpcResult<AgentStatus>>
   /** 返回取消订阅函数 */
   onAgentEvent(listener: (event: AgentEvent) => void): () => void
+  listRuns(): Promise<IpcResult<RunMeta[]>>
+  readRun(name: string): Promise<IpcResult<RunLog>>
+  /** 按运行读取原始标注截图（data URL），失败时界面退回缩略图 */
+  readRunShot(runId: string, step: number): Promise<IpcResult<string | null>>
+  openRunsDir(): Promise<IpcResult<null>>
 }

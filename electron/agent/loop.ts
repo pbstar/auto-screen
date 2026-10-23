@@ -27,6 +27,8 @@ export interface RunOptions {
   signal: AbortSignal
   emit: Emit
   hide: Hide
+  /** 把标注后的完整截图落到运行记录里，供大图查看 */
+  saveShot: (step: number, dataUrl: string) => void
 }
 
 export interface RunOutcome {
@@ -43,6 +45,7 @@ interface RunContext {
   signal: AbortSignal
   emit: Emit
   hide: Hide
+  saveShot: (step: number, dataUrl: string) => void
   messages: AgentMessage[]
   shots: ShotRef[]
   usage: TokenUsage
@@ -91,6 +94,7 @@ async function runLoop(ctx: RunContext): Promise<AgentRunReason> {
 async function runStep(ctx: RunContext, step: number): Promise<AgentRunReason | null> {
   ctx.steps = step
   const shot = await annotateCapture(captureWindow(ctx.windowId))
+  ctx.saveShot(step, shot.dataUrl)
   appendShot(ctx.messages, ctx.shots, shot, step)
   ctx.emit({ type: 'shot', step, image: shot.thumb, width: shot.width, height: shot.height })
 
@@ -200,6 +204,7 @@ function createContext(options: RunOptions): RunContext {
     signal: options.signal,
     emit: options.emit,
     hide: options.hide,
+    saveShot: options.saveShot,
     messages: [
       { role: 'system', content: buildSystemPrompt() },
       { role: 'user', content: options.task },

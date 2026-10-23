@@ -36,6 +36,15 @@ export const theme = createTheme({
         },
       },
     },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          border: '1px solid #e6e8eb',
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08)',
+          borderRadius: 8,
+        },
+      },
+    },
     MuiCssBaseline: {
       styleOverrides: {
         '*::-webkit-scrollbar': { width: 8, height: 8 },

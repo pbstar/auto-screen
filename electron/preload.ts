@@ -17,6 +17,10 @@ const api: AutoScreenApi = {
     ipcRenderer.on(IPC.agentEvent, handler)
     return () => ipcRenderer.removeListener(IPC.agentEvent, handler)
   },
+  listRuns: () => ipcRenderer.invoke(IPC.runsList),
+  readRun: (name: string) => ipcRenderer.invoke(IPC.runsRead, name),
+  readRunShot: (runId: string, step: number) => ipcRenderer.invoke(IPC.runsShot, runId, step),
+  openRunsDir: () => ipcRenderer.invoke(IPC.runsOpenDir),
 }
 
 contextBridge.exposeInMainWorld('autoScreen', api)

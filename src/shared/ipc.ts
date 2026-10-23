@@ -7,6 +7,10 @@ export const IPC = {
   agentStop: 'agent:stop',
   agentStatus: 'agent:status',
   agentEvent: 'agent:event',
+  runsList: 'runs:list',
+  runsRead: 'runs:read',
+  runsShot: 'runs:shot',
+  runsOpenDir: 'runs:open',
 } as const
 
 export const GRID = {
