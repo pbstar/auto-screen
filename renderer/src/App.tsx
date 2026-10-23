@@ -9,7 +9,8 @@ import type {
   ToolContext,
   WindowInfo,
 } from '@shared/types'
-import WindowList from './components/WindowList'
+import WindowSelect from './components/WindowSelect'
+import SkillList from './components/SkillList'
 import ScreenPreview from './components/ScreenPreview'
 import type { DragRange, ImagePoint } from './components/preview-types'
 import ActionPanel from './components/ActionPanel'
@@ -226,8 +227,21 @@ export default function App() {
       )}
 
       <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
-        <Box sx={{ width: 260, flex: 'none', borderRight: 1, borderColor: 'divider', overflow: 'auto' }}>
-          <WindowList windows={windows} selectedId={selectedId} onSelect={setSelectedId} />
+        <Box
+          sx={{
+            width: 260,
+            flex: 'none',
+            borderRight: 1,
+            borderColor: 'divider',
+            overflow: 'auto',
+            p: 1.5,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+          }}
+        >
+          <WindowSelect windows={windows} selectedId={selectedId} onSelect={setSelectedId} />
+          <SkillList />
         </Box>
 
         <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
