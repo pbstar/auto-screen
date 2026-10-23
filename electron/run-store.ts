@@ -22,6 +22,11 @@ export function runsRoot(): string {
     : join(process.cwd(), 'runs')
 }
 
+/** 还没跑过任务时目录不存在，打开目录前先建出来 */
+export function ensureRunsRoot(): void {
+  mkdirSync(runsRoot(), { recursive: true })
+}
+
 function pad(value: number, size = 2): string {
   return String(value).padStart(size, '0')
 }
@@ -118,7 +123,8 @@ export function listRuns(): RunMeta[] {
 }
 
 export function readRun(name: string): RunLog {
-  const dir = join(runsRoot(), name)
+  // 名字来自渲染进程，只取最后一段，避免拼出 runs/ 之外的路径
+  const dir = join(runsRoot(), basename(name))
   let text = ''
   try {
     text = readFileSync(join(dir, LOG_NAME), 'utf8')

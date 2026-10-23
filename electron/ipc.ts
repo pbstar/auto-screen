@@ -6,7 +6,7 @@ import { listWindows } from '../src/core/screen'
 import { setStreamTarget } from './capture-stream'
 import { listToolSummaries } from './agent/registry'
 import { agentStatus, pauseAgent, resumeAgent, startAgent, stopAgent } from './agent/service'
-import { listRuns, readRun, readShot, runsRoot } from './run-store'
+import { ensureRunsRoot, listRuns, readRun, readShot, runsRoot } from './run-store'
 
 function ok<T>(data: T): IpcResult<T> {
   return { ok: true, data }
@@ -142,6 +142,7 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null): 
 
   ipcMain.handle(IPC.runsOpenDir, async () => {
     try {
+      ensureRunsRoot()
       const error = await shell.openPath(runsRoot())
       if (error) throw new Error(error)
       return ok(null)
