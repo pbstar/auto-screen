@@ -1,0 +1,139 @@
+import { useMemo } from 'react'
+import { GRID } from '@shared/ipc'
+
+interface Props {
+  imageWidth: number
+  imageHeight: number
+  displayWidth: number
+  displayHeight: number
+  visible: boolean
+}
+
+export default function PreviewGrid({
+  imageWidth,
+  imageHeight,
+  displayWidth,
+  displayHeight,
+  visible,
+}: Props) {
+  const majorX = useMemo(() => {
+    const values: number[] = []
+    for (let x = 0; x <= imageWidth; x += GRID.major) values.push(x)
+    return values
+  }, [imageWidth])
+
+  const majorY = useMemo(() => {
+    const values: number[] = []
+    for (let y = 0; y <= imageHeight; y += GRID.major) values.push(y)
+    return values
+  }, [imageHeight])
+
+  const minorStepX = (GRID.minor / imageWidth) * displayWidth
+  const minorStepY = (GRID.minor / imageHeight) * displayHeight
+
+  const minorX = useMemo(() => {
+    if (minorStepX < 4) return [] as number[]
+    const values: number[] = []
+    for (let x = 0; x <= imageWidth; x += GRID.minor) values.push(x)
+    return values
+  }, [imageWidth, minorStepX])
+
+  const minorY = useMemo(() => {
+    if (minorStepY < 4) return [] as number[]
+    const values: number[] = []
+    for (let y = 0; y <= imageHeight; y += GRID.minor) values.push(y)
+    return values
+  }, [imageHeight, minorStepY])
+
+  if (!visible) return null
+
+  const px = (x: number) => (x / imageWidth) * displayWidth
+  const py = (y: number) => (y / imageHeight) * displayHeight
+  const showLabels = Math.min(
+    (GRID.major / imageWidth) * displayWidth,
+    (GRID.major / imageHeight) * displayHeight,
+  ) >= 24
+
+  return (
+    <g>
+      {majorX.map((x) => (
+        <line
+          key={`vx-${x}`}
+          x1={px(x)}
+          y1={0}
+          x2={px(x)}
+          y2={displayHeight}
+          stroke="rgba(255,82,82,0.45)"
+          strokeWidth={1}
+          strokeDasharray="4 4"
+        />
+      ))}
+      {majorY.map((y) => (
+        <line
+          key={`hy-${y}`}
+          x1={0}
+          y1={py(y)}
+          x2={displayWidth}
+          y2={py(y)}
+          stroke="rgba(255,82,82,0.45)"
+          strokeWidth={1}
+          strokeDasharray="4 4"
+        />
+      ))}
+
+      {minorX.map((x) => (
+        <line
+          key={`tx-${x}`}
+          x1={px(x)}
+          y1={0}
+          x2={px(x)}
+          y2={x % GRID.major === 0 ? 10 : 4}
+          stroke="rgba(255,82,82,0.7)"
+          strokeWidth={1}
+        />
+      ))}
+      {minorY.map((y) => (
+        <line
+          key={`ty-${y}`}
+          x1={0}
+          y1={py(y)}
+          x2={y % GRID.major === 0 ? 10 : 4}
+          y2={py(y)}
+          stroke="rgba(255,82,82,0.7)"
+          strokeWidth={1}
+        />
+      ))}
+
+      {showLabels &&
+        majorX.map((x) => (
+          <text
+            key={`lx-${x}`}
+            x={px(x) + 3}
+            y={14}
+            fontSize={11}
+            fill="#ff8a80"
+            stroke="rgba(0,0,0,0.85)"
+            strokeWidth={3}
+            paintOrder="stroke"
+          >
+            {x}
+          </text>
+        ))}
+      {showLabels &&
+        majorY.map((y) => (
+          <text
+            key={`ly-${y}`}
+            x={3}
+            y={py(y) - 3}
+            fontSize={11}
+            fill="#ff8a80"
+            stroke="rgba(0,0,0,0.85)"
+            strokeWidth={3}
+            paintOrder="stroke"
+          >
+            {y}
+          </text>
+        ))}
+    </g>
+  )
+}

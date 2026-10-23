@@ -8,7 +8,26 @@ import {
   screen as nutScreen,
   sleep,
 } from '@nut-tree-fork/nut-js'
-import type { ClickResult, UnitMode } from '../shared/types'
+import type { ScrollDirection, UnitMode } from '../shared/types'
+
+interface ClickResult {
+  x: number
+  y: number
+  unit: 'physical' | 'logical'
+}
+
+interface DragResult {
+  from: { x: number; y: number }
+  to: { x: number; y: number }
+  unit: 'physical' | 'logical'
+}
+
+interface ScrollResult {
+  x: number
+  y: number
+  unit: 'physical' | 'logical'
+  amount: number
+}
 
 mouse.config.autoDelayMs = 30
 keyboard.config.autoDelayMs = 20
@@ -121,7 +140,7 @@ function parseKey(raw: string): Key {
  * nut.js 的坐标单位随平台/版本可能是物理像素或逻辑点，
  * 用“主屏物理宽度”和 nut 报告的屏幕宽度比对来判断。
  */
-export async function resolveUnitMode(
+async function resolveUnitMode(
   mode: UnitMode,
   scaleFactor: number,
 ): Promise<'physical' | 'logical'> {
@@ -160,6 +179,48 @@ export async function clickAt(
   }
 
   return { x, y, unit }
+}
+
+export async function dragAt(
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+  scaleFactor: number,
+  unitMode: UnitMode,
+): Promise<DragResult> {
+  const unit = await resolveUnitMode(unitMode, scaleFactor)
+  const physicalPerUnit = unit === 'logical' ? scaleFactor || 1 : 1
+  const start = new Point(from.x / physicalPerUnit, from.y / physicalPerUnit)
+  const end = new Point(to.x / physicalPerUnit, to.y / physicalPerUnit)
+
+  await mouse.drag([start, end])
+
+  return {
+    from: { x: start.x, y: start.y },
+    to: { x: end.x, y: end.y },
+    unit,
+  }
+}
+
+export async function scrollAt(
+  point: { x: number; y: number },
+  scaleFactor: number,
+  unitMode: UnitMode,
+  direction: ScrollDirection,
+  amount: number,
+): Promise<ScrollResult> {
+  const unit = await resolveUnitMode(unitMode, scaleFactor)
+  const physicalPerUnit = unit === 'logical' ? scaleFactor || 1 : 1
+  const x = point.x / physicalPerUnit
+  const y = point.y / physicalPerUnit
+
+  await mouse.setPosition(new Point(x, y))
+  if (direction === 'up') {
+    await mouse.scrollUp(amount)
+  } else {
+    await mouse.scrollDown(amount)
+  }
+
+  return { x, y, unit, amount }
 }
 
 export async function pasteText(text: string): Promise<void> {

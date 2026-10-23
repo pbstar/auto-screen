@@ -1,9 +1,7 @@
 export const IPC = {
   listWindows: 'windows:list',
   capture: 'screen:capture',
-  click: 'input:click',
-  typeText: 'input:type',
-  pressKey: 'input:key',
+  executeTool: 'tools:execute',
   copyText: 'clipboard:write',
   permissions: 'app:permissions',
 } as const

@@ -12,10 +12,9 @@ function readMonitor(win: NativeWindow): MonitorInfo {
       width: monitor.width(),
       height: monitor.height(),
       scaleFactor: monitor.scaleFactor(),
-      isPrimary: monitor.isPrimary(),
     }
   } catch {
-    return { x: 0, y: 0, width: 0, height: 0, scaleFactor: 1, isPrimary: false }
+    return { x: 0, y: 0, width: 0, height: 0, scaleFactor: 1 }
   }
 }
 
@@ -29,8 +28,6 @@ function toWindowInfo(win: NativeWindow): WindowInfo {
     y: win.y(),
     width: win.width(),
     height: win.height(),
-    isMinimized: win.isMinimized(),
-    isFocused: win.isFocused(),
     monitor: readMonitor(win),
   }
 }
@@ -99,5 +96,3 @@ export function imageToPhysical(
     y: win.y() * physicalPerUnit + (y / imageHeight) * physicalHeight,
   }
 }
-
-export { type NativeWindow }

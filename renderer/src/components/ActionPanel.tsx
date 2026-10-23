@@ -1,36 +1,19 @@
 import { useEffect, useState } from 'react'
-import {
-  Box,
-  Button,
-  Checkbox,
-  Divider,
-  FormControl,
-  FormControlLabel,
-  InputLabel,
-  MenuItem,
-  Select,
-  Stack,
-  Switch,
-  TextField,
-  Typography,
-} from '@mui/material'
-import type { CaptureResult, MouseButton, UnitMode } from '@shared/types'
+import { Box, Button, Divider, Stack, TextField, Typography } from '@mui/material'
+import type { CaptureResult, MouseButton, ScrollDirection } from '@shared/types'
 import { GRID } from '@shared/ipc'
-import type { ImagePoint } from './ScreenPreview'
+import type { DragRange, ImagePoint } from './preview-types'
 
 interface Props {
   capture: CaptureResult | null
   picked: ImagePoint | null
+  dragRange: DragRange | null
   onPickedChange: (point: ImagePoint | null) => void
-  unitMode: UnitMode
-  onUnitModeChange: (mode: UnitMode) => void
-  hideWindow: boolean
-  onHideWindowChange: (value: boolean) => void
+  onClear: () => void
   busy: boolean
-  lastAction: string
   onClick: (button: MouseButton, count: number) => void
-  onType: (text: string, useClick: boolean) => void
-  onKey: (combo: string) => void
+  onDrag: () => void
+  onScroll: (direction: ScrollDirection) => void
 }
 
 function clamp(value: number, max: number): number {
@@ -40,22 +23,16 @@ function clamp(value: number, max: number): number {
 export default function ActionPanel({
   capture,
   picked,
+  dragRange,
   onPickedChange,
-  unitMode,
-  onUnitModeChange,
-  hideWindow,
-  onHideWindowChange,
+  onClear,
   busy,
-  lastAction,
   onClick,
-  onType,
-  onKey,
+  onDrag,
+  onScroll,
 }: Props) {
   const [x, setX] = useState('')
   const [y, setY] = useState('')
-  const [text, setText] = useState('')
-  const [combo, setCombo] = useState('')
-  const [useClick, setUseClick] = useState(true)
 
   useEffect(() => {
     setX(picked ? String(picked.x) : '')
@@ -80,12 +57,13 @@ export default function ActionPanel({
 
   return (
     <Stack spacing={1.5}>
-      <Box>
-        <Typography variant="subtitle2">坐标（10px 网格）</Typography>
-        <Typography variant="caption" color="text.secondary">
-          {capture ? `截图 ${capture.width}×${capture.height} px` : '尚未截图'}
-        </Typography>
-      </Box>
+      <Stack direction="row" sx={{ alignItems: 'center' }}>
+        <Typography variant="subtitle2">坐标</Typography>
+        <Box sx={{ flex: 1 }} />
+        <Button size="small" onClick={onClear} disabled={!picked && !dragRange}>
+          清除
+        </Button>
+      </Stack>
 
       <Stack direction="row" spacing={1}>
         <TextField
@@ -112,12 +90,9 @@ export default function ActionPanel({
           slotProps={{ htmlInput: { min: 0, step: GRID.minor } }}
           sx={{ flex: 1 }}
         />
-        <Button onClick={() => onPickedChange(null)} disabled={!picked}>
-          清除
-        </Button>
       </Stack>
 
-      <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
+      <Stack direction="row" spacing={1}>
         <Button variant="outlined" disabled={!picked || busy} onClick={() => onClick('left', 1)}>
           单击
         </Button>
@@ -131,83 +106,34 @@ export default function ActionPanel({
 
       <Divider />
 
-      <Typography variant="subtitle2">文本输入</Typography>
-      <TextField
-        multiline
-        minRows={2}
-        maxRows={4}
-        fullWidth
-        value={text}
-        onChange={(event) => setText(event.target.value)}
-        placeholder="要输入到目标窗口的文本"
-      />
-      <FormControlLabel
-        control={
-          <Checkbox
-            size="small"
-            checked={useClick}
-            onChange={(event) => setUseClick(event.target.checked)}
-            disabled={!picked}
-          />
-        }
-        label="先点击取点位置"
-      />
-      <Button
-        variant="contained"
-        disabled={busy || text.length === 0}
-        onClick={() => onType(text, useClick && picked != null)}
-      >
-        输入文本
-      </Button>
+      <Typography variant="subtitle2">拖拽</Typography>
+      {dragRange ? (
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+          <Typography variant="caption" sx={{ fontVariantNumeric: 'tabular-nums' }}>
+            ({dragRange.start.x}, {dragRange.start.y}) → ({dragRange.end.x}, {dragRange.end.y})
+          </Typography>
+          <Box sx={{ flex: 1 }} />
+          <Button variant="outlined" disabled={busy} onClick={onDrag}>
+            执行
+          </Button>
+        </Stack>
+      ) : (
+        <Typography variant="caption" color="text.secondary">
+          在预览图上按住拖动框选
+        </Typography>
+      )}
 
       <Divider />
 
-      <Typography variant="subtitle2">按键</Typography>
-      <TextField
-        fullWidth
-        value={combo}
-        onChange={(event) => setCombo(event.target.value)}
-        placeholder="mod+shift+t"
-      />
-      <Button variant="contained" disabled={busy || combo.trim().length === 0} onClick={() => onKey(combo)}>
-        发送按键
-      </Button>
-
-      <Divider />
-
-      <Typography variant="subtitle2">执行设置</Typography>
-      <FormControl fullWidth size="small">
-        <InputLabel id="unit-mode-label">鼠标坐标单位</InputLabel>
-        <Select
-          labelId="unit-mode-label"
-          label="鼠标坐标单位"
-          value={unitMode}
-          onChange={(event) => onUnitModeChange(event.target.value as UnitMode)}
-        >
-          <MenuItem value="auto">自动判断</MenuItem>
-          <MenuItem value="physical">物理像素</MenuItem>
-          <MenuItem value="logical">逻辑点</MenuItem>
-        </Select>
-      </FormControl>
-      <Typography variant="caption" color="text.secondary">
-        点击位置整体偏移（通常是 2 倍）时，在这里切换单位。
-      </Typography>
-      <FormControlLabel
-        control={
-          <Switch
-            size="small"
-            checked={hideWindow}
-            onChange={(event) => onHideWindowChange(event.target.checked)}
-          />
-        }
-        label="执行时暂时隐藏本窗口"
-      />
-
-      <Divider />
-
-      <Typography variant="caption" color="text.secondary">
-        {lastAction || '尚未执行操作'}
-      </Typography>
+      <Typography variant="subtitle2">滚轮</Typography>
+      <Stack direction="row" spacing={1}>
+        <Button variant="outlined" disabled={!picked || busy} onClick={() => onScroll('up')}>
+          向上滚
+        </Button>
+        <Button variant="outlined" disabled={!picked || busy} onClick={() => onScroll('down')}>
+          向下滚
+        </Button>
+      </Stack>
     </Stack>
   )
 }

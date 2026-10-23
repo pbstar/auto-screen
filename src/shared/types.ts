@@ -4,7 +4,6 @@ export interface MonitorInfo {
   width: number
   height: number
   scaleFactor: number
-  isPrimary: boolean
 }
 
 export interface WindowInfo {
@@ -16,8 +15,6 @@ export interface WindowInfo {
   y: number
   width: number
   height: number
-  isMinimized: boolean
-  isFocused: boolean
   monitor: MonitorInfo
 }
 
@@ -33,33 +30,26 @@ export interface CaptureResult {
 
 export type MouseButton = 'left' | 'right'
 export type UnitMode = 'auto' | 'physical' | 'logical'
+export type ScrollDirection = 'up' | 'down'
 
-export interface ClickRequest {
+export interface ToolContext {
   windowId: number
   imageWidth: number
   imageHeight: number
-  x: number
-  y: number
-  button?: MouseButton
-  count?: number
   unitMode?: UnitMode
-  hideWindow?: boolean
 }
 
-export interface ClickResult {
-  x: number
-  y: number
-  unit: 'physical' | 'logical'
-}
-
-export interface TypeRequest {
+export interface ToolResult {
   text: string
-  click?: ClickRequest
-  hideWindow?: boolean
+  data?: unknown
+  image?: string
+  isError?: boolean
 }
 
-export interface KeyRequest {
-  combo: string
+export interface ToolExecuteRequest {
+  name: string
+  input: Record<string, unknown>
+  context: ToolContext
   hideWindow?: boolean
 }
 
@@ -74,9 +64,7 @@ export type IpcResult<T> = { ok: true; data: T } | { ok: false; error: string }
 export interface AutoScreenApi {
   listWindows(): Promise<IpcResult<WindowInfo[]>>
   capture(windowId: number): Promise<IpcResult<CaptureResult>>
-  click(request: ClickRequest): Promise<IpcResult<ClickResult>>
-  typeText(request: TypeRequest): Promise<IpcResult<null>>
-  pressKey(request: KeyRequest): Promise<IpcResult<null>>
+  executeTool(request: ToolExecuteRequest): Promise<IpcResult<ToolResult>>
   copyText(text: string): Promise<IpcResult<null>>
   permissions(): Promise<IpcResult<PermissionStatus>>
 }

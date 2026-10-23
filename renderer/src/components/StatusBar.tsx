@@ -5,6 +5,7 @@ interface Props {
   permissions: PermissionStatus | null
   capture: CaptureResult | null
   selectedWindow: WindowInfo | null
+  lastAction: string
 }
 
 const SCREEN_LABELS: Record<string, string> = {
@@ -15,7 +16,7 @@ const SCREEN_LABELS: Record<string, string> = {
   unknown: '未知',
 }
 
-export default function StatusBar({ permissions, capture, selectedWindow }: Props) {
+export default function StatusBar({ permissions, capture, selectedWindow, lastAction }: Props) {
   return (
     <Box
       sx={{
@@ -66,9 +67,11 @@ export default function StatusBar({ permissions, capture, selectedWindow }: Prop
       )}
 
       <Box sx={{ flex: 1 }} />
-      <Typography variant="caption" color="text.secondary">
-        原点左上角 · 小格 10px · 大格 100px
-      </Typography>
+      {lastAction && (
+        <Typography variant="caption" color="text.secondary" noWrap sx={{ maxWidth: 520 }}>
+          {lastAction}
+        </Typography>
+      )}
     </Box>
   )
 }

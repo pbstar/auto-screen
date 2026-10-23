@@ -2,15 +2,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, AppBar, Box, Button, Chip, Toolbar, Typography } from '@mui/material'
 import type {
   CaptureResult,
-  ClickRequest,
   IpcResult,
   MouseButton,
   PermissionStatus,
-  UnitMode,
+  ScrollDirection,
+  ToolContext,
   WindowInfo,
 } from '@shared/types'
 import WindowList from './components/WindowList'
-import ScreenPreview, { type ImagePoint } from './components/ScreenPreview'
+import ScreenPreview from './components/ScreenPreview'
+import type { DragRange, ImagePoint } from './components/preview-types'
 import ActionPanel from './components/ActionPanel'
 import StatusBar from './components/StatusBar'
 
@@ -32,11 +33,8 @@ export default function App() {
   const [capture, setCapture] = useState<CaptureResult | null>(null)
   const [permissions, setPermissions] = useState<PermissionStatus | null>(null)
   const [picked, setPicked] = useState<ImagePoint | null>(null)
+  const [dragRange, setDragRange] = useState<DragRange | null>(null)
   const [gridVisible, setGridVisible] = useState(true)
-  const [pickMode, setPickMode] = useState(true)
-  const [autoRefresh, setAutoRefresh] = useState(false)
-  const [hideWindow, setHideWindow] = useState(true)
-  const [unitMode, setUnitMode] = useState<UnitMode>('auto')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [lastAction, setLastAction] = useState('')
@@ -61,26 +59,24 @@ export default function App() {
     }
   }, [])
 
-  const refreshCapture = useCallback(
-    async (windowId: number, keepPicked = false, silent = false) => {
-      const seq = ++captureSeq.current
-      if (!silent) setBusy(true)
-      try {
-        const data = await expectResult(api.capture(windowId))
-        if (seq !== captureSeq.current) return
-        setCapture(data)
-        if (!keepPicked) setPicked(null)
-        setError('')
-      } catch (caught) {
-        if (seq !== captureSeq.current) return
-        setCapture(null)
-        setError(messageOf(caught))
-      } finally {
-        if (!silent && seq === captureSeq.current) setBusy(false)
-      }
-    },
-    [],
-  )
+  const refreshCapture = useCallback(async (windowId: number) => {
+    const seq = ++captureSeq.current
+    setBusy(true)
+    try {
+      const data = await expectResult(api.capture(windowId))
+      if (seq !== captureSeq.current) return
+      setCapture(data)
+      setPicked(null)
+      setDragRange(null)
+      setError('')
+    } catch (caught) {
+      if (seq !== captureSeq.current) return
+      setCapture(null)
+      setError(messageOf(caught))
+    } finally {
+      if (seq === captureSeq.current) setBusy(false)
+    }
+  }, [])
 
   useEffect(() => {
     void loadWindows()
@@ -101,24 +97,13 @@ export default function App() {
     void refreshCapture(selectedId)
   }, [selectedId, refreshCapture])
 
-  useEffect(() => {
-    if (!autoRefresh || selectedId == null) return
-    const timer = window.setInterval(() => {
-      void refreshCapture(selectedId, true, true)
-    }, 1500)
-    return () => window.clearInterval(timer)
-  }, [autoRefresh, selectedId, refreshCapture])
-
-  const buildClickRequest = (): ClickRequest | null => {
-    if (!capture || !picked) return null
+  const buildToolContext = (): ToolContext | null => {
+    if (!capture) return null
     return {
       windowId: capture.window.id,
       imageWidth: capture.width,
       imageHeight: capture.height,
-      x: picked.x,
-      y: picked.y,
-      unitMode,
-      hideWindow,
+      unitMode: 'auto',
     }
   }
 
@@ -136,35 +121,64 @@ export default function App() {
 
   const handleClick = (button: MouseButton, count: number) => {
     void runAction(async () => {
-      const request = buildClickRequest()
-      if (!request) throw new Error('请先在预览图上取点')
-      const result = await expectResult(api.click({ ...request, button, count }))
-      const action = button === 'right' ? '右键' : count > 1 ? '双击' : '单击'
-      const unit = result.unit === 'physical' ? '物理像素' : '逻辑点'
-      return `已${action} (${result.x.toFixed(1)}, ${result.y.toFixed(1)})，坐标单位：${unit}`
+      const context = buildToolContext()
+      if (!context || !picked) throw new Error('请先在预览图上取点')
+      const result = await expectResult(
+        api.executeTool({
+          name: 'click',
+          input: { x: picked.x, y: picked.y, button, count },
+          context,
+          hideWindow: true,
+        }),
+      )
+      return result.text
     })
   }
 
-  const handleType = (text: string, useClick: boolean) => {
+  const handleDragPick = (range: DragRange) => {
+    setDragRange(range)
+    setPicked(range.start)
+  }
+
+  const clearSelection = () => {
+    setPicked(null)
+    setDragRange(null)
+  }
+
+  const handleDrag = () => {
     void runAction(async () => {
-      if (!text) throw new Error('请输入要输入的文本')
-      let click: ClickRequest | undefined
-      if (useClick) {
-        const request = buildClickRequest()
-        if (!request) throw new Error('请先在预览图上取点')
-        click = request
-      }
-      await expectResult(api.typeText({ text, click, hideWindow }))
-      return click ? `已在 (${click.x}, ${click.y}) 输入 ${text.length} 个字符` : `已输入 ${text.length} 个字符`
+      const context = buildToolContext()
+      if (!context || !dragRange) throw new Error('请先在预览图上拖出拖拽范围')
+      const result = await expectResult(
+        api.executeTool({
+          name: 'drag',
+          input: {
+            fromX: dragRange.start.x,
+            fromY: dragRange.start.y,
+            toX: dragRange.end.x,
+            toY: dragRange.end.y,
+          },
+          context,
+          hideWindow: true,
+        }),
+      )
+      return result.text
     })
   }
 
-  const handleKey = (combo: string) => {
+  const handleScroll = (direction: ScrollDirection) => {
     void runAction(async () => {
-      const value = combo.trim()
-      if (!value) throw new Error('请输入组合键')
-      await expectResult(api.pressKey({ combo: value, hideWindow }))
-      return `已发送按键 ${value}`
+      const context = buildToolContext()
+      if (!context || !picked) throw new Error('请先在预览图上取点')
+      const result = await expectResult(
+        api.executeTool({
+          name: 'scroll',
+          input: { x: picked.x, y: picked.y, direction, amount: 3 },
+          context,
+          hideWindow: true,
+        }),
+      )
+      return result.text
     })
   }
 
@@ -194,7 +208,7 @@ export default function App() {
             disabled={selectedId == null || busy}
             onClick={() => selectedId != null && void refreshCapture(selectedId)}
           >
-            重新截图
+            截图
           </Button>
         </Toolbar>
       </AppBar>
@@ -220,15 +234,11 @@ export default function App() {
           <ScreenPreview
             capture={capture}
             gridVisible={gridVisible}
-            pickMode={pickMode}
-            autoRefresh={autoRefresh}
             picked={picked}
-            busy={busy}
+            dragRange={dragRange}
             onPick={setPicked}
+            onDragPick={handleDragPick}
             onGridVisibleChange={setGridVisible}
-            onPickModeChange={setPickMode}
-            onAutoRefreshChange={setAutoRefresh}
-            onRefresh={() => selectedId != null && void refreshCapture(selectedId)}
           />
         </Box>
 
@@ -245,21 +255,23 @@ export default function App() {
           <ActionPanel
             capture={capture}
             picked={picked}
+            dragRange={dragRange}
             onPickedChange={setPicked}
-            unitMode={unitMode}
-            onUnitModeChange={setUnitMode}
-            hideWindow={hideWindow}
-            onHideWindowChange={setHideWindow}
+            onClear={clearSelection}
             busy={busy}
-            lastAction={lastAction}
             onClick={handleClick}
-            onType={handleType}
-            onKey={handleKey}
+            onDrag={handleDrag}
+            onScroll={handleScroll}
           />
         </Box>
       </Box>
 
-      <StatusBar permissions={permissions} capture={capture} selectedWindow={selectedWindow} />
+      <StatusBar
+        permissions={permissions}
+        capture={capture}
+        selectedWindow={selectedWindow}
+        lastAction={lastAction}
+      />
     </Box>
   )
 }

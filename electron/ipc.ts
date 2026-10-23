@@ -1,21 +1,9 @@
 import { BrowserWindow, clipboard, ipcMain, systemPreferences } from 'electron'
 import { IPC } from '../src/shared/ipc'
-import type {
-  ClickRequest,
-  ClickResult,
-  IpcResult,
-  KeyRequest,
-  PermissionStatus,
-  TypeRequest,
-} from '../src/shared/types'
-import { clickAt, pasteText, pressCombo } from '../src/core/input'
-import {
-  captureWindow,
-  findWindow,
-  imageToPhysical,
-  listWindows,
-  windowScaleFactor,
-} from '../src/core/screen'
+import type { IpcResult, PermissionStatus, ToolExecuteRequest } from '../src/shared/types'
+import { captureWindow, listWindows } from '../src/core/screen'
+import { withWindowHidden } from '../src/core/safety'
+import { executeTool } from './agent/registry'
 
 function ok<T>(data: T): IpcResult<T> {
   return { ok: true, data }
@@ -23,40 +11,6 @@ function ok<T>(data: T): IpcResult<T> {
 
 function fail(error: unknown): IpcResult<never> {
   return { ok: false, error: error instanceof Error ? error.message : String(error) }
-}
-
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-
-async function withWindowHidden<T>(
-  win: BrowserWindow | null,
-  hide: boolean,
-  action: () => Promise<T>,
-): Promise<T> {
-  if (!win || !hide) return action()
-
-  const wasVisible = win.isVisible()
-  win.hide()
-  await delay(250)
-  try {
-    return await action()
-  } finally {
-    if (wasVisible) {
-      win.show()
-      win.focus()
-    }
-  }
-}
-
-async function runClick(req: ClickRequest): Promise<ClickResult> {
-  const win = findWindow(req.windowId)
-  const physical = imageToPhysical(win, req.imageWidth, req.imageHeight, req.x, req.y)
-  return clickAt(
-    physical,
-    windowScaleFactor(win),
-    req.unitMode ?? 'auto',
-    req.button ?? 'left',
-    req.count ?? 1,
-  )
 }
 
 function getPermissions(): PermissionStatus {
@@ -99,33 +53,12 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null): 
     }
   })
 
-  ipcMain.handle(IPC.click, async (_event, req: ClickRequest) => {
+  ipcMain.handle(IPC.executeTool, async (_event, req: ToolExecuteRequest) => {
     try {
       const result = await withWindowHidden(getMainWindow(), req.hideWindow !== false, () =>
-        runClick(req),
+        executeTool(req.name, req.input, req.context),
       )
       return ok(result)
-    } catch (error) {
-      return fail(error)
-    }
-  })
-
-  ipcMain.handle(IPC.typeText, async (_event, req: TypeRequest) => {
-    try {
-      await withWindowHidden(getMainWindow(), req.hideWindow !== false, async () => {
-        if (req.click) await runClick(req.click)
-        await pasteText(req.text)
-      })
-      return ok(null)
-    } catch (error) {
-      return fail(error)
-    }
-  })
-
-  ipcMain.handle(IPC.pressKey, async (_event, req: KeyRequest) => {
-    try {
-      await withWindowHidden(getMainWindow(), req.hideWindow !== false, () => pressCombo(req.combo))
-      return ok(null)
     } catch (error) {
       return fail(error)
     }
