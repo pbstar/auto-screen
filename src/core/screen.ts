@@ -35,7 +35,8 @@ function toWindowInfo(win: NativeWindow): WindowInfo {
 export function listWindows(excludePid: number): WindowInfo[] {
   return ScreenshotWindow.all()
     .filter((win) => win.pid() !== excludePid)
-    .filter((win) => !win.isMinimized() && win.width() > 0 && win.height() > 0)
+    // 系统菜单栏小组件只有几十像素高，不是可操作窗口，也拿不到视频源
+    .filter((win) => !win.isMinimized() && win.width() >= 100 && win.height() >= 100)
     .map(toWindowInfo)
     .sort(
       (a, b) =>
