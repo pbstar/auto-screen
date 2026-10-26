@@ -4,7 +4,8 @@ import type { TokenUsage } from '@shared/agent'
 import type { SkillSummary } from '@shared/types'
 import type { AgentRunState } from '../hooks/useAgentRun'
 import { MONO_FONT } from '../theme'
-import SkillPicker from './SkillPicker'
+import SkillPill from './SkillPill'
+import ToolPill from './ToolPill'
 
 interface Props {
   windowSelected: boolean
@@ -57,9 +58,20 @@ export default function TaskBar({
 
   return (
     <Box sx={{ p: 1.5, flex: 'none', borderBottom: 1, borderColor: 'divider' }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', height: 20 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, height: 20 }}>
         <Typography sx={{ fontSize: 12, fontWeight: 600 }}>任务</Typography>
         <Box sx={{ flex: 1 }} />
+        {/* 步数与用量是任务的元信息，放标题行，不跟操作按钮抢位置 */}
+        <Typography
+          sx={{
+            fontFamily: MONO_FONT,
+            fontSize: 11,
+            color: 'text.secondary',
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
+          {state.step}/{state.maxSteps} 步 · {formatTokens(state.usage)} tokens
+        </Typography>
         {/* 自带内边距，负外边距让文字和下面内容的 12px 右边界对齐 */}
         <Button
           size="small"
@@ -93,24 +105,15 @@ export default function TaskBar({
           },
         }}
       />
-      <SkillPicker
-        skills={skills}
-        selected={selectedSkills}
-        disabled={running}
-        onToggle={onToggleSkill}
-        onRefresh={onRefreshSkills}
-      />
-      <Stack direction="row" spacing={1} sx={{ mt: 1, alignItems: 'center' }}>
-        <Typography
-          sx={{
-            fontFamily: MONO_FONT,
-            fontSize: 11,
-            color: 'text.secondary',
-            fontVariantNumeric: 'tabular-nums',
-          }}
-        >
-          {state.step}/{state.maxSteps} 步 · {formatTokens(state.usage)} tokens
-        </Typography>
+      <Stack direction="row" spacing={0.75} sx={{ mt: 1, alignItems: 'center' }}>
+        <SkillPill
+          skills={skills}
+          selected={selectedSkills}
+          disabled={running}
+          onToggle={onToggleSkill}
+          onReload={onRefreshSkills}
+        />
+        <ToolPill />
         <Box sx={{ flex: 1 }} />
         {running ? (
           <Stack direction="row" spacing={1}>

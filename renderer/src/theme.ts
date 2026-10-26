@@ -67,6 +67,15 @@ export const theme = createTheme({
         },
       },
     },
+    MuiPopover: {
+      styleOverrides: {
+        paper: {
+          border: `1px solid ${HAIRLINE}`,
+          boxShadow: '0 12px 32px rgba(15, 23, 42, 0.10)',
+          borderRadius: 8,
+        },
+      },
+    },
     MuiDialog: {
       styleOverrides: {
         paper: {
