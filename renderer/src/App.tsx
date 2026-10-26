@@ -4,7 +4,7 @@ import type { IpcResult, PermissionStatus, WindowInfo } from '@shared/types'
 import ScreenPreview from './components/ScreenPreview'
 import TaskBar from './components/TaskBar'
 import Timeline from './components/Timeline'
-import ReferencePanel from './components/ReferencePanel'
+import ToolPanel from './components/ToolPanel'
 import LogDialog from './components/LogDialog'
 import { useAgentRun } from './hooks/useAgentRun'
 
@@ -108,7 +108,7 @@ export default function App() {
             onResume={() => void agent.resume()}
           />
           <Timeline items={agent.state.items} runId={agent.state.runId} />
-          <ReferencePanel />
+          <ToolPanel />
         </Box>
       </Box>
 
