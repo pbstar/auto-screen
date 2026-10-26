@@ -41,7 +41,8 @@ npm run dev   # 实跑界面前先征得同意
 7. **不泄露密钥**：`.env` 不入库；Key 不明文展示、不写日志（`run-store.ts` 已有脱敏）。
 8. **技能靠用户勾选注入**，不做自动匹配；手册追加在通用规则之后，不勾选时系统提示前缀保持不变。
 9. **技能只写策略不写死坐标**：用网格相对位置描述目标，要求每一步都用新截图核对，易错点写进「注意」。
-8. **暂停在步骤边界生效**；`wait` / `wait_until` 内部每 500ms 检查暂停与终止，新增阻塞型工具必须同时接 `context.signal` 和 `context.gate`，长任务用 `context.report` 报进度。
+8. **暂停在步骤边界生效**；`wait` / `wait_until` / `wait_for_change` 内部每 500ms 检查暂停与终止，新增阻塞型工具必须同时接 `context.signal` 和 `context.gate`，长任务用 `context.report` 报进度。
+9. **`wait_for_change` 的基线必须是本步模型看到的那张截图**（`shot.frame`）。改成「开始等待那一刻」的截图，会在模型思考的两三秒里漏掉对手已经落子的情况。检测阈值集中在 `agent/watch.ts`，调整前先看那里的实测注释。
 
 ## 代码风格
 
@@ -54,7 +55,7 @@ npm run dev   # 实跑界面前先征得同意
 
 - 调模型行为：`prompt.ts`（策略）、`loop.ts`（分档与终止条件）、`control.ts`（失败收敛）。
 - 加动作能力：在 `tools/` 新建文件导出 `ToolDef`，再注册到 `tools/index.ts`；坐标用 `snapToGrid`，换算走 `core/screen.ts` 与 `core/input.ts`。
-- 长流程与技能：技能系统已接入，新增技能只需在 `skills/<id>/` 下写 `SKILL.md`（frontmatter 只认 `name`、`description`），不必改代码；步数上限在 `src/shared/agent.ts`，等待上限与语义在 `tools/wait.ts` 与 `tools/wait-until.ts`（引擎在 `wait-runner.ts`），时间线容量在 `useAgentRun.ts`。
+- 长流程与技能：技能系统已接入，新增技能只需在 `skills/<id>/` 下写 `SKILL.md`（frontmatter 只认 `name`、`description`），不必改代码；步数上限在 `src/shared/agent.ts`，三种等待在 `tools/wait*.ts`（引擎 `wait-runner.ts`，画面差分 `agent/watch.ts`），时间线容量在 `useAgentRun.ts`。
 - 界面：`renderer/src/components/`；主进程与渲染进程之间新增字段先改 `src/shared/`。
 
 ## 验收
