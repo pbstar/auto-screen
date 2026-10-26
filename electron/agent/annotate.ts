@@ -5,7 +5,8 @@ import {
   type SKRSContext2D,
 } from '@napi-rs/canvas'
 import { GRID, GRID_STYLE, gridMajor } from '../../src/shared/ipc'
-import type { CaptureResult } from '../../src/shared/types'
+import type { CaptureResult, FrameSignature } from '../../src/shared/types'
+import { sampleFrame } from './watch'
 
 const MAX_EDGE = 1280
 const THUMB_EDGE = 360
@@ -28,6 +29,8 @@ export interface AnnotatedShot {
   /** 模型坐标系宽高，工具上下文必须用这两个值 */
   width: number
   height: number
+  /** 原始画面的灰度签名，wait_for_change 以这一步看到的画面为基准 */
+  frame: FrameSignature
 }
 
 /**
@@ -42,6 +45,8 @@ export async function annotateCapture(
   const width = Math.max(1, Math.round(capture.width * scale))
   const height = Math.max(1, Math.round(capture.height * scale))
   const source = await loadImage(Buffer.from(capture.image.split(',')[1] ?? '', 'base64'))
+  // 在画网格之前采样原始画面，否则虚线会干扰画面变化判断
+  const frame = sampleFrame(source)
 
   const canvas = createCanvas(width, height)
   const ctx = canvas.getContext('2d')
@@ -59,6 +64,7 @@ export async function annotateCapture(
     thumb: makeThumb(canvas, width, height),
     width,
     height,
+    frame,
   }
 }
 

@@ -173,6 +173,7 @@ async function runToolCalls(
       signal: ctx.signal,
       gate: ctx.gate,
       report: (text) => ctx.emit({ type: 'tool_progress', step, callId: call.id, text }),
+      baseline: shot.frame,
     }
     const result = await runOneTool(ctx, call, context, step)
     const abort = ctx.guard.observe(call.function.name, result.input, result.text, result.isError)

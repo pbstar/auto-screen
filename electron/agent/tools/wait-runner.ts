@@ -3,7 +3,7 @@ import { durationText } from '../../../src/shared/time'
 
 const TICK_MS = 500
 /** 进度每十秒报一次：够界面看出在推进，又不至于刷屏 */
-const REPORT_MS = 10_000
+export const PROGRESS_MS = 10_000
 
 export interface WaitRun {
   signal: AbortSignal
@@ -12,7 +12,7 @@ export interface WaitRun {
 }
 
 /** 可被终止打断的睡眠，返回实际睡掉的毫秒数 */
-function sleep(ms: number, signal: AbortSignal): Promise<number> {
+export function sleepOrAbort(ms: number, signal: AbortSignal): Promise<number> {
   return new Promise((resolve) => {
     if (signal.aborted || ms <= 0) {
       resolve(0)
@@ -33,16 +33,16 @@ function sleep(ms: number, signal: AbortSignal): Promise<number> {
 /** 累加活动时间：暂停期间不推进，返回真正等掉的毫秒数 */
 export async function waitFor(run: WaitRun, totalMs: number): Promise<number> {
   let elapsed = 0
-  let nextReport = REPORT_MS
+  let nextReport = PROGRESS_MS
   while (elapsed < totalMs && !run.signal.aborted) {
     if (run.gate.paused) {
       await run.gate.wait(run.signal)
       continue
     }
-    elapsed += await sleep(Math.min(TICK_MS, totalMs - elapsed), run.signal)
+    elapsed += await sleepOrAbort(Math.min(TICK_MS, totalMs - elapsed), run.signal)
     if (elapsed >= nextReport) {
       run.report?.(`已等待 ${durationText(elapsed)} / ${durationText(totalMs)}`)
-      nextReport += REPORT_MS
+      nextReport += PROGRESS_MS
     }
   }
   return elapsed
@@ -55,17 +55,17 @@ export async function waitFor(run: WaitRun, totalMs: number): Promise<number> {
 export async function waitUntil(run: WaitRun, targetMs: number): Promise<number> {
   const started = Date.now()
   const total = Math.max(0, targetMs - started)
-  let nextReport = REPORT_MS
+  let nextReport = PROGRESS_MS
   while (Date.now() < targetMs && !run.signal.aborted) {
     if (run.gate.paused) {
       await run.gate.wait(run.signal)
       continue
     }
-    await sleep(Math.min(TICK_MS, targetMs - Date.now()), run.signal)
+    await sleepOrAbort(Math.min(TICK_MS, targetMs - Date.now()), run.signal)
     const elapsed = Date.now() - started
     if (elapsed >= nextReport) {
       run.report?.(`已等待 ${durationText(elapsed)} / ${durationText(total)}`)
-      nextReport += REPORT_MS
+      nextReport += PROGRESS_MS
     }
   }
   return Date.now() - started

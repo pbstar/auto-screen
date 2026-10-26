@@ -26,6 +26,14 @@ export interface PauseControl {
   wait(signal: AbortSignal): Promise<void>
 }
 
+/** 一张截图的低分辨率灰度签名，用来判断画面有没有变化 */
+export interface FrameSignature {
+  cols: number
+  rows: number
+  /** 每块的平均灰度 0-255，按行优先排列 */
+  blocks: Uint8Array
+}
+
 export interface ToolContext {
   windowId: number
   /** 当前截图宽高，工具坐标一律以它为准 */
@@ -36,6 +44,8 @@ export interface ToolContext {
   gate: PauseControl
   /** 长任务定期回报进度，界面显示在时间线上；即时工具不用 */
   report?: (text: string) => void
+  /** 本步模型看到的那张原始截图的签名，wait_for_change 以它为基准 */
+  baseline?: FrameSignature
 }
 
 export interface ToolResult {
