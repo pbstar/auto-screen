@@ -84,8 +84,8 @@ export function useAgentRun() {
     return unsubscribe
   }, [])
 
-  const start = useCallback(async (windowId: number, task: string) => {
-    const result = await api.startAgent({ windowId, task })
+  const start = useCallback(async (windowId: number, task: string, skills: string[]) => {
+    const result = await api.startAgent({ windowId, task, skills })
     if (!result.ok) {
       setState((previous) => ({ ...previous, error: result.error }))
     }

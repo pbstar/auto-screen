@@ -2,6 +2,7 @@ export const IPC = {
   listWindows: 'windows:list',
   streamTarget: 'stream:target',
   toolsList: 'tools:list',
+  skillsList: 'skills:list',
   permissions: 'app:permissions',
   agentStart: 'agent:start',
   agentStop: 'agent:stop',

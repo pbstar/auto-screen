@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Alert, Box } from '@mui/material'
-import type { IpcResult, PermissionStatus, WindowInfo } from '@shared/types'
+import type { IpcResult, PermissionStatus, SkillSummary, WindowInfo } from '@shared/types'
 import ScreenPreview from './components/ScreenPreview'
 import TaskBar from './components/TaskBar'
 import Timeline from './components/Timeline'
-import ToolPanel from './components/ToolPanel'
+import ReferencePanel from './components/ReferencePanel'
 import LogDialog from './components/LogDialog'
 import { useAgentRun } from './hooks/useAgentRun'
 
@@ -24,6 +24,8 @@ export default function App() {
   const [windows, setWindows] = useState<WindowInfo[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [permissions, setPermissions] = useState<PermissionStatus | null>(null)
+  const [skills, setSkills] = useState<SkillSummary[]>([])
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([])
   const [gridVisible, setGridVisible] = useState(true)
   const [logOpen, setLogOpen] = useState(false)
   const [error, setError] = useState('')
@@ -43,8 +45,21 @@ export default function App() {
     }
   }, [])
 
+  const loadSkills = useCallback(async () => {
+    try {
+      const data = await expectResult(api.listSkills())
+      setSkills(data)
+      // 手册被删掉后，勾选状态要跟着收敛，否则会把不存在的 id 发给主进程
+      setSelectedSkills((previous) => previous.filter((id) => data.some((skill) => skill.id === id)))
+      setError('')
+    } catch (caught) {
+      setError(messageOf(caught))
+    }
+  }, [])
+
   useEffect(() => {
     void loadWindows()
+    void loadSkills()
     void (async () => {
       try {
         setPermissions(await expectResult(api.permissions()))
@@ -52,7 +67,13 @@ export default function App() {
         setError(messageOf(caught))
       }
     })()
-  }, [loadWindows])
+  }, [loadWindows, loadSkills])
+
+  const toggleSkill = (id: string) => {
+    setSelectedSkills((previous) =>
+      previous.includes(id) ? previous.filter((item) => item !== id) : [...previous, id],
+    )
+  }
 
   const permissionWarning =
     permissions?.platform === 'darwin' &&
@@ -101,14 +122,20 @@ export default function App() {
             onOpenLogs={() => setLogOpen(true)}
             onStart={async (task) => {
               if (selectedId == null) return
-              await agent.start(selectedId, task)
+              await agent.start(selectedId, task, selectedSkills)
             }}
             onStop={() => void agent.stop()}
             onPause={() => void agent.pause()}
             onResume={() => void agent.resume()}
           />
           <Timeline items={agent.state.items} runId={agent.state.runId} />
-          <ToolPanel />
+          <ReferencePanel
+            skills={skills}
+            selectedSkills={selectedSkills}
+            skillsLocked={agent.state.status !== 'idle'}
+            onToggleSkill={toggleSkill}
+            onRefreshSkills={() => void loadSkills()}
+          />
         </Box>
       </Box>
 

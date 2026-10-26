@@ -18,7 +18,7 @@ import {
   type AssistantTurn,
   type ToolCall,
 } from './llm'
-import { buildSystemPrompt } from './prompt'
+import { buildSystemPrompt, type SkillPrompt } from './prompt'
 import { executeTool } from './registry'
 import { markOf } from './mark'
 import { FailureGuard, type PauseGate } from './control'
@@ -38,6 +38,8 @@ type Emit = (payload: AgentEventPayload) => void
 export interface RunOptions {
   windowId: number
   task: string
+  /** 用户勾选的技能正文，直接拼进系统提示 */
+  skills: SkillPrompt[]
   signal: AbortSignal
   emit: Emit
   /** 把标注后的完整截图落到运行记录里，供大图查看 */
@@ -272,7 +274,7 @@ function createContext(options: RunOptions): RunContext {
     guard: new FailureGuard(),
     busy: options.busy,
     messages: [
-      { role: 'system', content: buildSystemPrompt() },
+      { role: 'system', content: buildSystemPrompt(options.skills) },
       { role: 'user', content: options.task },
     ],
     shots: [],

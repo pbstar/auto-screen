@@ -24,6 +24,8 @@ export type PauseReason = 'user' | 'human'
 export interface AgentStartRequest {
   windowId: number
   task: string
+  /** 勾选的技能 id，对应 skills/<id>/SKILL.md */
+  skills: string[]
 }
 
 export interface AgentStatus {

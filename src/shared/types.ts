@@ -40,6 +40,13 @@ export interface ToolSummary {
   description: string
 }
 
+/** 一份技能就是一个目录下的 SKILL.md，id 即目录名 */
+export interface SkillSummary {
+  id: string
+  name: string
+  description: string
+}
+
 export interface PermissionStatus {
   platform: string
   screen: string
@@ -69,6 +76,7 @@ export interface AutoScreenApi {
   /** 设置 getDisplayMedia 要捕获的窗口，返回系统是否提供了画面源 */
   setStreamTarget(windowId: number | null): Promise<IpcResult<boolean>>
   listTools(): Promise<IpcResult<ToolSummary[]>>
+  listSkills(): Promise<IpcResult<SkillSummary[]>>
   permissions(): Promise<IpcResult<PermissionStatus>>
   startAgent(request: AgentStartRequest): Promise<IpcResult<null>>
   stopAgent(): Promise<IpcResult<null>>
