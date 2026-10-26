@@ -1,30 +1,14 @@
+import { durationText } from '../../../src/shared/time'
 import type { ToolDef } from './types'
 import { requireNumber } from './helpers'
+import { waitFor } from './wait-runner'
 
-/** 操作手册里会有「等 5 分钟再继续」这类固定停顿，上限给到 5 分钟 */
-const MAX_WAIT_MS = 300_000
-
-/** 等待期间用户可能点终止，靠 abort 立即退出，不阻塞停止 */
-function sleepOrAbort(ms: number, signal: AbortSignal): Promise<void> {
-  return new Promise((resolve) => {
-    if (signal.aborted) {
-      resolve()
-      return
-    }
-    let timer: ReturnType<typeof setTimeout>
-    const finish = (): void => {
-      clearTimeout(timer)
-      signal.removeEventListener('abort', finish)
-      resolve()
-    }
-    timer = setTimeout(finish, ms)
-    signal.addEventListener('abort', finish, { once: true })
-  })
-}
+/** 技能里最长会写「等一个小时」；再长的等待该由定时任务承担，不该占着一次运行 */
+const MAX_WAIT_MS = 3_600_000
 
 export const waitTool: ToolDef = {
   name: 'wait',
-  description: `等待一段时间，让界面完成响应或按操作手册做固定停顿。单位毫秒，最多 ${MAX_WAIT_MS}。`,
+  description: `等待一段时间再继续。单位毫秒，最多 ${MAX_WAIT_MS}（1 小时）；等待期间可以暂停或终止。`,
   parameters: {
     type: 'object',
     properties: {
@@ -34,8 +18,15 @@ export const waitTool: ToolDef = {
     additionalProperties: false,
   },
   async execute(input, context) {
-    const ms = requireNumber(input, 'ms', { min: 0, max: MAX_WAIT_MS, integer: true })
-    await sleepOrAbort(ms, context.signal)
-    return { text: `已等待 ${ms}ms` }
+    const ms = requireNumber(input, 'ms', { min: 0, integer: true })
+    // 超过上限直接报错，不静默裁剪，否则模型会以为等够了
+    if (ms > MAX_WAIT_MS) {
+      throw new Error(`等待时长最多 ${MAX_WAIT_MS} 毫秒（1 小时）`)
+    }
+    const elapsed = await waitFor(context, ms)
+    const spent = durationText(elapsed)
+    return {
+      text: context.signal.aborted ? `等待被终止，已等 ${spent}` : `已等待 ${spent}`,
+    }
   },
 }

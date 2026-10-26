@@ -198,6 +198,9 @@ function logEvent(runId: string, payload: AgentEventPayload): void {
           `${payload.durationMs}ms ${oneLine(payload.text)}`,
       )
       break
+    case 'tool_progress':
+      // 进度每十秒一条，落盘只会把 run.log 冲垮；总耗时看 tool_finished
+      break
     case 'usage':
       appendLog(
         runId,

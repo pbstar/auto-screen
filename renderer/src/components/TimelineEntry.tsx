@@ -143,7 +143,7 @@ function ToolEntry({ item }: { item: TimelineItem }) {
       >
         {item.detail}
       </Typography>
-      {item.text && (
+      {(item.text ?? item.progress) && (
         <Typography
           variant="caption"
           sx={{
@@ -153,7 +153,7 @@ function ToolEntry({ item }: { item: TimelineItem }) {
             wordBreak: 'break-word',
           }}
         >
-          {item.text}
+          {item.text ?? item.progress}
         </Typography>
       )}
     </>

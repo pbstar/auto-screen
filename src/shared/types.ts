@@ -1,4 +1,4 @@
-import type { AgentEvent, AgentStartRequest, AgentStatus } from './agent'
+import type { AgentEvent, AgentStartRequest, AgentStatus, PauseReason } from './agent'
 
 /** 窗口列表只给界面用来认出目标，坐标换算在 core/screen.ts 内部完成 */
 export interface WindowInfo {
@@ -20,6 +20,12 @@ export interface CaptureResult {
 
 export type ScrollDirection = 'up' | 'down'
 
+/** 暂停闸门在工具层的投影：长等待据此在暂停时停止推进 */
+export interface PauseControl {
+  readonly paused: PauseReason | null
+  wait(signal: AbortSignal): Promise<void>
+}
+
 export interface ToolContext {
   windowId: number
   /** 当前截图宽高，工具坐标一律以它为准 */
@@ -27,6 +33,9 @@ export interface ToolContext {
   imageHeight: number
   /** 终止时立刻中断，长等待不用等满 */
   signal: AbortSignal
+  gate: PauseControl
+  /** 长任务定期回报进度，界面显示在时间线上；即时工具不用 */
+  report?: (text: string) => void
 }
 
 export interface ToolResult {

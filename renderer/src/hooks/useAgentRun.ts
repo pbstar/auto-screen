@@ -18,6 +18,8 @@ export interface TimelineItem {
   detail?: string
   image?: string
   text?: string
+  /** 长任务的实时进度，如「已等待 00:30 / 05:00」 */
+  progress?: string
   status?: 'running' | 'ok' | 'error'
   durationMs?: number
 }
@@ -161,6 +163,13 @@ function applyEvent(state: AgentRunState, event: AgentEvent): AgentRunState {
           item.id === event.callId
             ? { ...item, status: event.isError ? 'error' : 'ok', text: event.text, durationMs: event.durationMs }
             : item,
+        ),
+      }
+    case 'tool_progress':
+      return {
+        ...state,
+        items: state.items.map((item) =>
+          item.id === event.callId ? { ...item, progress: event.text } : item,
         ),
       }
     case 'usage':

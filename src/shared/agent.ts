@@ -74,6 +74,13 @@ export type AgentEvent =
       isError: boolean
       durationMs: number
     })
+  | (AgentEventBase & {
+      type: 'tool_progress'
+      step: number
+      callId: string
+      /** 长任务的进度文案，如「已等待 00:30 / 05:00」 */
+      text: string
+    })
   | (AgentEventBase & { type: 'usage'; usage: TokenUsage; effort: ReasoningEffort })
   | (AgentEventBase & { type: 'paused'; reason: PauseReason })
   | (AgentEventBase & { type: 'resumed' })

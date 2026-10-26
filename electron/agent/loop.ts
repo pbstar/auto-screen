@@ -153,13 +153,6 @@ async function runToolCalls(
   shot: AnnotatedShot,
   step: number,
 ): Promise<AgentRunReason | null> {
-  const context: ToolContext = {
-    windowId: ctx.windowId,
-    imageWidth: shot.width,
-    imageHeight: shot.height,
-    signal: ctx.signal,
-  }
-
   // 一批动作里前面某个失败了，后面的前提可能已经不成立，跳过并把原因回给模型
   let blocked = false
   for (const call of calls) {
@@ -171,6 +164,15 @@ async function runToolCalls(
         content: '未执行：同一批里前面的动作失败了，先看新截图再决定',
       })
       continue
+    }
+    // 工具上下文按调用构造：进度事件要带上 callId，界面才知道更新哪一条
+    const context: ToolContext = {
+      windowId: ctx.windowId,
+      imageWidth: shot.width,
+      imageHeight: shot.height,
+      signal: ctx.signal,
+      gate: ctx.gate,
+      report: (text) => ctx.emit({ type: 'tool_progress', step, callId: call.id, text }),
     }
     const result = await runOneTool(ctx, call, context, step)
     const abort = ctx.guard.observe(call.function.name, result.input, result.text, result.isError)
