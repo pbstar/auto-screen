@@ -158,14 +158,25 @@ async function runToolCalls(
     unitMode: 'auto',
   }
 
+  // 一批动作里前面某个失败了，后面的前提可能已经不成立，跳过并把原因回给模型
+  let blocked = false
   for (const call of calls) {
     if (!(await waitWhilePaused(ctx))) return 'stopped'
+    if (blocked) {
+      ctx.messages.push({
+        role: 'tool',
+        tool_call_id: call.id,
+        content: '未执行：同一批里前面的动作失败了，先看新截图再决定',
+      })
+      continue
+    }
     const result = await runOneTool(ctx, call, context, step)
     const abort = ctx.guard.observe(call.function.name, result.input, result.text, result.isError)
     if (abort) {
       ctx.error = abort
       return 'failed'
     }
+    blocked = result.isError
   }
   return null
 }
@@ -265,6 +276,7 @@ function addUsage(total: TokenUsage, delta: TokenUsage): TokenUsage {
   return {
     prompt: total.prompt + delta.prompt,
     completion: total.completion + delta.completion,
+    cached: total.cached + delta.cached,
   }
 }
 
@@ -282,7 +294,7 @@ function createContext(options: RunOptions): RunContext {
       { role: 'user', content: options.task },
     ],
     shots: [],
-    usage: { prompt: 0, completion: 0 },
+    usage: { prompt: 0, completion: 0, cached: 0 },
     steps: 0,
     lastText: null,
     mark: null,

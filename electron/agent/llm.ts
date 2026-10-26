@@ -82,13 +82,18 @@ export async function requestAssistantTurn(
   }
 
   const extra = message as typeof message & { reasoning_content?: string }
+  // prompt_cache_hit_tokens 是 DeepSeek 的扩展字段，SDK 类型里没有
+  const usage = completion.usage as
+    | (NonNullable<typeof completion.usage> & { prompt_cache_hit_tokens?: number })
+    | undefined
   return {
     content: message.content ?? null,
     reasoning: extra.reasoning_content ?? null,
     toolCalls: (message.tool_calls ?? []) as ToolCall[],
     usage: {
-      prompt: completion.usage?.prompt_tokens ?? 0,
-      completion: completion.usage?.completion_tokens ?? 0,
+      prompt: usage?.prompt_tokens ?? 0,
+      completion: usage?.completion_tokens ?? 0,
+      cached: usage?.prompt_cache_hit_tokens ?? 0,
     },
   }
 }

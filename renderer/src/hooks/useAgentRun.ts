@@ -3,7 +3,7 @@ import type { AgentEvent, PauseReason, TokenUsage } from '@shared/agent'
 
 const api = window.autoScreen
 const MAX_ITEMS = 300
-const EMPTY_USAGE: TokenUsage = { prompt: 0, completion: 0 }
+const EMPTY_USAGE: TokenUsage = { prompt: 0, completion: 0, cached: 0 }
 
 export interface TimelineItem {
   id: string

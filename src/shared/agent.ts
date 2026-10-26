@@ -1,6 +1,8 @@
 export interface TokenUsage {
   prompt: number
   completion: number
+  /** 其中命中前缀缓存的部分，DeepSeek 按更低价格计费 */
+  cached: number
 }
 
 /** 思考强度：第 1 步与失败恢复步用 high，其余步骤 low，策略固定在循环里，不做配置化 */

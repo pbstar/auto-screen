@@ -29,7 +29,8 @@ interface ActiveRun {
 let active: ActiveRun | null = null
 let seq = 0
 let lastStep = 0
-let lastUsage: TokenUsage = { prompt: 0, completion: 0 }
+const EMPTY_USAGE: TokenUsage = { prompt: 0, completion: 0, cached: 0 }
+let lastUsage: TokenUsage = EMPTY_USAGE
 
 export async function startAgent(
   getWindow: WindowGetter,
@@ -60,7 +61,7 @@ export async function startAgent(
   active = { runId, windowId: request.windowId, controller, gate, watcher }
   seq = 0
   lastStep = 0
-  lastUsage = { prompt: 0, completion: 0 }
+  lastUsage = EMPTY_USAGE
 
   void runAgent({
     windowId: request.windowId,
@@ -141,7 +142,7 @@ export function agentStatus(): AgentStatus {
     pauseReason: active?.gate.paused ?? null,
     step: running ? lastStep : 0,
     maxSteps: MAX_STEPS,
-    usage: running ? lastUsage : { prompt: 0, completion: 0 },
+    usage: running ? lastUsage : EMPTY_USAGE,
     configReady: configReady(),
   }
 }
@@ -192,8 +193,8 @@ function logEvent(runId: string, payload: AgentEventPayload): void {
     case 'usage':
       appendLog(
         runId,
-        `用量 prompt=${payload.usage.prompt} completion=${payload.usage.completion}` +
-          ` · effort=${payload.effort}`,
+        `用量 prompt=${payload.usage.prompt}（命中缓存 ${payload.usage.cached}）` +
+          ` completion=${payload.usage.completion} · effort=${payload.effort}`,
       )
       break
     case 'stopping':
