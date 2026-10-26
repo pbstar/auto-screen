@@ -21,6 +21,8 @@ npm run dev   # 实跑界面前先征得同意
 | `electron/main.ts` | 窗口、生命周期、IPC 注册 |
 | `electron/agent/` | 决策循环：`loop.ts` 主循环、`service.ts` 运行生命周期与事件广播、`llm.ts` DeepSeek 封装、`prompt.ts` 系统提示、`control.ts` 暂停闸门与失败收敛、`history.ts` 图片历史、`annotate.ts` 截图标注、`mark.ts` 落点准星 |
 | `electron/agent/tools/` | 一个工具一个文件，`index.ts` 汇总注册 |
+| `electron/skills.ts` | 扫描 `skills/*/SKILL.md`，解析 frontmatter，按勾选返回技能正文 |
+| `skills/` | 技能手册，一个目录一份 `SKILL.md`；`calculator/` 是示例 |
 | `src/core/` | 纯能力层：`screen.ts` 窗口与坐标换算、`input.ts` nut.js、`pointer.ts` 人工接管检测、`safety.ts` 前台激活 |
 | `src/shared/` | 类型、IPC 契约、网格常量（主进程与渲染进程共用） |
 | `renderer/src/` | React + MUI 界面，`components/`、`hooks/` |
@@ -37,6 +39,8 @@ npm run dev   # 实跑界面前先征得同意
 5. **图片历史只保留最近 2 张**（`KEEP_IMAGES`），更早的降级成一行文字。
 6. **工具只做动作**：失败一律抛错，日志、时间线、失败收敛都由循环层处理，工具里不要重复。
 7. **不泄露密钥**：`.env` 不入库；Key 不明文展示、不写日志（`run-store.ts` 已有脱敏）。
+8. **技能靠用户勾选注入**，不做自动匹配；手册追加在通用规则之后，不勾选时系统提示前缀保持不变。
+9. **技能只写策略不写死坐标**：用网格相对位置描述目标，要求每一步都用新截图核对，易错点写进「注意」。
 8. **暂停在步骤边界生效**；长等待靠 abort 打断，新增阻塞型工具时要把 `context.signal` 接上。
 
 ## 代码风格
@@ -50,7 +54,7 @@ npm run dev   # 实跑界面前先征得同意
 
 - 调模型行为：`prompt.ts`（策略）、`loop.ts`（分档与终止条件）、`control.ts`（失败收敛）。
 - 加动作能力：在 `tools/` 新建文件导出 `ToolDef`，再注册到 `tools/index.ts`；坐标用 `snapToGrid`，换算走 `core/screen.ts` 与 `core/input.ts`。
-- 长流程与技能：技能系统尚未实现，设计设想见技术方案 §6；步数上限在 `src/shared/agent.ts`，`wait` 上限在 `tools/wait.ts`，时间线容量在 `useAgentRun.ts`。
+- 长流程与技能：技能系统已接入，新增技能只需在 `skills/<id>/` 下写 `SKILL.md`（frontmatter 只认 `name`、`description`），不必改代码；步数上限在 `src/shared/agent.ts`，`wait` 上限在 `tools/wait.ts`，时间线容量在 `useAgentRun.ts`。
 - 界面：`renderer/src/components/`；主进程与渲染进程之间新增字段先改 `src/shared/`。
 
 ## 验收
