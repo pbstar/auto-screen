@@ -5,6 +5,7 @@ import { scrollTool } from './scroll'
 import { typeTool } from './type'
 import { keyTool } from './key'
 import { waitTool } from './wait'
+import { waitUntilTool } from './wait-until'
 import { moveTool } from './move'
 import { listWindowsTool } from './list-windows'
 
@@ -15,6 +16,7 @@ export const tools: ToolDef[] = [
   typeTool,
   keyTool,
   waitTool,
+  waitUntilTool,
   moveTool,
   listWindowsTool,
 ]
