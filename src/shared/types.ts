@@ -1,23 +1,12 @@
 import type { AgentEvent, AgentStartRequest, AgentStatus } from './agent'
 
-export interface MonitorInfo {
-  x: number
-  y: number
-  width: number
-  height: number
-  scaleFactor: number
-}
-
+/** 窗口列表只给界面用来认出目标，坐标换算在 core/screen.ts 内部完成 */
 export interface WindowInfo {
   id: number
-  pid: number
   appName: string
   title: string
-  x: number
-  y: number
   width: number
   height: number
-  monitor: MonitorInfo
 }
 
 export interface CaptureResult {
@@ -27,24 +16,22 @@ export interface CaptureResult {
   width: number
   /** 截图物理像素高 */
   height: number
-  window: WindowInfo
 }
 
-export type UnitMode = 'auto' | 'physical' | 'logical'
 export type ScrollDirection = 'up' | 'down'
 
 export interface ToolContext {
   windowId: number
+  /** 当前截图宽高，工具坐标一律以它为准 */
   imageWidth: number
   imageHeight: number
-  unitMode?: UnitMode
+  /** 终止时立刻中断，长等待不用等满 */
+  signal: AbortSignal
 }
 
 export interface ToolResult {
+  /** 回填给模型并显示在时间线；失败一律抛错，由调用方统一收敛 */
   text: string
-  data?: unknown
-  image?: string
-  isError?: boolean
 }
 
 /** 界面展示用的工具条目，不含 JSON Schema */

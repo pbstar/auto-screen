@@ -1,7 +1,8 @@
 import { clickAt } from '../../../src/core/input'
 import { findWindow, imageToPhysical, windowScaleFactor } from '../../../src/core/screen'
+import { snapToGrid } from '../../../src/shared/ipc'
 import type { ToolDef } from './types'
-import { gridValue, optionalNumber, readEnum, requireNumber } from './helpers'
+import { optionalNumber, readEnum, requireNumber } from './helpers'
 
 export const clickTool: ToolDef = {
   name: 'click',
@@ -19,25 +20,18 @@ export const clickTool: ToolDef = {
     additionalProperties: false,
   },
   async execute(input, context) {
-    const x = gridValue(requireNumber(input, 'x'), context.imageWidth)
-    const y = gridValue(requireNumber(input, 'y'), context.imageHeight)
+    const x = snapToGrid(requireNumber(input, 'x'), context.imageWidth)
+    const y = snapToGrid(requireNumber(input, 'y'), context.imageHeight)
     const button = readEnum(input, 'button', ['left', 'right'] as const, 'left')
     const count = optionalNumber(input, 'count', { min: 1, max: 2, integer: true }) ?? 1
 
     const win = findWindow(context.windowId)
     const point = imageToPhysical(win, context.imageWidth, context.imageHeight, x, y)
-    const result = await clickAt(
-      point,
-      windowScaleFactor(win),
-      context.unitMode ?? 'auto',
-      button,
-      count,
-    )
+    const result = await clickAt(point, windowScaleFactor(win), button, count)
 
     const action = button === 'right' ? '右键' : count > 1 ? '双击' : '单击'
     return {
       text: `已${action} (${x}, ${y})，落点 (${result.x.toFixed(1)}, ${result.y.toFixed(1)})`,
-      data: result,
     }
   },
 }

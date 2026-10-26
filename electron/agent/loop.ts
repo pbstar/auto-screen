@@ -1,8 +1,10 @@
-import type {
-  AgentEventPayload,
-  AgentRunReason,
-  ReasoningEffort,
-  TokenUsage,
+import {
+  EMPTY_USAGE,
+  MAX_STEPS,
+  type AgentEventPayload,
+  type AgentRunReason,
+  type ReasoningEffort,
+  type TokenUsage,
 } from '../../src/shared/agent'
 import type { ToolContext } from '../../src/shared/types'
 import { captureWindow } from '../../src/core/screen'
@@ -18,15 +20,13 @@ import {
 } from './llm'
 import { buildSystemPrompt } from './prompt'
 import { executeTool } from './registry'
+import { markOf } from './mark'
 import { FailureGuard, type PauseGate } from './control'
 
-export const MAX_STEPS = 30
 /** 动作执行后界面未必立刻重绘，截图前留一点时间，免得模型读到旧画面 */
 const SETTLE_MS = 150
 /** 会移动鼠标或敲键盘的工具，执行期间暂停人工接管检测 */
 const INPUT_TOOLS = new Set(['click', 'move', 'drag', 'scroll', 'type', 'key'])
-/** 这些工具的落点会标在下一张截图上 */
-const MARK_TOOLS = new Set(['click', 'move', 'drag'])
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
@@ -155,7 +155,7 @@ async function runToolCalls(
     windowId: ctx.windowId,
     imageWidth: shot.width,
     imageHeight: shot.height,
-    unitMode: 'auto',
+    signal: ctx.signal,
   }
 
   // 一批动作里前面某个失败了，后面的前提可能已经不成立，跳过并把原因回给模型
@@ -212,24 +212,6 @@ async function runOneTool(
   return { ...outcome, input }
 }
 
-/** 把指针动作的落点换算成截图坐标，和工具内部的对齐规则保持一致 */
-function markOf(
-  name: string,
-  input: Record<string, unknown>,
-  context: ToolContext,
-): ClickMark | null {
-  if (!MARK_TOOLS.has(name)) return null
-  const dragging = name === 'drag'
-  const x = Number(dragging ? input.toX : input.x)
-  const y = Number(dragging ? input.toY : input.y)
-  if (!Number.isFinite(x) || !Number.isFinite(y)) return null
-  return { x: snap(x, context.imageWidth), y: snap(y, context.imageHeight) }
-}
-
-function snap(value: number, max: number): number {
-  return Math.min(max, Math.max(0, Math.round(value / 10) * 10))
-}
-
 /** 鼠标键盘由 Agent 自己动的时候，按住接管检测，避免误判 */
 async function withBusy<T>(ctx: RunContext, name: string, action: () => Promise<T>): Promise<T> {
   if (!INPUT_TOOLS.has(name)) return action()
@@ -248,7 +230,7 @@ async function invokeTool(
 ): Promise<{ text: string; isError: boolean }> {
   try {
     const result = await executeTool(name, input, context)
-    return { text: truncate(result.text), isError: Boolean(result.isError) }
+    return { text: truncate(result.text), isError: false }
   } catch (caught) {
     return { text: truncate(describeError(caught)), isError: true }
   }
@@ -294,7 +276,7 @@ function createContext(options: RunOptions): RunContext {
       { role: 'user', content: options.task },
     ],
     shots: [],
-    usage: { prompt: 0, completion: 0, cached: 0 },
+    usage: EMPTY_USAGE,
     steps: 0,
     lastText: null,
     mark: null,

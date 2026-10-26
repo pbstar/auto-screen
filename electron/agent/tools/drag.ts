@@ -1,7 +1,8 @@
 import { dragAt } from '../../../src/core/input'
 import { findWindow, imageToPhysical, windowScaleFactor } from '../../../src/core/screen'
+import { snapToGrid } from '../../../src/shared/ipc'
 import type { ToolDef } from './types'
-import { gridValue, requireNumber } from './helpers'
+import { requireNumber } from './helpers'
 
 export const dragTool: ToolDef = {
   name: 'drag',
@@ -18,19 +19,16 @@ export const dragTool: ToolDef = {
     additionalProperties: false,
   },
   async execute(input, context) {
-    const fromX = gridValue(requireNumber(input, 'fromX'), context.imageWidth)
-    const fromY = gridValue(requireNumber(input, 'fromY'), context.imageHeight)
-    const toX = gridValue(requireNumber(input, 'toX'), context.imageWidth)
-    const toY = gridValue(requireNumber(input, 'toY'), context.imageHeight)
+    const fromX = snapToGrid(requireNumber(input, 'fromX'), context.imageWidth)
+    const fromY = snapToGrid(requireNumber(input, 'fromY'), context.imageHeight)
+    const toX = snapToGrid(requireNumber(input, 'toX'), context.imageWidth)
+    const toY = snapToGrid(requireNumber(input, 'toY'), context.imageHeight)
 
     const win = findWindow(context.windowId)
     const from = imageToPhysical(win, context.imageWidth, context.imageHeight, fromX, fromY)
     const to = imageToPhysical(win, context.imageWidth, context.imageHeight, toX, toY)
-    const result = await dragAt(from, to, windowScaleFactor(win), context.unitMode ?? 'auto')
+    await dragAt(from, to, windowScaleFactor(win))
 
-    return {
-      text: `已拖拽 (${fromX}, ${fromY}) → (${toX}, ${toY})`,
-      data: result,
-    }
+    return { text: `已拖拽 (${fromX}, ${fromY}) → (${toX}, ${toY})` }
   },
 }

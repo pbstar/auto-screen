@@ -5,6 +5,14 @@ export interface TokenUsage {
   cached: number
 }
 
+export const EMPTY_USAGE: TokenUsage = { prompt: 0, completion: 0, cached: 0 }
+
+/**
+ * 操作手册类任务动辄上百步，30 步会在中途被掐断；
+ * 上限只用来兜住死循环，正常任务不该碰到。
+ */
+export const MAX_STEPS = 300
+
 /** 思考强度：第 1 步与失败恢复步用 high，其余步骤 low，策略固定在循环里，不做配置化 */
 export type ReasoningEffort = 'low' | 'high'
 

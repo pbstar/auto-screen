@@ -1,7 +1,8 @@
 import { scrollAt } from '../../../src/core/input'
 import { findWindow, imageToPhysical, windowScaleFactor } from '../../../src/core/screen'
+import { snapToGrid } from '../../../src/shared/ipc'
 import type { ToolDef } from './types'
-import { gridValue, optionalNumber, requireEnum, requireNumber } from './helpers'
+import { optionalNumber, requireEnum, requireNumber } from './helpers'
 
 export const scrollTool: ToolDef = {
   name: 'scroll',
@@ -19,24 +20,15 @@ export const scrollTool: ToolDef = {
     additionalProperties: false,
   },
   async execute(input, context) {
-    const x = gridValue(requireNumber(input, 'x'), context.imageWidth)
-    const y = gridValue(requireNumber(input, 'y'), context.imageHeight)
+    const x = snapToGrid(requireNumber(input, 'x'), context.imageWidth)
+    const y = snapToGrid(requireNumber(input, 'y'), context.imageHeight)
     const direction = requireEnum(input, 'direction', ['up', 'down'] as const)
     const amount = optionalNumber(input, 'amount', { min: 1, max: 10, integer: true }) ?? 3
 
     const win = findWindow(context.windowId)
     const point = imageToPhysical(win, context.imageWidth, context.imageHeight, x, y)
-    const result = await scrollAt(
-      point,
-      windowScaleFactor(win),
-      context.unitMode ?? 'auto',
-      direction,
-      amount,
-    )
+    await scrollAt(point, windowScaleFactor(win), direction, amount)
 
-    return {
-      text: `已在 (${x}, ${y}) ${direction === 'up' ? '向上' : '向下'}滚动 ${amount} 格`,
-      data: result,
-    }
+    return { text: `已在 (${x}, ${y}) ${direction === 'up' ? '向上' : '向下'}滚动 ${amount} 格` }
   },
 }

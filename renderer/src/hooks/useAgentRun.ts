@@ -1,9 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { AgentEvent, PauseReason, TokenUsage } from '@shared/agent'
+import {
+  EMPTY_USAGE,
+  MAX_STEPS,
+  type AgentEvent,
+  type PauseReason,
+  type TokenUsage,
+} from '@shared/agent'
 
 const api = window.autoScreen
 const MAX_ITEMS = 300
-const EMPTY_USAGE: TokenUsage = { prompt: 0, completion: 0, cached: 0 }
 
 export interface TimelineItem {
   id: string
@@ -35,7 +40,7 @@ const INITIAL: AgentRunState = {
   runId: '',
   pauseReason: null,
   step: 0,
-  maxSteps: 30,
+  maxSteps: MAX_STEPS,
   usage: EMPTY_USAGE,
   items: [],
   error: '',

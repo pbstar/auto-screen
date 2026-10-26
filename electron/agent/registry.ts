@@ -15,7 +15,7 @@ export async function executeTool(
   return tool.execute(input, context)
 }
 
-/** OpenAI function 格式的工具定义，M2 的 Agent 循环直接使用 */
+/** OpenAI function 格式的工具定义，模型请求直接使用 */
 export function listToolSchemas() {
   return tools.map((tool) => ({
     type: 'function' as const,

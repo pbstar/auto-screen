@@ -44,7 +44,7 @@ async function waitFrontmost(pid: number): Promise<boolean> {
  */
 export async function activateWindow(windowId: number): Promise<void> {
   if (process.platform !== 'darwin') {
-    // Windows 的 SetForegroundWindow 随 M4 双平台适配一起补
+    // Windows 的 SetForegroundWindow 尚未实现，打包适配时再补
     return
   }
 

@@ -20,6 +20,12 @@ export const GRID = {
   major: 100,
 } as const
 
+/** 所有工具坐标、准星落点、预览读数都走这里：对齐到 10px 并限制在画面内 */
+export function snapToGrid(value: number, max: number): number {
+  const snapped = Math.round(value / GRID.minor) * GRID.minor
+  return Math.min(max, Math.max(0, snapped))
+}
+
 /**
  * 小窗口按 100px 画主格只剩一两条线，模型只能靠数刻度估坐标；
  * 长边不到 640 时改用 50px 主格，锚点翻倍。
@@ -38,6 +44,9 @@ export const GRID_STYLE = {
   label: '#ffffff',
   labelStroke: 'rgba(0, 0, 0, 0.9)',
   labelStrokeWidth: 2.5,
+  /** 标签字号与基线到主格线的距离，预览和截图必须一致 */
+  labelSize: 12,
+  labelGap: 15,
   majorTick: 10,
   minorTick: 4,
   dash: [4, 4],

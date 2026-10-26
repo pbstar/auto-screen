@@ -1,11 +1,8 @@
 import { useMemo } from 'react'
 import { GRID, GRID_STYLE, gridMajor } from '@shared/ipc'
 
-/** 和 canvas 标注图保持一致的标签字号与基线距离 */
-const LABEL_SIZE = 12
-const LABEL_GAP = 15
 /** SVG 里量不到实际文字宽度，粗体数字按 0.71em 估，比实测略宽一点，宁可早收 */
-const LABEL_CHAR = LABEL_SIZE * 0.71
+const LABEL_CHAR = GRID_STYLE.labelSize * 0.71
 
 interface Props {
   imageWidth: number
@@ -122,8 +119,8 @@ export default function PreviewGrid({
             <text
               key={`lx-${x}`}
               x={px(x) + 3}
-              y={LABEL_GAP}
-              fontSize={LABEL_SIZE}
+              y={GRID_STYLE.labelGap}
+              fontSize={GRID_STYLE.labelSize}
               fontWeight="bold"
               fill={GRID_STYLE.label}
               stroke={GRID_STYLE.labelStroke}
@@ -139,13 +136,13 @@ export default function PreviewGrid({
         majorY
           .filter((y) => y > 0)
           .map((y) => {
-            if (py(y) + LABEL_GAP + 2 > displayHeight) return null
+            if (py(y) + GRID_STYLE.labelGap + 2 > displayHeight) return null
             return (
               <text
                 key={`ly-${y}`}
                 x={3}
-                y={py(y) + LABEL_GAP}
-                fontSize={LABEL_SIZE}
+                y={py(y) + GRID_STYLE.labelGap}
+                fontSize={GRID_STYLE.labelSize}
                 fontWeight="bold"
                 fill={GRID_STYLE.label}
                 stroke={GRID_STYLE.labelStroke}

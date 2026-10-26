@@ -1,6 +1,6 @@
 import { mouse } from '@nut-tree-fork/nut-js'
 
-export interface PointerPoint {
+interface PointerPoint {
   x: number
   y: number
 }
@@ -17,7 +17,7 @@ export interface PointerWatcher {
   stop(): void
 }
 
-export async function pointerPosition(): Promise<PointerPoint> {
+async function pointerPosition(): Promise<PointerPoint> {
   const point = await mouse.getPosition()
   return { x: point.x, y: point.y }
 }

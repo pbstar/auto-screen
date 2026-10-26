@@ -74,7 +74,7 @@ export async function requestAssistantTurn(
 
   const completion = await getClient(cfg).chat.completions.create(params, { signal })
   if (!('choices' in completion)) {
-    throw new Error('模型返回了流式响应，M2 只支持非流式')
+    throw new Error('模型返回了流式响应，当前只发送非流式请求')
   }
   const message = completion.choices[0]?.message
   if (!message) {

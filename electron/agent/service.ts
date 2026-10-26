@@ -1,11 +1,13 @@
 import type { BrowserWindow } from 'electron'
 import { randomUUID } from 'node:crypto'
-import type {
-  AgentEvent,
-  AgentEventPayload,
-  AgentStartRequest,
-  AgentStatus,
-  TokenUsage,
+import {
+  EMPTY_USAGE,
+  MAX_STEPS,
+  type AgentEvent,
+  type AgentEventPayload,
+  type AgentStartRequest,
+  type AgentStatus,
+  type TokenUsage,
 } from '../../src/shared/agent'
 import { IPC } from '../../src/shared/ipc'
 import { activateWindow } from '../../src/core/safety'
@@ -14,7 +16,7 @@ import { configReady, readModelConfig } from '../config'
 import { appendLog, createRun, finishRun, saveShot } from '../run-store'
 import { PauseGate } from './control'
 import { describeError } from './llm'
-import { HEAVY_EFFORT, MAX_STEPS, ROUTINE_EFFORT, runAgent } from './loop'
+import { HEAVY_EFFORT, ROUTINE_EFFORT, runAgent } from './loop'
 
 type WindowGetter = () => BrowserWindow | null
 
@@ -29,7 +31,6 @@ interface ActiveRun {
 let active: ActiveRun | null = null
 let seq = 0
 let lastStep = 0
-const EMPTY_USAGE: TokenUsage = { prompt: 0, completion: 0, cached: 0 }
 let lastUsage: TokenUsage = EMPTY_USAGE
 
 export async function startAgent(

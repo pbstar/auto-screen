@@ -1,7 +1,8 @@
 import { moveAt } from '../../../src/core/input'
 import { findWindow, imageToPhysical, windowScaleFactor } from '../../../src/core/screen'
+import { snapToGrid } from '../../../src/shared/ipc'
 import type { ToolDef } from './types'
-import { gridValue, requireNumber } from './helpers'
+import { requireNumber } from './helpers'
 
 export const moveTool: ToolDef = {
   name: 'move',
@@ -17,12 +18,12 @@ export const moveTool: ToolDef = {
     additionalProperties: false,
   },
   async execute(input, context) {
-    const x = gridValue(requireNumber(input, 'x'), context.imageWidth)
-    const y = gridValue(requireNumber(input, 'y'), context.imageHeight)
+    const x = snapToGrid(requireNumber(input, 'x'), context.imageWidth)
+    const y = snapToGrid(requireNumber(input, 'y'), context.imageHeight)
 
     const win = findWindow(context.windowId)
     const point = imageToPhysical(win, context.imageWidth, context.imageHeight, x, y)
-    await moveAt(point, windowScaleFactor(win), context.unitMode ?? 'auto')
+    await moveAt(point, windowScaleFactor(win))
 
     return { text: `已移动到 (${x}, ${y})` }
   },

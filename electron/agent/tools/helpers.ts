@@ -43,11 +43,6 @@ export function requireString(input: Record<string, unknown>, key: string): stri
   return value
 }
 
-/** 对齐到 10px 网格并限制在截图范围内 */
-export function gridValue(value: number, max: number, step = 10): number {
-  return Math.min(max, Math.max(0, Math.round(value / step) * step))
-}
-
 function assertEnum<T extends string>(value: unknown, key: string, values: readonly T[]): T {
   if (typeof value === 'string' && (values as readonly string[]).includes(value)) {
     return value as T

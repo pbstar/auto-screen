@@ -1,34 +1,24 @@
 import { Window as ScreenshotWindow } from 'node-screenshots'
-import type { CaptureResult, MonitorInfo, WindowInfo } from '../shared/types'
+import type { CaptureResult, WindowInfo } from '../shared/types'
 
 type NativeWindow = InstanceType<typeof ScreenshotWindow>
 
-function readMonitor(win: NativeWindow): MonitorInfo {
+/** 读不到显示器信息时按 1 倍处理，宁可坐标偏也不能让工具直接抛错 */
+export function windowScaleFactor(win: NativeWindow): number {
   try {
-    const monitor = win.currentMonitor()
-    return {
-      x: monitor.x(),
-      y: monitor.y(),
-      width: monitor.width(),
-      height: monitor.height(),
-      scaleFactor: monitor.scaleFactor(),
-    }
+    return win.currentMonitor().scaleFactor() || 1
   } catch {
-    return { x: 0, y: 0, width: 0, height: 0, scaleFactor: 1 }
+    return 1
   }
 }
 
 function toWindowInfo(win: NativeWindow): WindowInfo {
   return {
     id: win.id(),
-    pid: win.pid(),
     appName: win.appName(),
     title: win.title(),
-    x: win.x(),
-    y: win.y(),
     width: win.width(),
     height: win.height(),
-    monitor: readMonitor(win),
   }
 }
 
@@ -54,20 +44,13 @@ export function findWindow(windowId: number): NativeWindow {
 }
 
 export function captureWindow(windowId: number): CaptureResult {
-  const win = findWindow(windowId)
-  const image = win.captureImageSync()
+  const image = findWindow(windowId).captureImageSync()
   const png = image.toPngSync(true)
-
   return {
     image: `data:image/png;base64,${png.toString('base64')}`,
     width: image.width,
     height: image.height,
-    window: toWindowInfo(win),
   }
-}
-
-export function windowScaleFactor(win: NativeWindow): number {
-  return readMonitor(win).scaleFactor || 1
 }
 
 /**
@@ -84,7 +67,7 @@ export function imageToPhysical(
 ): { x: number; y: number } {
   const boundsWidth = win.width()
   const boundsHeight = win.height()
-  const scaleFactor = readMonitor(win).scaleFactor || 1
+  const scaleFactor = windowScaleFactor(win)
   const ratio = imageWidth / boundsWidth
 
   const boundsArePhysical = Math.abs(ratio - 1) <= Math.abs(ratio - scaleFactor)

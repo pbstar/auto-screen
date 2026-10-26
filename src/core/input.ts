@@ -8,26 +8,7 @@ import {
   screen as nutScreen,
   sleep,
 } from '@nut-tree-fork/nut-js'
-import type { ScrollDirection, UnitMode } from '../shared/types'
-
-interface ClickResult {
-  x: number
-  y: number
-  unit: 'physical' | 'logical'
-}
-
-interface DragResult {
-  from: { x: number; y: number }
-  to: { x: number; y: number }
-  unit: 'physical' | 'logical'
-}
-
-interface ScrollResult {
-  x: number
-  y: number
-  unit: 'physical' | 'logical'
-  amount: number
-}
+import type { ScrollDirection } from '../shared/types'
 
 // 光标刚跳到新位置就按下，目标应用可能还没处理完移动，第一次点击会被吞掉
 mouse.config.autoDelayMs = 80
@@ -139,38 +120,37 @@ function parseKey(raw: string): Key {
 
 /**
  * nut.js 的坐标单位随平台/版本可能是物理像素或逻辑点，
- * 用“主屏物理宽度”和 nut 报告的屏幕宽度比对来判断。
+ * 用「主屏物理宽度」和 nut 报告的屏幕宽度比对来判断。
  */
-async function resolveUnitMode(
-  mode: UnitMode,
-  scaleFactor: number,
-): Promise<'physical' | 'logical'> {
-  if (mode !== 'auto') return mode
-
+async function resolveUnit(scaleFactor: number): Promise<'physical' | 'logical'> {
   const primary = electronScreen.getPrimaryDisplay()
   const nutWidth = await nutScreen.width()
   const physicalWidth = primary.size.width * primary.scaleFactor
 
   if (Math.abs(nutWidth - physicalWidth) <= 2) return 'physical'
   if (Math.abs(nutWidth - primary.size.width) <= 2) return 'logical'
-
-  // 两个都对不上时按逻辑点处理，界面上可以手动切换
+  // 两个都对不上时按缩放比推断
   return scaleFactor > 1 ? 'logical' : 'physical'
+}
+
+/** 屏幕物理像素 → nut 单位；换算只在这里发生，上层一律用截图坐标 */
+async function toNutPoint(
+  point: { x: number; y: number },
+  scaleFactor: number,
+): Promise<Point> {
+  const unit = await resolveUnit(scaleFactor)
+  const physicalPerUnit = unit === 'logical' ? scaleFactor || 1 : 1
+  return new Point(point.x / physicalPerUnit, point.y / physicalPerUnit)
 }
 
 export async function clickAt(
   physicalPoint: { x: number; y: number },
   scaleFactor: number,
-  unitMode: UnitMode,
   button: 'left' | 'right' = 'left',
   count = 1,
-): Promise<ClickResult> {
-  const unit = await resolveUnitMode(unitMode, scaleFactor)
-  const physicalPerUnit = unit === 'logical' ? scaleFactor || 1 : 1
-  const x = physicalPoint.x / physicalPerUnit
-  const y = physicalPoint.y / physicalPerUnit
-
-  await mouse.setPosition(new Point(x, y))
+): Promise<{ x: number; y: number }> {
+  const target = await toNutPoint(physicalPoint, scaleFactor)
+  await mouse.setPosition(target)
   if (button === 'right') {
     await mouse.click(Button.RIGHT)
   } else if (count >= 2) {
@@ -178,67 +158,42 @@ export async function clickAt(
   } else {
     await mouse.click(Button.LEFT)
   }
-
-  return { x, y, unit }
+  return { x: target.x, y: target.y }
 }
 
 export async function moveAt(
   physicalPoint: { x: number; y: number },
   scaleFactor: number,
-  unitMode: UnitMode,
-): Promise<ClickResult> {
-  const unit = await resolveUnitMode(unitMode, scaleFactor)
-  const physicalPerUnit = unit === 'logical' ? scaleFactor || 1 : 1
-  const x = physicalPoint.x / physicalPerUnit
-  const y = physicalPoint.y / physicalPerUnit
-
-  await mouse.setPosition(new Point(x, y))
-  return { x, y, unit }
+): Promise<void> {
+  await mouse.setPosition(await toNutPoint(physicalPoint, scaleFactor))
 }
 
 export async function dragAt(
   from: { x: number; y: number },
   to: { x: number; y: number },
   scaleFactor: number,
-  unitMode: UnitMode,
-): Promise<DragResult> {
-  const unit = await resolveUnitMode(unitMode, scaleFactor)
-  const physicalPerUnit = unit === 'logical' ? scaleFactor || 1 : 1
-  const start = new Point(from.x / physicalPerUnit, from.y / physicalPerUnit)
-  const end = new Point(to.x / physicalPerUnit, to.y / physicalPerUnit)
-
-  await mouse.drag([start, end])
-
-  return {
-    from: { x: start.x, y: start.y },
-    to: { x: end.x, y: end.y },
-    unit,
-  }
+): Promise<void> {
+  await mouse.drag([
+    await toNutPoint(from, scaleFactor),
+    await toNutPoint(to, scaleFactor),
+  ])
 }
 
 export async function scrollAt(
   point: { x: number; y: number },
   scaleFactor: number,
-  unitMode: UnitMode,
   direction: ScrollDirection,
   amount: number,
-): Promise<ScrollResult> {
-  const unit = await resolveUnitMode(unitMode, scaleFactor)
-  const physicalPerUnit = unit === 'logical' ? scaleFactor || 1 : 1
-  const x = point.x / physicalPerUnit
-  const y = point.y / physicalPerUnit
-
-  await mouse.setPosition(new Point(x, y))
+): Promise<void> {
+  await mouse.setPosition(await toNutPoint(point, scaleFactor))
   if (direction === 'up') {
     await mouse.scrollUp(amount)
   } else {
     await mouse.scrollDown(amount)
   }
-
-  return { x, y, unit, amount }
 }
 
-/** 走剪贴板再按 Mod+V：中文、emoji 和长文本都比逐键敲更稳。 */
+/** 走剪贴板再按 Mod+V：中文、emoji 和长文本都比逐键敲更稳 */
 export async function typeText(text: string): Promise<void> {
   const previous = await clipboard.readText()
   await clipboard.writeText(text)

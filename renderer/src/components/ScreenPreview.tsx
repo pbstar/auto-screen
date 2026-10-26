@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Box, FormControlLabel, Switch, Typography } from '@mui/material'
-import { GRID } from '@shared/ipc'
+import { snapToGrid } from '@shared/ipc'
 import type { WindowInfo } from '@shared/types'
 import { CANVAS, HAIRLINE, MONO_FONT, SIGNAL } from '../theme'
 import { useWindowStream } from '../hooks/useWindowStream'
@@ -24,9 +24,7 @@ interface Point {
 }
 
 function snapPoint(x: number, y: number, width: number, height: number): Point {
-  const snap = (value: number, limit: number) =>
-    Math.min(limit, Math.max(0, Math.round(value / GRID.minor) * GRID.minor))
-  return { x: snap(x, width), y: snap(y, height) }
+  return { x: snapToGrid(x, width), y: snapToGrid(y, height) }
 }
 
 export default function ScreenPreview({
