@@ -1,12 +1,18 @@
 import { useState } from 'react'
 import { Box, Button, Stack, TextField, Typography } from '@mui/material'
 import type { TokenUsage } from '@shared/agent'
+import type { SkillSummary } from '@shared/types'
 import type { AgentRunState } from '../hooks/useAgentRun'
 import { MONO_FONT } from '../theme'
+import SkillPicker from './SkillPicker'
 
 interface Props {
   windowSelected: boolean
   state: AgentRunState
+  skills: SkillSummary[]
+  selectedSkills: string[]
+  onToggleSkill: (id: string) => void
+  onRefreshSkills: () => void
   onOpenLogs: () => void
   onStart: (task: string) => Promise<void>
   onStop: () => void
@@ -22,6 +28,10 @@ function formatTokens(usage: TokenUsage): string {
 export default function TaskBar({
   windowSelected,
   state,
+  skills,
+  selectedSkills,
+  onToggleSkill,
+  onRefreshSkills,
   onOpenLogs,
   onStart,
   onStop,
@@ -83,7 +93,14 @@ export default function TaskBar({
           },
         }}
       />
-      <Stack direction="row" spacing={1} sx={{ mt: 1.25, alignItems: 'center' }}>
+      <SkillPicker
+        skills={skills}
+        selected={selectedSkills}
+        disabled={running}
+        onToggle={onToggleSkill}
+        onRefresh={onRefreshSkills}
+      />
+      <Stack direction="row" spacing={1} sx={{ mt: 1, alignItems: 'center' }}>
         <Typography
           sx={{
             fontFamily: MONO_FONT,

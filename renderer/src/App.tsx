@@ -4,7 +4,7 @@ import type { IpcResult, PermissionStatus, SkillSummary, WindowInfo } from '@sha
 import ScreenPreview from './components/ScreenPreview'
 import TaskBar from './components/TaskBar'
 import Timeline from './components/Timeline'
-import ReferencePanel from './components/ReferencePanel'
+import ToolPanel from './components/ToolPanel'
 import LogDialog from './components/LogDialog'
 import { useAgentRun } from './hooks/useAgentRun'
 
@@ -119,6 +119,10 @@ export default function App() {
           <TaskBar
             windowSelected={selectedId != null}
             state={agent.state}
+            skills={skills}
+            selectedSkills={selectedSkills}
+            onToggleSkill={toggleSkill}
+            onRefreshSkills={() => void loadSkills()}
             onOpenLogs={() => setLogOpen(true)}
             onStart={async (task) => {
               if (selectedId == null) return
@@ -129,13 +133,7 @@ export default function App() {
             onResume={() => void agent.resume()}
           />
           <Timeline items={agent.state.items} runId={agent.state.runId} />
-          <ReferencePanel
-            skills={skills}
-            selectedSkills={selectedSkills}
-            skillsLocked={agent.state.status !== 'idle'}
-            onToggleSkill={toggleSkill}
-            onRefreshSkills={() => void loadSkills()}
-          />
+          <ToolPanel />
         </Box>
       </Box>
 
