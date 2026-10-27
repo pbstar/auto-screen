@@ -1,8 +1,8 @@
 import { app } from 'electron'
 import { readdirSync, readFileSync } from 'node:fs'
 import { basename, extname, join } from 'node:path'
-import type { RuleSummary } from '../src/shared/types'
-import type { RulePrompt } from './agent/prompt'
+import type { RuleSummary } from '../../src/shared/types'
+import type { RulePrompt } from './prompt'
 import { parseFrontmatter } from './frontmatter'
 
 interface RuleDoc extends RulePrompt {

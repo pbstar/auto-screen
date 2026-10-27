@@ -6,9 +6,9 @@ import { listWindows } from '../src/core/screen'
 import { setStreamTarget } from './capture-stream'
 import { listToolSummaries } from './agent/registry'
 import { agentStatus, pauseAgent, resumeAgent, startAgent, stopAgent } from './agent/service'
-import { ensureRunsRoot, listRuns, readRun, readShot, runsRoot } from './run-store'
-import { listRules } from './rules'
-import { listSkills } from './skills'
+import { ensureRunsRoot, listRuns, readRun, readShot, runsRoot } from './agent/run-store'
+import { listRules } from './agent/rules'
+import { listSkills } from './agent/skills'
 
 function ok<T>(data: T): IpcResult<T> {
   return { ok: true, data }

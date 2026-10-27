@@ -7,7 +7,7 @@ import {
   writeFileSync,
 } from 'node:fs'
 import { basename, join } from 'node:path'
-import type { RunLog, RunMeta } from '../src/shared/types'
+import type { RunLog, RunMeta } from '../../src/shared/types'
 
 const LOG_NAME = 'run.log'
 const META_NAME = 'meta.json'
