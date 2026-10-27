@@ -3,6 +3,7 @@ import { Alert, Box } from '@mui/material'
 import type { IpcResult, PermissionStatus, SkillSummary, WindowInfo } from '@shared/types'
 import ScreenPreview from './components/ScreenPreview'
 import TaskBar from './components/TaskBar'
+import QuestionCard from './components/QuestionCard'
 import Timeline from './components/Timeline'
 import LogDialog from './components/LogDialog'
 import { useAgentRun } from './hooks/useAgentRun'
@@ -29,6 +30,7 @@ export default function App() {
   const [logOpen, setLogOpen] = useState(false)
   const [error, setError] = useState('')
   const agent = useAgentRun()
+  const question = agent.state.question
 
   const loadWindows = useCallback(async () => {
     try {
@@ -131,6 +133,14 @@ export default function App() {
             onPause={() => void agent.pause()}
             onResume={() => void agent.resume()}
           />
+          {question && (
+            <QuestionCard
+              key={question.callId}
+              question={question}
+              disabled={agent.state.status === 'stopping'}
+              onAnswer={(answer) => agent.answer(question.callId, answer)}
+            />
+          )}
           <Timeline items={agent.state.items} runId={agent.state.runId} />
         </Box>
       </Box>

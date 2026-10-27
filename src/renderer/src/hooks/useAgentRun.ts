@@ -4,6 +4,7 @@ import {
   MAX_STEPS,
   type AgentEvent,
   type PauseReason,
+  type PendingQuestion,
   type TokenUsage,
 } from '@shared/agent'
 
@@ -35,6 +36,8 @@ export interface AgentRunState {
   items: TimelineItem[]
   error: string
   configReady: boolean
+  /** 正在等待回答的问题，非空时界面显示提问卡片 */
+  question: PendingQuestion | null
 }
 
 const INITIAL: AgentRunState = {
@@ -47,6 +50,7 @@ const INITIAL: AgentRunState = {
   items: [],
   error: '',
   configReady: true,
+  question: null,
 }
 
 export function useAgentRun() {
@@ -81,6 +85,7 @@ export function useAgentRun() {
         maxSteps: status.maxSteps,
         usage: status.usage,
         configReady: status.configReady,
+        question: status.question,
       }))
     })
     return unsubscribe
@@ -114,7 +119,14 @@ export function useAgentRun() {
     }
   }, [])
 
-  return { state, start, stop, pause, resume }
+  const answer = useCallback(async (callId: string, text: string | null) => {
+    const result = await api.answerAgentQuestion({ callId, answer: text })
+    if (!result.ok) {
+      setState((previous) => ({ ...previous, error: result.error }))
+    }
+  }, [])
+
+  return { state, start, stop, pause, resume, answer }
 }
 
 function applyEvent(state: AgentRunState, event: AgentEvent): AgentRunState {
@@ -128,6 +140,7 @@ function applyEvent(state: AgentRunState, event: AgentEvent): AgentRunState {
         usage: EMPTY_USAGE,
         items: [],
         error: '',
+        question: null,
       }
     case 'shot':
       return append(state, {
@@ -174,6 +187,19 @@ function applyEvent(state: AgentRunState, event: AgentEvent): AgentRunState {
       }
     case 'usage':
       return { ...state, usage: event.usage }
+    case 'question':
+      return {
+        ...state,
+        question: {
+          callId: event.callId,
+          step: event.step,
+          question: event.question,
+          options: event.options,
+          multiple: event.multiple,
+        },
+      }
+    case 'answered':
+      return { ...state, question: null }
     case 'paused':
       return { ...state, status: 'paused', pauseReason: event.reason }
     case 'resumed':
@@ -188,6 +214,7 @@ function applyEvent(state: AgentRunState, event: AgentEvent): AgentRunState {
         step: event.steps,
         usage: event.usage,
         error: event.error ?? reasonText(event.reason),
+        question: null,
       }
   }
 }
