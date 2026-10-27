@@ -18,21 +18,22 @@ npm run dev   # 实跑界面前先征得同意
 
 | 位置 | 职责 |
 |---|---|
-| `electron/main.ts` | 窗口、生命周期、IPC 注册 |
-| `electron/agent/` | 决策循环：`loop.ts` 主循环、`service.ts` 运行生命周期与事件广播、`llm.ts` DeepSeek 封装、`prompt.ts` 系统提示、`control.ts` 暂停闸门与失败收敛、`history.ts` 图片历史、`annotate.ts` 截图标注、`mark.ts` 落点准星 |
-| `electron/agent/tools/` | 一个工具一个文件，`index.ts` 汇总注册并提供执行入口 |
-| `electron/agent/skills.ts` | 扫描 `skills/*/SKILL.md`，解析 frontmatter，按勾选返回技能正文 |
-| `electron/agent/rules.ts` | 内置规则常量 + 扫描 `rules/*.md`，规则始终注入、优先于技能 |
-| `electron/agent/frontmatter.ts` | 技能与规则共用的 frontmatter 解析 |
-| `electron/agent/run-store.ts` | 运行日志与每步截图的落盘、读取（`runs/`） |
-| `skills/` | 技能手册，一个目录一份 `SKILL.md`；`calculator/` 是示例 |
-| `rules/`（可选） | 自定义规则，一份 `.md` 一条，始终生效；目录不存在不报错 |
+| `src/main/` | 主进程：`index.ts` 窗口与生命周期、`ipc.ts` IPC 注册、`capture-stream.ts` 预览视频流、`config.ts` 模型与环境配置 |
+| `src/preload/` | contextBridge 桥接，向渲染进程暴露 `window.autoScreen` |
+| `src/agent/` | 决策循环：`loop.ts` 主循环、`service.ts` 运行生命周期与事件广播、`llm.ts` DeepSeek 封装、`prompt.ts` 系统提示、`control.ts` 暂停闸门与失败收敛、`history.ts` 图片历史、`annotate.ts` 截图标注、`mark.ts` 落点准星 |
+| `src/agent/tools/` | 一个工具一个文件，`index.ts` 汇总注册并提供执行入口 |
+| `src/agent/skills.ts` | 扫描 `skills/*/SKILL.md`，解析 frontmatter，按勾选返回技能正文 |
+| `src/agent/rules.ts` | 内置规则常量 + 扫描 `rules/*.md`，规则始终注入、优先于技能 |
+| `src/agent/frontmatter.ts` | 技能与规则共用的 frontmatter 解析 |
+| `src/agent/run-store.ts` | 运行日志与每步截图的落盘、读取（`runs/`） |
 | `src/core/` | 纯能力层：`screen.ts` 窗口与坐标换算、`input.ts` nut.js、`pointer.ts` 人工接管检测、`safety.ts` 前台激活 |
 | `src/shared/` | 类型、IPC 契约、网格常量（主进程与渲染进程共用） |
-| `renderer/src/` | React + MUI 界面，`components/`、`hooks/` |
+| `src/renderer/` | React + MUI 界面，`components/`、`hooks/` |
+| `skills/` | 技能手册，一个目录一份 `SKILL.md`；`calculator/` 是示例 |
+| `rules/`（可选） | 自定义规则，一份 `.md` 一条，始终生效；目录不存在不报错 |
 | `docs/` | 技术方案，改动前先读 |
 
-`electron/agent` 不直接调用系统 API，一律经 `src/core/`。
+`src/agent` 不直接调用系统 API，一律经 `src/core/`。
 
 ## 不能破坏的规则
 
@@ -47,7 +48,7 @@ npm run dev   # 实跑界面前先征得同意
 9. **技能只写策略不写死坐标**：用网格相对位置描述目标，要求每一步都用新截图核对，易错点写进「注意」。
 10. **暂停在步骤边界生效**；`wait` / `wait_until` / `wait_for_change` 内部每 500ms 检查暂停与终止，新增阻塞型工具必须同时接 `context.signal` 和 `context.gate`，长任务用 `context.report` 报进度。
 11. **`wait_for_change` 的基线必须是本步模型看到的那张截图**（`shot.frame`）。改成「开始等待那一刻」的截图，会在模型思考的两三秒里漏掉对手已经落子的情况。检测阈值集中在 `agent/watch.ts`，调整前先看那里的实测注释。
-12. **规则始终注入、不参与勾选**：内置规则写在 `electron/agent/rules.ts`，自定义规则读 `rules/*.md`；优先级高于技能手册。内置规则只从代码改，不要做成可关闭或可覆盖。
+12. **规则始终注入、不参与勾选**：内置规则写在 `src/agent/rules.ts`，自定义规则读 `rules/*.md`；优先级高于技能手册。内置规则只从代码改，不要做成可关闭或可覆盖。
 
 ## 代码风格
 
@@ -61,8 +62,8 @@ npm run dev   # 实跑界面前先征得同意
 - 调模型行为：`prompt.ts`（策略）、`loop.ts`（分档与终止条件）、`control.ts`（失败收敛）。
 - 加动作能力：在 `tools/` 新建文件导出 `ToolDef`，再注册到 `tools/index.ts`；坐标用 `snapToGrid`，换算走 `core/screen.ts` 与 `core/input.ts`。
 - 长流程与技能：技能系统已接入，新增技能只需在 `skills/<id>/` 下写 `SKILL.md`（frontmatter 只认 `name`、`description`），不必改代码；步数上限在 `src/shared/agent.ts`，三种等待在 `tools/wait*.ts`（引擎 `wait-runner.ts`，画面差分 `agent/watch.ts`），时间线容量在 `useAgentRun.ts`。
-- 加规则：内置规则改 `electron/agent/rules.ts`；自定义规则放 `rules/*.md`（frontmatter 可选，`name` 缺省用文件名），始终生效、不参与勾选。
-- 界面：`renderer/src/components/`；主进程与渲染进程之间新增字段先改 `src/shared/`。
+- 加规则：内置规则改 `src/agent/rules.ts`；自定义规则放 `rules/*.md`（frontmatter 可选，`name` 缺省用文件名），始终生效、不参与勾选。
+- 界面：`src/renderer/src/components/`；主进程与渲染进程之间新增字段先改 `src/shared/`。
 
 ## 验收
 
