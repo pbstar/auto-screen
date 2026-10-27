@@ -231,13 +231,20 @@ function track(payload: AgentEventPayload): void {
   if ('step' in payload) lastStep = payload.step
   if (payload.type === 'usage') lastUsage = payload.usage
   if (!active) return
-  // 工具的开始与结束配成一行轨迹：沉淀技能时模型看到的就是这些动作
+  // 工具的开始与结束配成一行轨迹，模型每步的判断也记一行：
+  // 只有坐标的话，沉淀技能时写不出「点的是哪个元素」
   if (payload.type === 'tool_started') {
     active.pending = { step: payload.step, name: payload.name, input: payload.input }
   } else if (payload.type === 'tool_finished' && active.pending) {
     active.trace.push(traceLine(active.pending, payload))
     active.pending = null
+  } else if (payload.type === 'reply' && payload.text) {
+    active.trace.push(`第 ${payload.step} 步 判断：${singleLine(payload.text).slice(0, 120)}`)
   }
+}
+
+function singleLine(text: string): string {
+  return text.replace(/\s*\n\s*/g, ' ').trim()
 }
 
 function traceLine(
@@ -247,7 +254,7 @@ function traceLine(
   const args = Object.entries(start.input)
     .map(([key, value]) => `${key}=${String(value).slice(0, 40)}`)
     .join(' ')
-  const text = end.text.replace(/\s*\n\s*/g, ' ').trim().slice(0, 120)
+  const text = singleLine(end.text).slice(0, 120)
   return `第 ${start.step} 步 ${start.name}(${args}) → ${end.isError ? '失败' : '成功'}：${text}`
 }
 

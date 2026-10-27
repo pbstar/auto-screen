@@ -59,7 +59,7 @@ function buildMessages(input: DistillInput): AgentMessage[] {
         `任务：${input.task}`,
         `目标窗口：${windowLabel(input.windowId)}`,
         '',
-        '执行轨迹（每行一步）：',
+        '执行轨迹（每步一行，含当时对界面的判断）：',
         traceText(input.trace),
       ].join('\n'),
     },
