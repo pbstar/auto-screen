@@ -1,4 +1,4 @@
-import { Box, Tooltip, Typography } from '@mui/material'
+import { Box, Typography } from '@mui/material'
 import type { ToolSummary } from '@shared/types'
 import { MONO_FONT } from '../theme'
 
@@ -27,21 +27,16 @@ export default function ToolList({ tools, error }: Props) {
   return (
     <>
       {tools.map((tool) => (
-        <Box key={tool.name} sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, py: 0.45 }}>
-          <Typography
-            sx={{ fontFamily: MONO_FONT, fontSize: 12, width: 76, flex: 'none', fontWeight: 600 }}
-          >
+        <Box key={tool.name} sx={{ py: 0.5 }}>
+          <Typography sx={{ fontFamily: MONO_FONT, fontSize: 12, fontWeight: 600 }}>
             {tool.name}
           </Typography>
-          <Tooltip title={tool.description} placement="left">
-            <Typography
-              variant="caption"
-              noWrap
-              sx={{ color: 'text.secondary', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}
-            >
-              {tool.description}
-            </Typography>
-          </Tooltip>
+          <Typography
+            variant="caption"
+            sx={{ display: 'block', color: 'text.secondary', lineHeight: 1.5 }}
+          >
+            {tool.description}
+          </Typography>
         </Box>
       ))}
     </>
