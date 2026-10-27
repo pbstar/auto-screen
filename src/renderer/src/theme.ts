@@ -37,7 +37,28 @@ export const theme = createTheme({
   components: {
     MuiButton: {
       defaultProps: { size: 'small', disableElevation: true },
-      styleOverrides: { root: { borderRadius: 6, paddingInline: 12 } },
+      styleOverrides: {
+        // 按钮统一胶囊形，和技能/规则/工具胶囊同一套语言
+        root: { borderRadius: 999, paddingInline: 14 },
+        contained: {
+          '&:hover': { backgroundColor: '#3a424e' },
+          // 禁用态不用 MUI 默认的灰块，压到很轻的墨色，避免抢视觉
+          '&.Mui-disabled': {
+            backgroundColor: 'rgba(15, 23, 42, 0.07)',
+            color: 'rgba(15, 23, 42, 0.35)',
+          },
+        },
+        // 只改无彩色描边的按钮；error 色的终止仍然保持红框
+        outlined: {
+          '&.MuiButton-colorPrimary': {
+            borderColor: HAIRLINE,
+            '&:hover': {
+              borderColor: '#c9d1db',
+              backgroundColor: 'rgba(15, 23, 42, 0.045)',
+            },
+          },
+        },
+      },
     },
     MuiOutlinedInput: {
       styleOverrides: { root: { borderRadius: 6, backgroundColor: SURFACE } },

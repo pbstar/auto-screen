@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Box, Button, Stack, TextField, Typography } from '@mui/material'
+import { Box, Button, Stack, TextField, Tooltip, Typography } from '@mui/material'
 import type { TokenUsage } from '@shared/agent'
 import type { SkillSummary } from '@shared/types'
 import type { AgentRunState, SkillOutcome } from '../hooks/useAgentRun'
@@ -42,6 +42,14 @@ function skillColor(skill: SkillOutcome): string {
   if (skill.status === 'saved') return 'success.main'
   if (skill.status === 'skipped') return 'text.secondary'
   return 'warning.main'
+}
+
+/** 开始按钮禁用时告诉用户差什么，比一块灰按钮好懂 */
+function startHint(canStart: boolean, windowSelected: boolean, task: string): string {
+  if (canStart) return ''
+  if (!windowSelected) return '先在左上角选择目标窗口'
+  if (task.trim().length === 0) return '先输入任务'
+  return '先在 .env 里配置 DEEPSEEK_API_KEY'
 }
 
 export default function TaskBar({
@@ -141,13 +149,14 @@ export default function TaskBar({
         {running ? (
           <Stack direction="row" spacing={1}>
             {paused ? (
-              <Button variant="outlined" onClick={onResume}>
+              <Button variant="outlined" sx={{ height: 30 }} onClick={onResume}>
                 继续
               </Button>
             ) : (
               <Button
                 variant="outlined"
                 disabled={state.status === 'stopping'}
+                sx={{ height: 30 }}
                 onClick={onPause}
               >
                 暂停
@@ -157,15 +166,26 @@ export default function TaskBar({
               color="error"
               variant="outlined"
               disabled={state.status === 'stopping'}
+              sx={{ height: 30 }}
               onClick={onStop}
             >
               {state.status === 'stopping' ? '终止中…' : '终止'}
             </Button>
           </Stack>
         ) : (
-          <Button variant="contained" disabled={!canStart || submitting} onClick={() => void start()}>
-            开始
-          </Button>
+          <Tooltip title={startHint(canStart, windowSelected, task)} placement="top">
+            {/* 禁用按钮不触发鼠标事件，用 span 承接悬浮 */}
+            <Box component="span" sx={{ display: 'inline-flex' }}>
+              <Button
+                variant="contained"
+                disabled={!canStart || submitting}
+                sx={{ height: 30, px: 2.25 }}
+                onClick={() => void start()}
+              >
+                开始
+              </Button>
+            </Box>
+          </Tooltip>
         )}
       </Stack>
       {paused && (
