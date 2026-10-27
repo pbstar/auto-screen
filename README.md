@@ -18,9 +18,9 @@ npm run build
 
 ## 配置
 
-```bash
-cp .env.example .env
-```
+在应用里点任务卡右上角的「⋮ → 配置模型」，填写接口地址、模型 ID 和 API Key，保存后立即生效，不用重启。配置保存在本机 `userData/model.json`，Key 不会回显、不会写进日志。
+
+也可以继续用 `.env`（`.env.example` 里有模板），界面里保存的配置优先于它：
 
 ```dotenv
 DEEPSEEK_API_KEY=sk-...
@@ -28,7 +28,7 @@ DEEPSEEK_BASE_URL=https://api.deepseek.com
 DEEPSEEK_MODEL=deepseek-flash
 ```
 
-`.env` 不进仓库；没填 Key 时界面会提示，且不会启动 Agent。改完 `.env` 需要重启应用生效。
+`.env` 不进仓库；没填 Key 时界面会提示，且不会启动 Agent。
 
 ## 系统权限
 
