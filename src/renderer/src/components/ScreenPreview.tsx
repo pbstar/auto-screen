@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Box, FormControlLabel, Switch, Typography } from '@mui/material'
+import { Box, Typography } from '@mui/material'
 import { snapToGrid } from '@shared/grid'
 import type { WindowInfo } from '@shared/types'
-import { CANVAS, HAIRLINE, MONO_FONT, SIGNAL } from '../theme'
+import { CANVAS, HAIRLINE, MONO_FONT } from '../theme'
 import { useWindowStream } from '../hooks/useWindowStream'
 import PreviewGrid from './PreviewGrid'
 import WindowSelect from './WindowSelect'
+import IconToggle from './IconToggle'
+import { GridIcon } from './icons'
 
 interface Props {
   windows: WindowInfo[]
@@ -77,7 +79,7 @@ export default function ScreenPreview({
           display: 'flex',
           alignItems: 'center',
           gap: 1.5,
-          height: 40,
+          height: 44,
           px: 1.5,
           flex: 'none',
           bgcolor: 'background.paper',
@@ -92,25 +94,14 @@ export default function ScreenPreview({
           onSelect={onSelect}
           onOpen={onRefreshWindows}
         />
-        <FormControlLabel
-          control={
-            <Switch
-              size="small"
-              checked={gridVisible}
-              onChange={(event) => onGridVisibleChange(event.target.checked)}
-              sx={{
-                '& .MuiSwitch-switchBase.Mui-checked': { color: SIGNAL },
-                '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                  bgcolor: SIGNAL,
-                  opacity: 1,
-                },
-              }}
-            />
-          }
-          label={<Typography variant="caption">网格</Typography>}
-          // 抵消 Switch 自带的内边距，让开关轨道和上方的窗口选择框左边对齐
-          sx={{ mr: 0, ml: -0.875 }}
-        />
+        {/* 网格只影响预览，发给模型的截图始终带网格；蓝色留给目标窗口，这里保持无彩色 */}
+        <IconToggle
+          checked={gridVisible}
+          onChange={onGridVisibleChange}
+          title="预览网格；发给模型的截图始终带网格"
+        >
+          <GridIcon />
+        </IconToggle>
         <Box sx={{ flex: 1 }} />
         <Typography
           sx={{
@@ -165,9 +156,22 @@ export default function ScreenPreview({
             </Typography>
           </Box>
         ) : error ? (
-          <Typography variant="caption" sx={{ color: 'error.main' }}>
-            {error}
-          </Typography>
+          <Box
+            sx={{
+              maxWidth: 420,
+              px: 2,
+              py: 1.5,
+              textAlign: 'center',
+              bgcolor: 'background.paper',
+              border: 1,
+              borderColor: 'divider',
+              borderRadius: '8px',
+            }}
+          >
+            <Typography variant="caption" sx={{ color: 'error.main' }}>
+              {error}
+            </Typography>
+          </Box>
         ) : (
           <Box
             onPointerMove={handlePointerMove}
