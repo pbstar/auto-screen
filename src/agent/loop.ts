@@ -1,16 +1,8 @@
-import {
-  EMPTY_USAGE,
-  MAX_STEPS,
-  type AgentEventPayload,
-  type AgentRunReason,
-  type PendingQuestion,
-  type ReasoningEffort,
-  type TokenUsage,
-} from '../shared/agent'
+import { MAX_STEPS, type AgentRunReason, type ReasoningEffort } from '../shared/agent'
 import type { ToolContext } from '../shared/types'
 import { captureWindow } from '../core/screen'
-import { annotateCapture, type AnnotatedShot, type ClickMark } from './annotate'
-import { appendShot, truncate, type ShotRef } from './history'
+import { annotateCapture, type AnnotatedShot } from './annotate'
+import { appendShot, truncate } from './history'
 import {
   addUsage,
   assistantMessage,
@@ -18,13 +10,11 @@ import {
   describeError,
   isAbortError,
   parseArguments,
-  type AgentMessage,
   type ToolCall,
 } from './llm'
-import { buildSystemPrompt, type RulePrompt, type SkillPrompt } from './prompts/agent'
 import { executeTool, listToolSchemas } from './tools'
 import { markOf } from './mark'
-import { FailureGuard, type PauseGate } from './control'
+import { createContext, type RunContext, type RunOptions, type RunOutcome } from './run-context'
 
 /** 动作执行后界面未必立刻重绘，截图前留一点时间，免得模型读到旧画面 */
 const SETTLE_MS = 150
@@ -35,58 +25,6 @@ const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve,
 
 export const HEAVY_EFFORT: ReasoningEffort = 'high'
 export const ROUTINE_EFFORT: ReasoningEffort = 'low'
-
-type Emit = (payload: AgentEventPayload) => void
-
-export interface RunOptions {
-  windowId: number
-  task: string
-  /** 始终生效的规则，内置与自定义都在里面 */
-  rules: RulePrompt[]
-  /** 用户勾选的技能正文，直接拼进系统提示 */
-  skills: SkillPrompt[]
-  signal: AbortSignal
-  emit: Emit
-  /** 把标注后的完整截图落到运行记录里，供大图查看 */
-  saveShot: (step: number, dataUrl: string) => void
-  gate: PauseGate
-  /** 标记鼠标键盘正在被 Agent 使用 */
-  busy: (on: boolean) => void
-  /** 向用户提问并等待回答，null 表示跳过 */
-  ask: (request: PendingQuestion) => Promise<string | null>
-}
-
-export interface RunOutcome {
-  reason: AgentRunReason
-  text?: string
-  error?: string
-  steps: number
-  usage: TokenUsage
-  durationMs: number
-}
-
-interface RunContext {
-  windowId: number
-  signal: AbortSignal
-  emit: Emit
-  saveShot: (step: number, dataUrl: string) => void
-  gate: PauseGate
-  guard: FailureGuard
-  busy: (on: boolean) => void
-  /** 向用户提问并等待回答 */
-  ask: (request: PendingQuestion) => Promise<string | null>
-  messages: AgentMessage[]
-  shots: ShotRef[]
-  usage: TokenUsage
-  steps: number
-  error?: string
-  lastText: string | null
-  mark: ClickMark | null
-  /** 上一步是否动过鼠标键盘，没动过就不用等重绘 */
-  dirty: boolean
-  /** 上一步是否有工具失败，失败后的下一步需要重新想 */
-  failed: boolean
-}
 
 export async function runAgent(options: RunOptions): Promise<RunOutcome> {
   const startedAt = Date.now()
@@ -256,29 +194,5 @@ async function invokeTool(
     // 终止时不要把中断伪装成工具失败，交给外层按 stopped 收敛
     if (isAbortError(caught)) throw caught
     return { text: truncate(describeError(caught)), isError: true }
-  }
-}
-
-function createContext(options: RunOptions): RunContext {
-  return {
-    windowId: options.windowId,
-    signal: options.signal,
-    emit: options.emit,
-    saveShot: options.saveShot,
-    gate: options.gate,
-    guard: new FailureGuard(),
-    busy: options.busy,
-    ask: options.ask,
-    messages: [
-      { role: 'system', content: buildSystemPrompt(options.rules, options.skills) },
-      { role: 'user', content: options.task },
-    ],
-    shots: [],
-    usage: EMPTY_USAGE,
-    steps: 0,
-    lastText: null,
-    mark: null,
-    dirty: false,
-    failed: false,
   }
 }
