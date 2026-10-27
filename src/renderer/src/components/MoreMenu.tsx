@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { IconButton, ListItemIcon, Menu, MenuItem, Tooltip } from '@mui/material'
-import { DocIcon, MoreIcon, SlidersIcon } from './icons'
+import { IconButton, Menu, MenuItem, Tooltip } from '@mui/material'
+import { MoreIcon } from './icons'
 
 interface Props {
   onOpenModelConfig: () => void
@@ -34,20 +34,10 @@ export default function MoreMenu({ onOpenModelConfig, onOpenLogs }: Props) {
         onClose={() => setAnchor(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        slotProps={{ paper: { sx: { mt: 0.5, minWidth: 168 } } }}
+        slotProps={{ paper: { sx: { mt: 0.5, minWidth: 132 } } }}
       >
-        <MenuItem onClick={choose(onOpenModelConfig)}>
-          <ListItemIcon sx={{ minWidth: 26 }}>
-            <SlidersIcon />
-          </ListItemIcon>
-          配置模型
-        </MenuItem>
-        <MenuItem onClick={choose(onOpenLogs)}>
-          <ListItemIcon sx={{ minWidth: 26 }}>
-            <DocIcon />
-          </ListItemIcon>
-          运行日志
-        </MenuItem>
+        <MenuItem onClick={choose(onOpenModelConfig)}>配置模型</MenuItem>
+        <MenuItem onClick={choose(onOpenLogs)}>运行日志</MenuItem>
       </Menu>
     </>
   )

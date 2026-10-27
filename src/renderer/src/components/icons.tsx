@@ -58,13 +58,13 @@ export function ChevronDownIcon({ size = 16 }: IconProps) {
   )
 }
 
-/** 三个点：更多菜单 */
+/** 竖排三个点：更多菜单 */
 export function MoreIcon({ size = 16 }: IconProps) {
   return (
     <Glyph size={size}>
-      <circle cx="3.2" cy="8" r="1.35" fill="currentColor" />
-      <circle cx="8" cy="8" r="1.35" fill="currentColor" />
-      <circle cx="12.8" cy="8" r="1.35" fill="currentColor" />
+      <circle cx="8" cy="3.5" r="1.15" fill="currentColor" />
+      <circle cx="8" cy="8" r="1.15" fill="currentColor" />
+      <circle cx="8" cy="12.5" r="1.15" fill="currentColor" />
     </Glyph>
   )
 }

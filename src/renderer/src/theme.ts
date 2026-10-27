@@ -88,6 +88,12 @@ export const theme = createTheme({
         },
       },
     },
+    MuiMenuItem: {
+      styleOverrides: {
+        // 菜单跟界面同一档字号，默认的 16px 和 48px 行高在这套紧凑布局里过大
+        root: { fontSize: 13, minHeight: 32, paddingBlock: 5 },
+      },
+    },
     MuiPopover: {
       styleOverrides: {
         paper: {
