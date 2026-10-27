@@ -1,14 +1,5 @@
 import { useState } from 'react'
-import {
-  Box,
-  Button,
-  FormControlLabel,
-  Stack,
-  Switch,
-  TextField,
-  Tooltip,
-  Typography,
-} from '@mui/material'
+import { Box, Button, Stack, TextField, Typography } from '@mui/material'
 import type { TokenUsage } from '@shared/agent'
 import type { SkillSummary } from '@shared/types'
 import type { AgentRunState, SkillOutcome } from '../hooks/useAgentRun'
@@ -16,6 +7,7 @@ import { MONO_FONT } from '../theme'
 import SkillPill from './SkillPill'
 import RulePill from './RulePill'
 import ToolPill from './ToolPill'
+import AutoSkillToggle from './AutoSkillToggle'
 
 interface Props {
   windowSelected: boolean
@@ -145,26 +137,7 @@ export default function TaskBar({
         <ToolPill />
         <Box sx={{ flex: 1 }} />
         {/* 开关只影响下一次启动，运行中收起，给暂停/终止让出位置 */}
-        {!running && (
-          <Tooltip title="任务完成后，把这次的操作流程整理成技能手册；生成的技能不会自动勾选，可在「技能」里手动选">
-            <Box sx={{ display: 'flex' }}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    size="small"
-                    checked={autoSkill}
-                    onChange={(event) => onAutoSkillChange(event.target.checked)}
-                  />
-                }
-                label="自动沉淀"
-                sx={{
-                  mx: 0,
-                  '& .MuiFormControlLabel-label': { fontSize: 12, color: 'text.secondary' },
-                }}
-              />
-            </Box>
-          </Tooltip>
-        )}
+        {!running && <AutoSkillToggle checked={autoSkill} onChange={onAutoSkillChange} />}
         {running ? (
           <Stack direction="row" spacing={1}>
             {paused ? (
