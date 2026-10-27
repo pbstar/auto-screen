@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Box, FormControlLabel, Switch, Typography } from '@mui/material'
-import { snapToGrid } from '@shared/ipc'
+import { snapToGrid } from '@shared/grid'
 import type { WindowInfo } from '@shared/types'
 import { CANVAS, HAIRLINE, MONO_FONT, SIGNAL } from '../theme'
 import { useWindowStream } from '../hooks/useWindowStream'

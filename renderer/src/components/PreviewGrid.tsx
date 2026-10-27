@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { GRID, GRID_STYLE, gridMajor } from '@shared/ipc'
+import { GRID, GRID_STYLE, gridMajor } from '@shared/grid'
 
 /** SVG 里量不到实际文字宽度，粗体数字按 0.71em 估，比实测略宽一点，宁可早收 */
 const LABEL_CHAR = GRID_STYLE.labelSize * 0.71

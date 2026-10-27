@@ -1,4 +1,4 @@
-import { snapToGrid } from '../../src/shared/ipc'
+import { snapToGrid } from '../../src/shared/grid'
 import type { ToolContext } from '../../src/shared/types'
 import type { ClickMark } from './annotate'
 
