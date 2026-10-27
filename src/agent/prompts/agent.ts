@@ -55,9 +55,7 @@ export function buildSystemPrompt(rules: RulePrompt[], skills: SkillPrompt[]): s
       '## 操作手册',
       '- 下面是用户为这类任务准备好的既定做法，与上面的通用说明冲突时以手册为准，但不能违反「规则」一节。',
     )
-    for (const skill of skills) {
-      lines.push('', `### ${skill.name}`, skill.body)
-    }
+    for (const skill of skills) lines.push('', `### ${skill.name}`, skill.body)
   }
 
   return lines.join('\n')

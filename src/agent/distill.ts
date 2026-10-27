@@ -2,7 +2,8 @@ import type { TokenUsage } from '../shared/agent'
 import type { SkillSummary } from '../shared/types'
 import { listWindows } from '../core/screen'
 import { parseFrontmatter } from './frontmatter'
-import { completeText, describeError, type AgentMessage } from './llm'
+import { chat, describeError, type AgentMessage } from './llm'
+import { DISTILL_PROMPT } from './prompts/distill'
 import { saveSkill } from './skills'
 
 /** 轨迹与正文都截断：一次沉淀不该让请求体无限变大 */
@@ -22,21 +23,6 @@ export type DistillResult =
   | { status: 'skipped'; usage: TokenUsage }
   | { status: 'failed'; error: string }
 
-const SYSTEM_PROMPT = [
-  '你在整理桌面操作手册。用户刚完成一次桌面任务，你要把过程沉淀成一份技能手册，供下次同类任务照着做。',
-  '',
-  '只输出 SKILL.md 的完整内容，不要任何解释，也不要用代码围栏：',
-  '第一行是 ---，接着是 name 与 description 两行，再一行 ---，然后是正文。',
-  '',
-  '要求：',
-  '- name 用中文，简短说明这是一件什么事；description 一句话写清适用场景。',
-  '- 正文分「## 适用场景」「## 操作步骤」「## 注意」三节；步骤按这次实际发生的顺序编号，写清每步的目标元素与动作。',
-  '- 位置用界面元素名称或相对位置（例如「顶部工具栏右侧的搜索框」），不要写像素坐标。',
-  '- 每一步都要求先用新截图核对结果再继续。',
-  '- 只写这次实际做过并验证有效的步骤，不要写推测。',
-  '- 如果这次任务没有可复用的流程（动作过少、纯一次性），只输出 SKIP。',
-].join('\n')
-
 function windowLabel(windowId: number): string {
   const win = listWindows(process.pid).find((item) => item.id === windowId)
   // 窗口可能已经关掉；标题只是给模型的上下文，拿不到就让它从任务本身推断
@@ -52,7 +38,7 @@ function traceText(lines: string[]): string {
 
 function buildMessages(input: DistillInput): AgentMessage[] {
   return [
-    { role: 'system', content: SYSTEM_PROMPT },
+    { role: 'system', content: DISTILL_PROMPT },
     {
       role: 'user',
       content: [
@@ -90,8 +76,12 @@ function parseSkill(text: string): { name: string; description: string; body: st
  */
 export async function distillSkill(input: DistillInput): Promise<DistillResult> {
   try {
-    const reply = await completeText(buildMessages(input), input.signal)
-    const parsed = parseSkill(reply.content)
+    const reply = await chat({
+      messages: buildMessages(input),
+      signal: input.signal,
+      maxTokens: 2048,
+    })
+    const parsed = parseSkill(reply.content ?? '')
     if (!parsed) return { status: 'skipped', usage: reply.usage }
     return { status: 'saved', skill: saveSkill(parsed), usage: reply.usage }
   } catch (caught) {

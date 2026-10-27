@@ -2,7 +2,7 @@ import { app } from 'electron'
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { SkillSummary } from '../shared/types'
-import type { SkillPrompt } from './prompt'
+import type { SkillPrompt } from './prompts/agent'
 import { parseFrontmatter } from './frontmatter'
 
 const SKILL_FILE = 'SKILL.md'

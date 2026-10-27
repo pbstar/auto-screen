@@ -1,7 +1,6 @@
 import OpenAI from 'openai'
 import type { ReasoningEffort, TokenUsage } from '../shared/agent'
 import { readModelConfig, type ModelConfig } from '../main/config'
-import { listToolSchemas } from './tools'
 
 export type ContentPart =
   | { type: 'text'; text: string }
@@ -52,27 +51,41 @@ function getClient(cfg: ModelConfig): OpenAI {
   return cached.sdk
 }
 
+/** 工具定义由调用方传入：只有执行步需要，规划和核对不带工具 */
+export interface ToolSchema {
+  type: 'function'
+  function: { name: string; description: string; parameters: Record<string, unknown> }
+}
+
+export interface ChatRequest {
+  messages: AgentMessage[]
+  signal: AbortSignal
+  maxTokens: number
+  /** 带上工具就是执行步，不带就是一次性的文本任务 */
+  tools?: ToolSchema[]
+  /** 有值才开思考 */
+  effort?: ReasoningEffort
+}
+
 /**
- * thinking / reasoning_effort 是 DeepSeek 的扩展参数，OpenAI SDK 类型里没有。
- * 这里集中做一次断言，其它模块只面对 AgentMessage。
+ * 所有模型请求的唯一入口。thinking / reasoning_effort 是 DeepSeek 的扩展参数，
+ * OpenAI SDK 类型里没有，只在这里做一次断言，其它模块只面对 AgentMessage。
  */
-export async function requestAssistantTurn(
-  messages: AgentMessage[],
-  signal: AbortSignal,
-  effort: ReasoningEffort,
-): Promise<AssistantTurn> {
+export async function chat(request: ChatRequest): Promise<AssistantTurn> {
   const cfg = readModelConfig()
   const params = {
     model: cfg.model,
-    messages,
-    tools: listToolSchemas(),
-    tool_choice: 'auto',
-    max_tokens: 8192,
-    thinking: { type: 'enabled' },
-    reasoning_effort: effort,
+    messages: request.messages,
+    max_tokens: request.maxTokens,
+    ...(request.tools ? { tools: request.tools, tool_choice: 'auto' } : {}),
+    ...(request.effort
+      ? { thinking: { type: 'enabled' }, reasoning_effort: request.effort }
+      : {}),
   } as unknown as ChatParams
 
-  const completion = await getClient(cfg).chat.completions.create(params, { signal })
+  const completion = await getClient(cfg).chat.completions.create(params, {
+    signal: request.signal,
+  })
   if (!('choices' in completion)) {
     throw new Error('模型返回了流式响应，当前只发送非流式请求')
   }
@@ -88,25 +101,6 @@ export async function requestAssistantTurn(
     toolCalls: (message.tool_calls ?? []) as ToolCall[],
     usage: readUsage(completion.usage),
   }
-}
-
-/**
- * 纯文本请求（沉淀技能用）：不带工具、不开思考，
- * 省下一次工具定义与推理开销。
- */
-export async function completeText(
-  messages: AgentMessage[],
-  signal: AbortSignal,
-): Promise<{ content: string; usage: TokenUsage }> {
-  const cfg = readModelConfig()
-  const params = { model: cfg.model, messages, max_tokens: 2048 } as unknown as ChatParams
-  const completion = await getClient(cfg).chat.completions.create(params, { signal })
-  if (!('choices' in completion)) {
-    throw new Error('模型返回了流式响应，当前只发送非流式请求')
-  }
-  const message = completion.choices[0]?.message
-  if (!message) throw new Error('模型没有返回消息')
-  return { content: message.content ?? '', usage: readUsage(completion.usage) }
 }
 
 /** prompt_cache_hit_tokens 是 DeepSeek 的扩展字段，SDK 类型里没有 */

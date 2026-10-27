@@ -14,15 +14,15 @@ import { appendShot, truncate, type ShotRef } from './history'
 import {
   addUsage,
   assistantMessage,
+  chat,
   describeError,
   isAbortError,
   parseArguments,
-  requestAssistantTurn,
   type AgentMessage,
   type ToolCall,
 } from './llm'
-import { buildSystemPrompt, type RulePrompt, type SkillPrompt } from './prompt'
-import { executeTool } from './tools'
+import { buildSystemPrompt, type RulePrompt, type SkillPrompt } from './prompts/agent'
+import { executeTool, listToolSchemas } from './tools'
 import { markOf } from './mark'
 import { FailureGuard, type PauseGate } from './control'
 
@@ -143,7 +143,13 @@ async function runStep(ctx: RunContext, step: number): Promise<AgentRunReason | 
   appendShot(ctx.messages, ctx.shots, shot, step)
   ctx.emit({ type: 'shot', step, image: shot.thumb, width: shot.width, height: shot.height })
 
-  const turn = await requestAssistantTurn(ctx.messages, ctx.signal, effort)
+  const turn = await chat({
+    messages: ctx.messages,
+    signal: ctx.signal,
+    maxTokens: 8192,
+    tools: listToolSchemas(),
+    effort,
+  })
   ctx.usage = addUsage(ctx.usage, turn.usage)
   ctx.emit({ type: 'usage', usage: ctx.usage, effort })
   ctx.messages.push(assistantMessage(turn))
