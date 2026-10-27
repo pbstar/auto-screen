@@ -5,6 +5,7 @@ import type { SkillSummary } from '@shared/types'
 import type { AgentRunState } from '../hooks/useAgentRun'
 import { MONO_FONT } from '../theme'
 import SkillPill from './SkillPill'
+import RulePill from './RulePill'
 import ToolPill from './ToolPill'
 
 interface Props {
@@ -113,6 +114,7 @@ export default function TaskBar({
           onToggle={onToggleSkill}
           onReload={onRefreshSkills}
         />
+        <RulePill />
         <ToolPill />
         <Box sx={{ flex: 1 }} />
         {running ? (
