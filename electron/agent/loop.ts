@@ -19,7 +19,7 @@ import {
   type ToolCall,
 } from './llm'
 import { buildSystemPrompt, type RulePrompt, type SkillPrompt } from './prompt'
-import { executeTool } from './registry'
+import { executeTool } from './tools'
 import { markOf } from './mark'
 import { FailureGuard, type PauseGate } from './control'
 

@@ -1,7 +1,7 @@
 import OpenAI from 'openai'
 import type { ReasoningEffort, TokenUsage } from '../../src/shared/agent'
 import { readModelConfig, type ModelConfig } from '../config'
-import { listToolSchemas } from './registry'
+import { listToolSchemas } from './tools'
 
 export type ContentPart =
   | { type: 'text'; text: string }
