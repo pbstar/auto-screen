@@ -6,7 +6,7 @@ import { CANVAS, HAIRLINE, MONO_FONT } from '../theme'
 import { useWindowStream } from '../hooks/useWindowStream'
 import PreviewGrid from './PreviewGrid'
 import WindowSelect from './WindowSelect'
-import IconToggle from './IconToggle'
+import TogglePill from './TogglePill'
 import { GridIcon } from './icons'
 
 interface Props {
@@ -95,13 +95,15 @@ export default function ScreenPreview({
           onOpen={onRefreshWindows}
         />
         {/* 网格只影响预览，发给模型的截图始终带网格；蓝色留给目标窗口，这里保持无彩色 */}
-        <IconToggle
+        <TogglePill
           checked={gridVisible}
           onChange={onGridVisibleChange}
+          ghost
+          label="网格"
           title="预览网格；发给模型的截图始终带网格"
         >
           <GridIcon />
-        </IconToggle>
+        </TogglePill>
         <Box sx={{ flex: 1 }} />
         <Typography
           sx={{
