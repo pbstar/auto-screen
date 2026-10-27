@@ -98,6 +98,34 @@ export async function requestAssistantTurn(
   }
 }
 
+/** assistant 消息必须原样带回 reasoning_content，缺了 DeepSeek 会返回 400 */
+export function assistantMessage(turn: AssistantTurn): AgentMessage {
+  return {
+    role: 'assistant',
+    content: turn.content,
+    ...(turn.reasoning ? { reasoning_content: turn.reasoning } : {}),
+    ...(turn.toolCalls.length > 0 ? { tool_calls: turn.toolCalls } : {}),
+  }
+}
+
+/** 参数是模型给的 JSON 字符串，解析失败按空对象处理，缺参由工具自己报 */
+export function parseArguments(raw: string): Record<string, unknown> {
+  try {
+    const parsed: unknown = JSON.parse(raw || '{}')
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : {}
+  } catch {
+    return {}
+  }
+}
+
+export function addUsage(total: TokenUsage, delta: TokenUsage): TokenUsage {
+  return {
+    prompt: total.prompt + delta.prompt,
+    completion: total.completion + delta.completion,
+    cached: total.cached + delta.cached,
+  }
+}
+
 export function isAbortError(error: unknown): boolean {
   return (
     error instanceof OpenAI.APIUserAbortError ||

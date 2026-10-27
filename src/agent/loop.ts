@@ -11,11 +11,13 @@ import { captureWindow } from '../core/screen'
 import { annotateCapture, type AnnotatedShot, type ClickMark } from './annotate'
 import { appendShot, truncate, type ShotRef } from './history'
 import {
+  addUsage,
+  assistantMessage,
   describeError,
   isAbortError,
+  parseArguments,
   requestAssistantTurn,
   type AgentMessage,
-  type AssistantTurn,
   type ToolCall,
 } from './llm'
 import { buildSystemPrompt, type RulePrompt, type SkillPrompt } from './prompt'
@@ -240,32 +242,6 @@ async function invokeTool(
     return { text: truncate(result.text), isError: false }
   } catch (caught) {
     return { text: truncate(describeError(caught)), isError: true }
-  }
-}
-
-function assistantMessage(turn: AssistantTurn): AgentMessage {
-  return {
-    role: 'assistant',
-    content: turn.content,
-    ...(turn.reasoning ? { reasoning_content: turn.reasoning } : {}),
-    ...(turn.toolCalls.length > 0 ? { tool_calls: turn.toolCalls } : {}),
-  }
-}
-
-function parseArguments(raw: string): Record<string, unknown> {
-  try {
-    const parsed: unknown = JSON.parse(raw || '{}')
-    return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : {}
-  } catch {
-    return {}
-  }
-}
-
-function addUsage(total: TokenUsage, delta: TokenUsage): TokenUsage {
-  return {
-    prompt: total.prompt + delta.prompt,
-    completion: total.completion + delta.completion,
-    cached: total.cached + delta.cached,
   }
 }
 
