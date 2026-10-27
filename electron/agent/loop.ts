@@ -18,7 +18,7 @@ import {
   type AssistantTurn,
   type ToolCall,
 } from './llm'
-import { buildSystemPrompt, type SkillPrompt } from './prompt'
+import { buildSystemPrompt, type RulePrompt, type SkillPrompt } from './prompt'
 import { executeTool } from './registry'
 import { markOf } from './mark'
 import { FailureGuard, type PauseGate } from './control'
@@ -38,6 +38,8 @@ type Emit = (payload: AgentEventPayload) => void
 export interface RunOptions {
   windowId: number
   task: string
+  /** 始终生效的规则，内置与自定义都在里面 */
+  rules: RulePrompt[]
   /** 用户勾选的技能正文，直接拼进系统提示 */
   skills: SkillPrompt[]
   signal: AbortSignal
@@ -277,7 +279,7 @@ function createContext(options: RunOptions): RunContext {
     guard: new FailureGuard(),
     busy: options.busy,
     messages: [
-      { role: 'system', content: buildSystemPrompt(options.skills) },
+      { role: 'system', content: buildSystemPrompt(options.rules, options.skills) },
       { role: 'user', content: options.task },
     ],
     shots: [],

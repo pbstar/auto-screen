@@ -9,6 +9,7 @@ const api: AutoScreenApi = {
     ipcRenderer.invoke(IPC.streamTarget, windowId),
   listTools: () => ipcRenderer.invoke(IPC.toolsList),
   listSkills: () => ipcRenderer.invoke(IPC.skillsList),
+  listRules: () => ipcRenderer.invoke(IPC.rulesList),
   permissions: () => ipcRenderer.invoke(IPC.permissions),
   startAgent: (request: AgentStartRequest) => ipcRenderer.invoke(IPC.agentStart, request),
   stopAgent: () => ipcRenderer.invoke(IPC.agentStop),

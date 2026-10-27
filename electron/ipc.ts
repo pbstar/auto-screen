@@ -7,6 +7,7 @@ import { setStreamTarget } from './capture-stream'
 import { listToolSummaries } from './agent/registry'
 import { agentStatus, pauseAgent, resumeAgent, startAgent, stopAgent } from './agent/service'
 import { ensureRunsRoot, listRuns, readRun, readShot, runsRoot } from './run-store'
+import { listRules } from './rules'
 import { listSkills } from './skills'
 
 function ok<T>(data: T): IpcResult<T> {
@@ -68,6 +69,14 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null): 
   ipcMain.handle(IPC.skillsList, () => {
     try {
       return ok(listSkills())
+    } catch (error) {
+      return fail(error)
+    }
+  })
+
+  ipcMain.handle(IPC.rulesList, () => {
+    try {
+      return ok(listRules())
     } catch (error) {
       return fail(error)
     }

@@ -14,6 +14,7 @@ import { activateWindow } from '../../src/core/safety'
 import { createPointerWatcher, type PointerWatcher } from '../../src/core/pointer'
 import { configReady, readModelConfig } from '../config'
 import { appendLog, createRun, finishRun, saveShot } from '../run-store'
+import { readRulePrompts } from '../rules'
 import { readSkillPrompts } from '../skills'
 import { PauseGate } from './control'
 import { describeError } from './llm'
@@ -42,6 +43,7 @@ export async function startAgent(
   const task = request.task.trim()
   if (!task) throw new Error('任务不能为空')
   const config = readModelConfig()
+  const rules = readRulePrompts()
   const skills = readSkillPrompts(request.skills)
   // 目标不在最前，鼠标就会点在自己身上；激活失败就不要开跑
   await activateWindow(request.windowId)
@@ -54,6 +56,12 @@ export async function startAgent(
   appendLog(
     runId,
     `模型：${config.model} · 思考强度 首步/失败恢复 ${HEAVY_EFFORT} · 常规 ${ROUTINE_EFFORT}`,
+  )
+  const customRules = rules.filter((rule) => !rule.builtin).map((rule) => rule.name)
+  appendLog(
+    runId,
+    `规则：内置 ${rules.length - customRules.length} 条 · ` +
+      `自定义 ${customRules.length > 0 ? customRules.join('、') : '无'}`,
   )
   appendLog(
     runId,
@@ -73,6 +81,7 @@ export async function startAgent(
   void runAgent({
     windowId: request.windowId,
     task,
+    rules,
     skills,
     signal: controller.signal,
     emit: (payload) => broadcast(getWindow(), runId, payload),

@@ -3,6 +3,7 @@ export const IPC = {
   streamTarget: 'stream:target',
   toolsList: 'tools:list',
   skillsList: 'skills:list',
+  rulesList: 'rules:list',
   permissions: 'app:permissions',
   agentStart: 'agent:start',
   agentStop: 'agent:stop',

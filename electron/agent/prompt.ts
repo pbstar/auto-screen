@@ -1,10 +1,18 @@
+/** 注入系统提示的规则正文：内置规则与 rules/*.md 都在这里 */
+export interface RulePrompt {
+  name: string
+  body: string
+  /** 内置规则随应用发布，运行日志据此区分来源 */
+  builtin: boolean
+}
+
 /** 注入系统提示的技能正文，来自 skills/<id>/SKILL.md */
 export interface SkillPrompt {
   name: string
   body: string
 }
 
-export function buildSystemPrompt(skills: SkillPrompt[]): string {
+export function buildSystemPrompt(rules: RulePrompt[], skills: SkillPrompt[]): string {
   const lines = [
     '你是一个桌面操作助手。用户已经替你选定了一个目标窗口，每一轮你都会收到这个窗口的最新截图。',
     '',
@@ -29,18 +37,22 @@ export function buildSystemPrompt(skills: SkillPrompt[]): string {
     '- 任务完成、或确认无法继续时，直接输出一段中文说明，不要再调用任何工具。',
     '- 宣布完成前，先看最新一张截图核对结果（比如计算器显示的数字）；和预期不一致就不要说完成，继续修正。',
     '- 说明里写清做了什么、最终结果是什么。',
-    '',
-    '## 边界',
-    '- 只操作目标窗口；不要点击任务栏、Dock、菜单栏等系统区域。',
-    '- 不要执行与任务无关的动作。',
   ]
 
-  // 手册接在通用规则之后：同一份通用前缀不受勾选影响，缓存命中更稳
+  // 规则始终注入、放在技能之前：这段前缀不随任务勾选变化，缓存命中更稳
+  lines.push(
+    '',
+    '## 规则',
+    '- 以下是必须始终遵守的硬性规则，任何操作手册和上面的通用说明与它们冲突时，以这里为准。',
+  )
+  for (const rule of rules) lines.push('', `### ${rule.name}`, rule.body)
+
+  // 手册接在规则之后：同一份规则前缀不受勾选影响
   if (skills.length > 0) {
     lines.push(
       '',
       '## 操作手册',
-      '- 下面是用户为这类任务准备好的既定做法，与上面的通用规则冲突时以手册为准；手册没覆盖的步骤再按通用规则判断。',
+      '- 下面是用户为这类任务准备好的既定做法，与上面的通用说明冲突时以手册为准，但不能违反「规则」一节。',
     )
     for (const skill of skills) {
       lines.push('', `### ${skill.name}`, skill.body)
