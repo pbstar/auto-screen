@@ -82,19 +82,47 @@ export async function requestAssistantTurn(
   }
 
   const extra = message as typeof message & { reasoning_content?: string }
-  // prompt_cache_hit_tokens 是 DeepSeek 的扩展字段，SDK 类型里没有
-  const usage = completion.usage as
-    | (NonNullable<typeof completion.usage> & { prompt_cache_hit_tokens?: number })
-    | undefined
   return {
     content: message.content ?? null,
     reasoning: extra.reasoning_content ?? null,
     toolCalls: (message.tool_calls ?? []) as ToolCall[],
-    usage: {
-      prompt: usage?.prompt_tokens ?? 0,
-      completion: usage?.completion_tokens ?? 0,
-      cached: usage?.prompt_cache_hit_tokens ?? 0,
-    },
+    usage: readUsage(completion.usage),
+  }
+}
+
+/**
+ * 纯文本请求（沉淀技能用）：不带工具、不开思考，
+ * 省下一次工具定义与推理开销。
+ */
+export async function completeText(
+  messages: AgentMessage[],
+  signal: AbortSignal,
+): Promise<{ content: string; usage: TokenUsage }> {
+  const cfg = readModelConfig()
+  const params = { model: cfg.model, messages, max_tokens: 2048 } as unknown as ChatParams
+  const completion = await getClient(cfg).chat.completions.create(params, { signal })
+  if (!('choices' in completion)) {
+    throw new Error('模型返回了流式响应，当前只发送非流式请求')
+  }
+  const message = completion.choices[0]?.message
+  if (!message) throw new Error('模型没有返回消息')
+  return { content: message.content ?? '', usage: readUsage(completion.usage) }
+}
+
+/** prompt_cache_hit_tokens 是 DeepSeek 的扩展字段，SDK 类型里没有 */
+function readUsage(
+  usage:
+    | {
+        prompt_tokens?: number
+        completion_tokens?: number
+        prompt_cache_hit_tokens?: number
+      }
+    | undefined,
+): TokenUsage {
+  return {
+    prompt: usage?.prompt_tokens ?? 0,
+    completion: usage?.completion_tokens ?? 0,
+    cached: usage?.prompt_cache_hit_tokens ?? 0,
   }
 }
 

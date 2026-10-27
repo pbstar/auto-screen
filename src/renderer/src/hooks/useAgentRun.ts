@@ -25,6 +25,13 @@ export interface TimelineItem {
   durationMs?: number
 }
 
+/** 任务结束后沉淀技能的结果，非空时任务卡下方提示一行 */
+export interface SkillOutcome {
+  status: 'saved' | 'skipped' | 'failed'
+  name?: string
+  error?: string
+}
+
 export interface AgentRunState {
   status: 'idle' | 'running' | 'paused' | 'stopping'
   runId: string
@@ -38,6 +45,7 @@ export interface AgentRunState {
   configReady: boolean
   /** 正在等待回答的问题，非空时界面显示提问卡片 */
   question: PendingQuestion | null
+  skill: SkillOutcome | null
 }
 
 const INITIAL: AgentRunState = {
@@ -51,6 +59,7 @@ const INITIAL: AgentRunState = {
   error: '',
   configReady: true,
   question: null,
+  skill: null,
 }
 
 export function useAgentRun() {
@@ -91,12 +100,15 @@ export function useAgentRun() {
     return unsubscribe
   }, [])
 
-  const start = useCallback(async (windowId: number, task: string, skills: string[]) => {
-    const result = await api.startAgent({ windowId, task, skills })
-    if (!result.ok) {
-      setState((previous) => ({ ...previous, error: result.error }))
-    }
-  }, [])
+  const start = useCallback(
+    async (windowId: number, task: string, skills: string[], autoSkill: boolean) => {
+      const result = await api.startAgent({ windowId, task, skills, autoSkill })
+      if (!result.ok) {
+        setState((previous) => ({ ...previous, error: result.error }))
+      }
+    },
+    [],
+  )
 
   const stop = useCallback(async () => {
     const result = await api.stopAgent()
@@ -141,6 +153,7 @@ function applyEvent(state: AgentRunState, event: AgentEvent): AgentRunState {
         items: [],
         error: '',
         question: null,
+        skill: null,
       }
     case 'shot':
       return append(state, {
@@ -200,6 +213,11 @@ function applyEvent(state: AgentRunState, event: AgentEvent): AgentRunState {
       }
     case 'answered':
       return { ...state, question: null }
+    case 'skill':
+      return {
+        ...state,
+        skill: { status: event.status, name: event.name, error: event.error },
+      }
     case 'paused':
       return { ...state, status: 'paused', pauseReason: event.reason }
     case 'resumed':

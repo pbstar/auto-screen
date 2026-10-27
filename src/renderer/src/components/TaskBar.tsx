@@ -1,8 +1,17 @@
 import { useState } from 'react'
-import { Box, Button, Stack, TextField, Typography } from '@mui/material'
+import {
+  Box,
+  Button,
+  FormControlLabel,
+  Stack,
+  Switch,
+  TextField,
+  Tooltip,
+  Typography,
+} from '@mui/material'
 import type { TokenUsage } from '@shared/agent'
 import type { SkillSummary } from '@shared/types'
-import type { AgentRunState } from '../hooks/useAgentRun'
+import type { AgentRunState, SkillOutcome } from '../hooks/useAgentRun'
 import { MONO_FONT } from '../theme'
 import SkillPill from './SkillPill'
 import RulePill from './RulePill'
@@ -13,8 +22,10 @@ interface Props {
   state: AgentRunState
   skills: SkillSummary[]
   selectedSkills: string[]
+  autoSkill: boolean
   onToggleSkill: (id: string) => void
   onRefreshSkills: () => void
+  onAutoSkillChange: (on: boolean) => void
   onOpenLogs: () => void
   onStart: (task: string) => Promise<void>
   onStop: () => void
@@ -27,13 +38,29 @@ function formatTokens(usage: TokenUsage): string {
   return total >= 1000 ? `${(total / 1000).toFixed(1)}k` : String(total)
 }
 
+function skillText(skill: SkillOutcome): string {
+  if (skill.status === 'saved') {
+    return `已生成技能《${skill.name}》 · 在「技能」里勾选，下次可直接复用`
+  }
+  if (skill.status === 'skipped') return '这次任务没有可复用的流程，未生成技能'
+  return `技能生成失败：${skill.error ?? '未知错误'}`
+}
+
+function skillColor(skill: SkillOutcome): string {
+  if (skill.status === 'saved') return 'success.main'
+  if (skill.status === 'skipped') return 'text.secondary'
+  return 'warning.main'
+}
+
 export default function TaskBar({
   windowSelected,
   state,
   skills,
   selectedSkills,
+  autoSkill,
   onToggleSkill,
   onRefreshSkills,
+  onAutoSkillChange,
   onOpenLogs,
   onStart,
   onStop,
@@ -117,6 +144,27 @@ export default function TaskBar({
         <RulePill />
         <ToolPill />
         <Box sx={{ flex: 1 }} />
+        {/* 开关只影响下一次启动，运行中收起，给暂停/终止让出位置 */}
+        {!running && (
+          <Tooltip title="任务完成后，把这次的操作流程整理成技能手册；生成的技能不会自动勾选，可在「技能」里手动选">
+            <Box sx={{ display: 'flex' }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    size="small"
+                    checked={autoSkill}
+                    onChange={(event) => onAutoSkillChange(event.target.checked)}
+                  />
+                }
+                label="自动沉淀"
+                sx={{
+                  mx: 0,
+                  '& .MuiFormControlLabel-label': { fontSize: 12, color: 'text.secondary' },
+                }}
+              />
+            </Box>
+          </Tooltip>
+        )}
         {running ? (
           <Stack direction="row" spacing={1}>
             {paused ? (
@@ -152,6 +200,14 @@ export default function TaskBar({
           {state.pauseReason === 'human'
             ? '检测到人工操作鼠标，已暂停；处理完点「继续」'
             : '已暂停，点「继续」恢复执行'}
+        </Typography>
+      )}
+      {state.skill && (
+        <Typography
+          variant="caption"
+          sx={{ display: 'block', mt: 0.75, color: skillColor(state.skill) }}
+        >
+          {skillText(state.skill)}
         </Typography>
       )}
       {!state.configReady && (

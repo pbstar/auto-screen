@@ -47,6 +47,8 @@ export interface AgentStartRequest {
   task: string
   /** 勾选的技能 id，对应 skills/<id>/SKILL.md */
   skills: string[]
+  /** 任务自然完成后，把这次的操作流程沉淀成技能手册 */
+  autoSkill: boolean
 }
 
 export interface AgentStatus {
@@ -113,6 +115,15 @@ export type AgentEvent =
       multiple: boolean
     })
   | (AgentEventBase & { type: 'answered'; callId: string; answer: string | null })
+  | (AgentEventBase & {
+      type: 'skill'
+      /** saved = 已写盘，skipped = 没有可复用流程，failed = 生成或写盘出错 */
+      status: 'saved' | 'skipped' | 'failed'
+      /** 生成的技能名与目录，失败或跳过时为空 */
+      name?: string
+      id?: string
+      error?: string
+    })
   | (AgentEventBase & { type: 'usage'; usage: TokenUsage; effort: ReasoningEffort })
   | (AgentEventBase & { type: 'paused'; reason: PauseReason })
   | (AgentEventBase & { type: 'resumed' })

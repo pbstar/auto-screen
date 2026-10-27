@@ -48,6 +48,15 @@ export function logEvent(runId: string, payload: AgentEventPayload): void {
         payload.answer === null ? '用户跳过提问' : `用户回答：${oneLine(payload.answer)}`,
       )
       break
+    case 'skill':
+      if (payload.status === 'saved') {
+        appendLog(runId, `沉淀技能：${payload.name} → skills/${payload.id}/SKILL.md`)
+      } else if (payload.status === 'skipped') {
+        appendLog(runId, '沉淀技能：这次没有可复用的流程，未生成')
+      } else {
+        appendLog(runId, `沉淀技能失败：${oneLine(payload.error ?? '未知错误')}`)
+      }
+      break
     case 'usage':
       appendLog(
         runId,

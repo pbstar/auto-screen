@@ -1,5 +1,5 @@
 import { app } from 'electron'
-import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { SkillSummary } from '../shared/types'
 import type { SkillPrompt } from './prompt'
@@ -61,4 +61,46 @@ export function readSkillPrompts(ids: string[]): SkillPrompt[] {
   return readAll()
     .filter((skill) => wanted.has(skill.summary.id))
     .map((skill) => ({ name: skill.summary.name, body: skill.body }))
+}
+
+function stampId(date = new Date()): string {
+  const pad = (value: number) => String(value).padStart(2, '0')
+  const day = `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}`
+  return `auto-${day}-${pad(date.getHours())}${pad(date.getMinutes())}`
+}
+
+/** 自动生成的技能永远新开目录：同名就加序号，宁可有重复也不能覆盖已有的手册 */
+function freeId(base: string): string {
+  let id = base
+  for (let n = 2; existsSync(join(skillsRoot(), id)); n += 1) id = `${base}-${n}`
+  return id
+}
+
+/** frontmatter 只写单行，正文里的换行原样保留 */
+function oneLine(value: string): string {
+  return value.replace(/\s+/g, ' ').trim().slice(0, 200)
+}
+
+/** 把沉淀出来的手册写成 skills/<id>/SKILL.md，返回它在下一次扫描里的样子 */
+export function saveSkill(input: {
+  name: string
+  description: string
+  body: string
+}): SkillSummary {
+  const id = freeId(stampId())
+  const name = oneLine(input.name)
+  const description = oneLine(input.description)
+  const dir = join(skillsRoot(), id)
+  mkdirSync(dir, { recursive: true })
+  const text = [
+    '---',
+    `name: ${name}`,
+    `description: ${description}`,
+    '---',
+    '',
+    input.body.trim(),
+    '',
+  ].join('\n')
+  writeFileSync(join(dir, SKILL_FILE), text, 'utf8')
+  return { id, name, description }
 }

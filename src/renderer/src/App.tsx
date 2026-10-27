@@ -26,6 +26,7 @@ export default function App() {
   const [permissions, setPermissions] = useState<PermissionStatus | null>(null)
   const [skills, setSkills] = useState<SkillSummary[]>([])
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
+  const [autoSkill, setAutoSkill] = useState(false)
   const [gridVisible, setGridVisible] = useState(true)
   const [logOpen, setLogOpen] = useState(false)
   const [error, setError] = useState('')
@@ -69,6 +70,12 @@ export default function App() {
       }
     })()
   }, [loadWindows, loadSkills])
+
+  // 自动沉淀写出新技能后刷新列表，「技能」胶囊里马上能看到并可勾选
+  const skill = agent.state.skill
+  useEffect(() => {
+    if (skill?.status === 'saved') void loadSkills()
+  }, [skill, loadSkills])
 
   const toggleSkill = (id: string) => {
     setSelectedSkills((previous) =>
@@ -122,12 +129,14 @@ export default function App() {
             state={agent.state}
             skills={skills}
             selectedSkills={selectedSkills}
+            autoSkill={autoSkill}
             onToggleSkill={toggleSkill}
             onRefreshSkills={() => void loadSkills()}
+            onAutoSkillChange={setAutoSkill}
             onOpenLogs={() => setLogOpen(true)}
             onStart={async (task) => {
               if (selectedId == null) return
-              await agent.start(selectedId, task, selectedSkills)
+              await agent.start(selectedId, task, selectedSkills, autoSkill)
             }}
             onStop={() => void agent.stop()}
             onPause={() => void agent.pause()}

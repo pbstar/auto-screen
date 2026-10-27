@@ -20,7 +20,8 @@ import { readRulePrompts } from './rules'
 import { readSkillPrompts } from './skills'
 import { PauseGate } from './control'
 import { describeError } from './llm'
-import { HEAVY_EFFORT, ROUTINE_EFFORT, runAgent } from './loop'
+import { HEAVY_EFFORT, ROUTINE_EFFORT, runAgent, type RunOutcome } from './loop'
+import { distillSkill } from './distill'
 import { createQuestionDesk, type QuestionDesk } from './questions'
 
 type WindowGetter = () => BrowserWindow | null
@@ -33,6 +34,14 @@ interface ActiveRun {
   watcher: PointerWatcher
   /** 提问挂起与回答，见 questions.ts */
   questions: QuestionDesk
+  /** 任务自然完成后是否沉淀技能 */
+  autoSkill: boolean
+  /** 每步一行的动作轨迹，沉淀技能时作为材料 */
+  trace: string[]
+  /** 正在执行的那次工具调用，等 tool_finished 回来合成一行轨迹 */
+  pending: { step: number; name: string; input: Record<string, unknown> } | null
+  /** 任务已经收尾、只剩技能沉淀在跑；这期间暂停与终止都不能再改界面状态 */
+  finished: boolean
 }
 
 let active: ActiveRun | null = null
@@ -72,6 +81,7 @@ export async function startAgent(
     runId,
     `技能：${skills.length > 0 ? skills.map((skill) => skill.name).join('、') : '未勾选'}`,
   )
+  if (request.autoSkill) appendLog(runId, '完成后自动沉淀技能：开启')
 
   const gate = new PauseGate()
   const watcher = createPointerWatcher(() => {
@@ -92,6 +102,10 @@ export async function startAgent(
     gate,
     watcher,
     questions,
+    autoSkill: request.autoSkill,
+    trace: [],
+    pending: null,
+    finished: false,
   }
   active = run
   seq = 0
@@ -110,7 +124,7 @@ export async function startAgent(
     busy: (on) => watcher.markBusy(on),
     ask: (request) => questions.ask(request),
   })
-    .then((outcome) => {
+    .then(async (outcome) => {
       broadcast(getWindow(), runId, {
         type: 'finished',
         reason: outcome.reason,
@@ -121,6 +135,8 @@ export async function startAgent(
         durationMs: outcome.durationMs,
       })
       if (outcome.error) appendLog(runId, `错误：${outcome.error}`)
+      run.finished = true
+      await maybeDistill(getWindow, run, task, outcome)
       finishRun(runId, outcome.reason)
     })
     .catch((error: unknown) => {
@@ -146,21 +162,28 @@ export async function startAgent(
 }
 
 export function stopAgent(getWindow: WindowGetter): void {
-  if (!active) return
-  broadcast(getWindow(), active.runId, { type: 'stopping' })
-  active.gate.resume()
-  active.controller.abort()
+  const run = active
+  if (!run) return
+  // 任务已经结束、只剩技能沉淀在跑：只取消沉淀，不再发事件，免得界面卡在「终止中」
+  if (run.finished) {
+    run.controller.abort()
+    return
+  }
+  broadcast(getWindow(), run.runId, { type: 'stopping' })
+  run.gate.resume()
+  run.controller.abort()
 }
 
 export function pauseAgent(getWindow: WindowGetter): void {
-  if (!active) return
-  if (!active.gate.pause('user')) return
-  broadcast(getWindow(), active.runId, { type: 'paused', reason: 'user' })
+  const run = active
+  if (!run || run.finished) return
+  if (!run.gate.pause('user')) return
+  broadcast(getWindow(), run.runId, { type: 'paused', reason: 'user' })
 }
 
 export async function resumeAgent(getWindow: WindowGetter): Promise<void> {
   const run = active
-  if (!run) return
+  if (!run || run.finished) return
   // 先确保目标回到最前，失败就不恢复，免得动作落空
   await activateWindow(run.windowId)
   if (active !== run || !run.gate.resume()) return
@@ -170,21 +193,21 @@ export async function resumeAgent(getWindow: WindowGetter): Promise<void> {
 
 export async function answerAgent(payload: AgentAnswer): Promise<void> {
   const run = active
-  if (!run) throw new Error('没有等待回答的问题')
+  if (!run || run.finished) throw new Error('没有等待回答的问题')
   await run.questions.answer(payload)
 }
 
 export function agentStatus(): AgentStatus {
-  // 空闲时上一轮的步数/tokens 已经没有对应的截图进度，清零，免得新会话里只剩读数
-  const running = active !== null
+  // 收尾后只剩沉淀在跑，对界面来说任务已经结束
+  const run = active?.finished ? null : active
   return {
-    running,
-    pauseReason: active?.gate.paused ?? null,
-    step: running ? lastStep : 0,
+    running: run !== null,
+    pauseReason: run?.gate.paused ?? null,
+    step: run ? lastStep : 0,
     maxSteps: MAX_STEPS,
-    usage: running ? lastUsage : EMPTY_USAGE,
+    usage: run ? lastUsage : EMPTY_USAGE,
     configReady: configReady(),
-    question: active?.questions.current ?? null,
+    question: run?.questions.current ?? null,
   }
 }
 
@@ -207,5 +230,55 @@ function broadcast(win: BrowserWindow | null, runId: string, payload: AgentEvent
 function track(payload: AgentEventPayload): void {
   if ('step' in payload) lastStep = payload.step
   if (payload.type === 'usage') lastUsage = payload.usage
+  if (!active) return
+  // 工具的开始与结束配成一行轨迹：沉淀技能时模型看到的就是这些动作
+  if (payload.type === 'tool_started') {
+    active.pending = { step: payload.step, name: payload.name, input: payload.input }
+  } else if (payload.type === 'tool_finished' && active.pending) {
+    active.trace.push(traceLine(active.pending, payload))
+    active.pending = null
+  }
+}
+
+function traceLine(
+  start: NonNullable<ActiveRun['pending']>,
+  end: Extract<AgentEventPayload, { type: 'tool_finished' }>,
+): string {
+  const args = Object.entries(start.input)
+    .map(([key, value]) => `${key}=${String(value).slice(0, 40)}`)
+    .join(' ')
+  const text = end.text.replace(/\s*\n\s*/g, ' ').trim().slice(0, 120)
+  return `第 ${start.step} 步 ${start.name}(${args}) → ${end.isError ? '失败' : '成功'}：${text}`
+}
+
+/** 任务自然完成后沉淀技能；失败或跳过都只多一条提示，不改变任务结果 */
+async function maybeDistill(
+  getWindow: WindowGetter,
+  run: ActiveRun,
+  task: string,
+  outcome: RunOutcome,
+): Promise<void> {
+  if (!run.autoSkill || outcome.reason !== 'completed' || outcome.steps < 3) return
+  const result = await distillSkill({
+    task,
+    windowId: run.windowId,
+    trace: run.trace,
+    signal: run.controller.signal,
+  })
+  // 蒸馏期间被终止：静默跳过，不发事件（文件只在拿到回复后才写）
+  if (run.controller.signal.aborted) return
+  if (result.status !== 'failed') {
+    appendLog(
+      run.runId,
+      `沉淀用量 prompt=${result.usage.prompt}（命中缓存 ${result.usage.cached}）` +
+        ` completion=${result.usage.completion}`,
+    )
+  }
+  broadcast(getWindow(), run.runId, {
+    type: 'skill',
+    status: result.status,
+    ...(result.status === 'saved' ? { name: result.skill.name, id: result.skill.id } : {}),
+    ...(result.status === 'failed' ? { error: result.error } : {}),
+  })
 }
 
