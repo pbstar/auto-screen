@@ -258,18 +258,17 @@ function applyEvent(state: AgentRunState, event: AgentEvent): AgentRunState {
 }
 
 function append(state: AgentRunState, item: TimelineItem): AgentRunState {
-  const items = state.items.length >= MAX_ITEMS
-    ? [...state.items.slice(-(MAX_ITEMS - 1)), item]
-    : [...state.items, item]
-  return { ...state, step: item.step, items }
+  return { ...state, step: item.step, items: addItem(state.items, item) }
 }
 
 /** 提示类条目只追加，不推进步数 */
 function withNote(state: AgentRunState, item: TimelineItem): AgentRunState {
-  const items = state.items.length >= MAX_ITEMS
-    ? [...state.items.slice(-(MAX_ITEMS - 1)), item]
-    : [...state.items, item]
-  return { ...state, items }
+  return { ...state, items: addItem(state.items, item) }
+}
+
+function addItem(items: TimelineItem[], item: TimelineItem): TimelineItem[] {
+  if (items.length < MAX_ITEMS) return [...items, item]
+  return [...items.slice(-(MAX_ITEMS - 1)), item]
 }
 
 function summarize(input: Record<string, unknown>): string {

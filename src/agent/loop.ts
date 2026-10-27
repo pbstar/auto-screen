@@ -120,7 +120,7 @@ async function runStep(ctx: RunContext, step: number): Promise<AgentRunReason | 
     ctx.emit({ type: 'reply', step, text: turn.content })
   }
 
-  if (turn.toolCalls.length === 0) return finishStep(ctx, shot, step)
+  if (turn.toolCalls.length === 0) return finishStep(ctx, shot, step, turn.content)
   return runToolCalls(ctx, turn.toolCalls, shot, step)
 }
 
@@ -132,11 +132,12 @@ async function finishStep(
   ctx: RunContext,
   shot: AnnotatedShot,
   step: number,
+  claim: string | null,
 ): Promise<AgentRunReason | null> {
   const { verdict, usage } = await verifyResult({
     task: ctx.task,
     plan: ctx.plan,
-    claim: ctx.lastText,
+    claim,
     image: shot.dataUrl,
     signal: ctx.signal,
   })
@@ -153,6 +154,8 @@ async function finishStep(
     ctx.error = `最终核对未通过：${problem}`
     return 'unverified'
   }
+  // 模型刚以为自己做完了，下一步要推翻这个判断，值得多想
+  ctx.failed = true
   ctx.messages.push({
     role: 'user',
     content: `最终核对未通过：${problem}\n请按任务要求继续修正，改完再说明结果。`,
