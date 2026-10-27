@@ -15,12 +15,15 @@ import {
 import { executeTool, listToolSchemas } from './tools'
 import { markOf } from './mark'
 import { planTask } from './plan'
+import { verifyResult } from './verify'
 import { createContext, type RunContext, type RunOptions, type RunOutcome } from './run-context'
 
 /** 动作执行后界面未必立刻重绘，截图前留一点时间，免得模型读到旧画面 */
 const SETTLE_MS = 150
 /** 会移动鼠标或敲键盘的工具，执行期间暂停人工接管检测 */
 const INPUT_TOOLS = new Set(['click', 'move', 'drag', 'scroll', 'type', 'key'])
+/** 核对连续两次不通过就收尾：结果没被确认，不能当作完成 */
+const MAX_VERIFY_FAILURES = 2
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
@@ -117,8 +120,44 @@ async function runStep(ctx: RunContext, step: number): Promise<AgentRunReason | 
     ctx.emit({ type: 'reply', step, text: turn.content })
   }
 
-  if (turn.toolCalls.length === 0) return 'completed'
+  if (turn.toolCalls.length === 0) return finishStep(ctx, shot, step)
   return runToolCalls(ctx, turn.toolCalls, shot, step)
+}
+
+/**
+ * 模型宣布完成：先对着任务要求核对最后一张截图。
+ * 不通过就把差距回灌让它继续修；连续两次不通过，以 unverified 收尾。
+ */
+async function finishStep(
+  ctx: RunContext,
+  shot: AnnotatedShot,
+  step: number,
+): Promise<AgentRunReason | null> {
+  const { verdict, usage } = await verifyResult({
+    task: ctx.task,
+    plan: ctx.plan,
+    claim: ctx.lastText,
+    image: shot.dataUrl,
+    signal: ctx.signal,
+  })
+  ctx.usage = addUsage(ctx.usage, usage)
+  ctx.emit({ type: 'usage', usage: ctx.usage, effort: HEAVY_EFFORT })
+  // 解析不出结论时按通过处理：格式问题不该把任务判失败
+  if (!verdict) return 'completed'
+  ctx.emit({ type: 'verify', step, ok: verdict.ok, problem: verdict.problem })
+  if (verdict.ok) return 'completed'
+
+  const problem = verdict.problem || '结果与任务要求不符'
+  ctx.verifyFailures += 1
+  if (ctx.verifyFailures >= MAX_VERIFY_FAILURES) {
+    ctx.error = `最终核对未通过：${problem}`
+    return 'unverified'
+  }
+  ctx.messages.push({
+    role: 'user',
+    content: `最终核对未通过：${problem}\n请按任务要求继续修正，改完再说明结果。`,
+  })
+  return null
 }
 
 async function runToolCalls(

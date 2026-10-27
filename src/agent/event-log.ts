@@ -51,6 +51,14 @@ export function logEvent(runId: string, payload: AgentEventPayload): void {
         payload.answer === null ? '用户跳过提问' : `用户回答：${oneLine(payload.answer)}`,
       )
       break
+    case 'verify':
+      appendLog(
+        runId,
+        payload.ok
+          ? `第 ${payload.step} 步最终核对：通过`
+          : `第 ${payload.step} 步最终核对：未通过 ${oneLine(payload.problem)}`,
+      )
+      break
     case 'skill':
       if (payload.status === 'saved') {
         appendLog(runId, `沉淀技能：${payload.name} → skills/${payload.id}/SKILL.md`)

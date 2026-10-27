@@ -65,6 +65,8 @@ export interface RunContext {
   dirty: boolean
   /** 上一步是否有工具失败，失败后的下一步需要重新想 */
   failed: boolean
+  /** 最终核对连续未通过的次数，到上限就以 unverified 收尾 */
+  verifyFailures: number
 }
 
 export function createContext(options: RunOptions): RunContext {
@@ -90,5 +92,6 @@ export function createContext(options: RunOptions): RunContext {
     mark: null,
     dirty: false,
     failed: false,
+    verifyFailures: 0,
   }
 }

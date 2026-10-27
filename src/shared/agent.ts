@@ -16,7 +16,8 @@ export const MAX_STEPS = 300
 /** 思考强度：第 1 步与失败恢复步用 high，其余步骤 low，策略固定在循环里，不做配置化 */
 export type ReasoningEffort = 'low' | 'high'
 
-export type AgentRunReason = 'completed' | 'stopped' | 'max_steps' | 'failed'
+/** unverified = 模型宣布完成，但最终核对连续未通过 */
+export type AgentRunReason = 'completed' | 'stopped' | 'max_steps' | 'failed' | 'unverified'
 
 /** user = 手动暂停，human = 检测到人工操作鼠标 */
 export type PauseReason = 'user' | 'human'
@@ -120,6 +121,13 @@ export type AgentEvent =
       multiple: boolean
     })
   | (AgentEventBase & { type: 'answered'; callId: string; answer: string | null })
+  | (AgentEventBase & {
+      type: 'verify'
+      step: number
+      ok: boolean
+      /** 不通过时的差距说明 */
+      problem: string
+    })
   | (AgentEventBase & {
       type: 'skill'
       /** saved = 已写盘，skipped = 没有可复用流程，failed = 生成或写盘出错 */

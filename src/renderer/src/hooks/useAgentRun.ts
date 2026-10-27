@@ -224,6 +224,15 @@ function applyEvent(state: AgentRunState, event: AgentEvent): AgentRunState {
       }
     case 'answered':
       return { ...state, question: null }
+    case 'verify': {
+      const note: TimelineItem = {
+        id: `verify-${event.seq}`,
+        kind: 'note',
+        step: event.step,
+        label: event.ok ? '最终核对通过' : '最终核对未通过',
+      }
+      return withNote(state, event.ok ? note : { ...note, tone: 'error', text: event.problem })
+    }
     case 'skill':
       return {
         ...state,
@@ -272,5 +281,6 @@ function summarize(input: Record<string, unknown>): string {
 function reasonText(reason: string): string {
   if (reason === 'max_steps') return '已达到步数上限'
   if (reason === 'failed') return '任务失败'
+  if (reason === 'unverified') return '结果未通过最终核对'
   return ''
 }
