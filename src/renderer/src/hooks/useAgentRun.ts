@@ -239,8 +239,11 @@ function applyEvent(state: AgentRunState, event: AgentEvent): AgentRunState {
         skill: { status: event.status, name: event.name, error: event.error },
       }
     case 'paused':
+      // 任务结束后才到的暂停一律是过期事件（收尾期间动鼠标），直接忽略
+      if (state.status === 'idle') return state
       return { ...state, status: 'paused', pauseReason: event.reason }
     case 'resumed':
+      if (state.status === 'idle') return state
       return { ...state, status: 'running', pauseReason: null }
     case 'stopping':
       return { ...state, status: 'stopping' }

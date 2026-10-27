@@ -137,6 +137,10 @@ export async function startAgent(
       })
       if (outcome.error) appendLog(runId, `错误：${outcome.error}`)
       run.finished = true
+      // 任务已结束：立刻停掉接管采样和暂停闸门。否则收尾沉淀的几秒里动一下鼠标
+      // 会再发一条暂停事件，界面卡在「暂停」而继续/终止都已经无效
+      watcher.stop()
+      gate.resume()
       await maybeDistill(getWindow, run, task, outcome)
       finishRun(runId, outcome.reason)
     })
@@ -171,6 +175,8 @@ export function stopAgent(getWindow: WindowGetter): void {
     return
   }
   broadcast(getWindow(), run.runId, { type: 'stopping' })
+  // 已经要停了，没必要再检测人手接管
+  run.watcher.stop()
   run.gate.resume()
   run.controller.abort()
 }
