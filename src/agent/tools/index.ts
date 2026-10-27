@@ -8,6 +8,7 @@ import { keyTool } from './key'
 import { waitTool } from './wait'
 import { waitUntilTool } from './wait-until'
 import { waitForChangeTool } from './wait-change'
+import { askUserTool } from './ask-user'
 import { moveTool } from './move'
 import { listWindowsTool } from './list-windows'
 
@@ -20,6 +21,7 @@ export const tools: ToolDef[] = [
   waitTool,
   waitUntilTool,
   waitForChangeTool,
+  askUserTool,
   moveTool,
   listWindowsTool,
 ]

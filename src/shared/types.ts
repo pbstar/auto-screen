@@ -1,4 +1,11 @@
-import type { AgentEvent, AgentStartRequest, AgentStatus, PauseReason } from './agent'
+import type {
+  AgentAnswer,
+  AgentEvent,
+  AgentStartRequest,
+  AgentStatus,
+  AskOption,
+  PauseReason,
+} from './agent'
 
 /** 窗口列表只给界面用来认出目标，坐标换算在 core/screen.ts 内部完成 */
 export interface WindowInfo {
@@ -34,6 +41,13 @@ export interface FrameSignature {
   blocks: Uint8Array
 }
 
+/** 给模型的提问参数，callId 与 step 由循环层补上 */
+export interface AskInput {
+  question: string
+  options: AskOption[]
+  multiple: boolean
+}
+
 export interface ToolContext {
   windowId: number
   /** 当前截图宽高，工具坐标一律以它为准 */
@@ -46,6 +60,8 @@ export interface ToolContext {
   report?: (text: string) => void
   /** 本步模型看到的那张原始截图的签名，wait_for_change 以它为基准 */
   baseline?: FrameSignature
+  /** 向用户提问并等待回答，返回 null 表示用户跳过；没有通道时不给 */
+  ask?: (input: AskInput) => Promise<string | null>
 }
 
 export interface ToolResult {
@@ -110,6 +126,7 @@ export interface AutoScreenApi {
   stopAgent(): Promise<IpcResult<null>>
   pauseAgent(): Promise<IpcResult<null>>
   resumeAgent(): Promise<IpcResult<null>>
+  answerAgentQuestion(payload: AgentAnswer): Promise<IpcResult<null>>
   agentStatus(): Promise<IpcResult<AgentStatus>>
   /** 返回取消订阅函数 */
   onAgentEvent(listener: (event: AgentEvent) => void): () => void

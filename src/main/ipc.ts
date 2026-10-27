@@ -1,11 +1,18 @@
 import { BrowserWindow, ipcMain, shell, systemPreferences } from 'electron'
 import { IPC } from '../shared/ipc'
-import type { AgentStartRequest } from '../shared/agent'
+import type { AgentAnswer, AgentStartRequest } from '../shared/agent'
 import type { IpcResult, PermissionStatus } from '../shared/types'
 import { listWindows } from '../core/screen'
 import { setStreamTarget } from './capture-stream'
 import { listToolSummaries } from '../agent/tools'
-import { agentStatus, pauseAgent, resumeAgent, startAgent, stopAgent } from '../agent/service'
+import {
+  agentStatus,
+  answerAgent,
+  pauseAgent,
+  resumeAgent,
+  startAgent,
+  stopAgent,
+} from '../agent/service'
 import { ensureRunsRoot, listRuns, readRun, readShot, runsRoot } from '../agent/run-store'
 import { listRules } from '../agent/rules'
 import { listSkills } from '../agent/skills'
@@ -120,6 +127,15 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null): 
   ipcMain.handle(IPC.agentResume, async () => {
     try {
       await resumeAgent(getMainWindow)
+      return ok(null)
+    } catch (error) {
+      return fail(error)
+    }
+  })
+
+  ipcMain.handle(IPC.agentAnswer, async (_event, payload: AgentAnswer) => {
+    try {
+      await answerAgent(payload)
       return ok(null)
     } catch (error) {
       return fail(error)

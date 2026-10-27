@@ -9,6 +9,7 @@ export const IPC = {
   agentStop: 'agent:stop',
   agentPause: 'agent:pause',
   agentResume: 'agent:resume',
+  agentAnswer: 'agent:answer',
   agentStatus: 'agent:status',
   agentEvent: 'agent:event',
   runsList: 'runs:list',

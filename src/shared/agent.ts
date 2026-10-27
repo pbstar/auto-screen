@@ -21,6 +21,27 @@ export type AgentRunReason = 'completed' | 'stopped' | 'max_steps' | 'failed'
 /** user = 手动暂停，human = 检测到人工操作鼠标 */
 export type PauseReason = 'user' | 'human'
 
+/** 提问的选项，description 是可选的补充说明 */
+export interface AskOption {
+  label: string
+  description?: string
+}
+
+/** 等待用户回答的问题；callId 把回答对回这次工具调用 */
+export interface PendingQuestion {
+  callId: string
+  step: number
+  question: string
+  options: AskOption[]
+  multiple: boolean
+}
+
+/** 用户对提问的回答，answer 为 null 表示跳过 */
+export interface AgentAnswer {
+  callId: string
+  answer: string | null
+}
+
 export interface AgentStartRequest {
   windowId: number
   task: string
@@ -36,6 +57,8 @@ export interface AgentStatus {
   maxSteps: number
   usage: TokenUsage
   configReady: boolean
+  /** 正在等待用户回答的问题，界面刷新后据此恢复 */
+  question: PendingQuestion | null
 }
 
 export interface AgentEventBase {
@@ -81,6 +104,15 @@ export type AgentEvent =
       /** 长任务的进度文案，如「已等待 00:30 / 05:00」 */
       text: string
     })
+  | (AgentEventBase & {
+      type: 'question'
+      step: number
+      callId: string
+      question: string
+      options: AskOption[]
+      multiple: boolean
+    })
+  | (AgentEventBase & { type: 'answered'; callId: string; answer: string | null })
   | (AgentEventBase & { type: 'usage'; usage: TokenUsage; effort: ReasoningEffort })
   | (AgentEventBase & { type: 'paused'; reason: PauseReason })
   | (AgentEventBase & { type: 'resumed' })

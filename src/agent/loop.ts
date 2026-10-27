@@ -3,6 +3,7 @@ import {
   MAX_STEPS,
   type AgentEventPayload,
   type AgentRunReason,
+  type PendingQuestion,
   type ReasoningEffort,
   type TokenUsage,
 } from '../shared/agent'
@@ -51,6 +52,8 @@ export interface RunOptions {
   gate: PauseGate
   /** 标记鼠标键盘正在被 Agent 使用 */
   busy: (on: boolean) => void
+  /** 向用户提问并等待回答，null 表示跳过 */
+  ask: (request: PendingQuestion) => Promise<string | null>
 }
 
 export interface RunOutcome {
@@ -70,6 +73,8 @@ interface RunContext {
   gate: PauseGate
   guard: FailureGuard
   busy: (on: boolean) => void
+  /** 向用户提问并等待回答 */
+  ask: (request: PendingQuestion) => Promise<string | null>
   messages: AgentMessage[]
   shots: ShotRef[]
   usage: TokenUsage
@@ -178,6 +183,7 @@ async function runToolCalls(
       gate: ctx.gate,
       report: (text) => ctx.emit({ type: 'tool_progress', step, callId: call.id, text }),
       baseline: shot.frame,
+      ask: (input) => ctx.ask({ ...input, callId: call.id, step }),
     }
     const result = await runOneTool(ctx, call, context, step)
     const abort = ctx.guard.observe(call.function.name, result.input, result.text, result.isError)
@@ -241,6 +247,8 @@ async function invokeTool(
     const result = await executeTool(name, input, context)
     return { text: truncate(result.text), isError: false }
   } catch (caught) {
+    // 终止时不要把中断伪装成工具失败，交给外层按 stopped 收敛
+    if (isAbortError(caught)) throw caught
     return { text: truncate(describeError(caught)), isError: true }
   }
 }
@@ -254,6 +262,7 @@ function createContext(options: RunOptions): RunContext {
     gate: options.gate,
     guard: new FailureGuard(),
     busy: options.busy,
+    ask: options.ask,
     messages: [
       { role: 'system', content: buildSystemPrompt(options.rules, options.skills) },
       { role: 'user', content: options.task },

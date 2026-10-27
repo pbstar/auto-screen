@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto'
 import {
   EMPTY_USAGE,
   MAX_STEPS,
+  type AgentAnswer,
   type AgentEvent,
   type AgentEventPayload,
   type AgentStartRequest,
@@ -19,6 +20,7 @@ import { readSkillPrompts } from './skills'
 import { PauseGate } from './control'
 import { describeError } from './llm'
 import { HEAVY_EFFORT, ROUTINE_EFFORT, runAgent } from './loop'
+import { createQuestionDesk, type QuestionDesk } from './questions'
 
 type WindowGetter = () => BrowserWindow | null
 
@@ -28,6 +30,8 @@ interface ActiveRun {
   controller: AbortController
   gate: PauseGate
   watcher: PointerWatcher
+  /** 提问挂起与回答，见 questions.ts */
+  questions: QuestionDesk
 }
 
 let active: ActiveRun | null = null
@@ -73,7 +77,22 @@ export async function startAgent(
     if (!gate.pause('human')) return
     broadcast(getWindow(), runId, { type: 'paused', reason: 'human' })
   })
-  active = { runId, windowId: request.windowId, controller, gate, watcher }
+  const questions = createQuestionDesk({
+    signal: controller.signal,
+    setBusy: (on) => watcher.markBusy(on),
+    emit: (payload) => broadcast(getWindow(), runId, payload),
+    showApp: () => focusWindow(getWindow()),
+    activateTarget: () => activateWindow(request.windowId).catch(() => {}),
+  })
+  const run: ActiveRun = {
+    runId,
+    windowId: request.windowId,
+    controller,
+    gate,
+    watcher,
+    questions,
+  }
+  active = run
   seq = 0
   lastStep = 0
   lastUsage = EMPTY_USAGE
@@ -88,6 +107,7 @@ export async function startAgent(
     saveShot: (step, dataUrl) => saveShot(runId, step, dataUrl),
     gate,
     busy: (on) => watcher.markBusy(on),
+    ask: (request) => questions.ask(request),
   })
     .then((outcome) => {
       broadcast(getWindow(), runId, {
@@ -120,11 +140,7 @@ export async function startAgent(
       gate.resume()
       active = null
       // 运行期间目标窗口在最前，结束时把本窗口带回前台，用户能立刻看到结果
-      const win = getWindow()
-      if (win && !win.isDestroyed()) {
-        win.show()
-        win.focus()
-      }
+      focusWindow(getWindow())
     })
 }
 
@@ -151,6 +167,12 @@ export async function resumeAgent(getWindow: WindowGetter): Promise<void> {
   broadcast(getWindow(), run.runId, { type: 'resumed' })
 }
 
+export async function answerAgent(payload: AgentAnswer): Promise<void> {
+  const run = active
+  if (!run) throw new Error('没有等待回答的问题')
+  await run.questions.answer(payload)
+}
+
 export function agentStatus(): AgentStatus {
   // 空闲时上一轮的步数/tokens 已经没有对应的截图进度，清零，免得新会话里只剩读数
   const running = active !== null
@@ -161,7 +183,15 @@ export function agentStatus(): AgentStatus {
     maxSteps: MAX_STEPS,
     usage: running ? lastUsage : EMPTY_USAGE,
     configReady: configReady(),
+    question: active?.questions.current ?? null,
   }
+}
+
+/** 主窗口可能已关闭，统一在入口挡住 */
+function focusWindow(win: BrowserWindow | null): void {
+  if (!win || win.isDestroyed()) return
+  win.show()
+  win.focus()
 }
 
 function broadcast(win: BrowserWindow | null, runId: string, payload: AgentEventPayload): void {
@@ -209,6 +239,21 @@ function logEvent(runId: string, payload: AgentEventPayload): void {
       break
     case 'tool_progress':
       // 进度每十秒一条，落盘只会把 run.log 冲垮；总耗时看 tool_finished
+      break
+    case 'question': {
+      const labels = payload.options.map((option) => option.label).join(' / ')
+      appendLog(
+        runId,
+        `第 ${payload.step} 步 提问：${oneLine(payload.question)}` +
+          (labels ? `（选项：${labels}）` : ''),
+      )
+      break
+    }
+    case 'answered':
+      appendLog(
+        runId,
+        payload.answer === null ? '用户跳过提问' : `用户回答：${oneLine(payload.answer)}`,
+      )
       break
     case 'usage':
       appendLog(

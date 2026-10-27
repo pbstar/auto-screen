@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import { IPC } from '../shared/ipc'
-import type { AgentEvent, AgentStartRequest } from '../shared/agent'
+import type { AgentAnswer, AgentEvent, AgentStartRequest } from '../shared/agent'
 import type { AutoScreenApi } from '../shared/types'
 
 const api: AutoScreenApi = {
@@ -15,6 +15,7 @@ const api: AutoScreenApi = {
   stopAgent: () => ipcRenderer.invoke(IPC.agentStop),
   pauseAgent: () => ipcRenderer.invoke(IPC.agentPause),
   resumeAgent: () => ipcRenderer.invoke(IPC.agentResume),
+  answerAgentQuestion: (payload: AgentAnswer) => ipcRenderer.invoke(IPC.agentAnswer, payload),
   agentStatus: () => ipcRenderer.invoke(IPC.agentStatus),
   onAgentEvent: (listener: (event: AgentEvent) => void) => {
     const handler = (_event: IpcRendererEvent, payload: AgentEvent) => listener(payload)
