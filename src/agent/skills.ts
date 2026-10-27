@@ -70,17 +70,18 @@ function stampId(date = new Date()): string {
 }
 
 /**
- * 目录名直接用技能名：在 skills/ 里一眼能看出是干什么的。
- * 去掉路径非法字符与首尾的点，限长 40；名字不可用时退回时间戳。
+ * 目录名优先用模型给出的英文 slug，读起来比时间戳有意义；
+ * 只保留小写字母、数字和短横线，不合格时退回时间戳。
  */
-function idFromName(name: string): string {
-  const id = name
-    .replace(/[\\/:*?"<>|]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/^[-.]+/, '')
+function slugOf(value: string | null | undefined): string | null {
+  if (!value) return null
+  const slug = value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+/, '')
     .slice(0, 40)
-    .replace(/[-.]+$/, '')
-  return id || stampId()
+    .replace(/-+$/, '')
+  return slug.length >= 2 ? slug : null
 }
 
 /** 自动生成的技能永远新开目录：同名就加序号，宁可有重复也不能覆盖已有的手册 */
@@ -95,15 +96,17 @@ function oneLine(value: string): string {
   return value.replace(/\s+/g, ' ').trim().slice(0, 200)
 }
 
-/** 把沉淀出来的手册写成 skills/<id>/SKILL.md，返回它在下一次扫描里的样子 */
+/** 把沉淀出来的手册写成 skills/<slug>/SKILL.md，返回它在下一次扫描里的样子 */
 export function saveSkill(input: {
+  /** 模型给出的英文目录名，不合规时回退到时间戳 */
+  id?: string | null
   name: string
   description: string
   body: string
 }): SkillSummary {
   const name = oneLine(input.name)
   const description = oneLine(input.description)
-  const id = freeId(idFromName(name))
+  const id = freeId(slugOf(input.id) ?? stampId())
   const dir = join(skillsRoot(), id)
   mkdirSync(dir, { recursive: true })
   const text = [

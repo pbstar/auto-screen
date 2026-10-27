@@ -60,14 +60,21 @@ function stripWrapper(text: string): string {
   return start >= 0 ? body.slice(start).trim() : ''
 }
 
-function parseSkill(text: string): { name: string; description: string; body: string } | null {
+function parseSkill(
+  text: string,
+): { id: string | null; name: string; description: string; body: string } | null {
   const content = stripWrapper(text)
   if (!content) return null
   const { meta, body } = parseFrontmatter(content)
   const name = meta.name?.trim()
   const trimmed = body.trim().slice(0, MAX_BODY)
   if (!name || !trimmed) return null
-  return { name, description: meta.description?.trim() ?? '', body: trimmed }
+  return {
+    id: meta.id?.trim() ?? null,
+    name,
+    description: meta.description?.trim() ?? '',
+    body: trimmed,
+  }
 }
 
 /**
