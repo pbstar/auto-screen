@@ -69,6 +69,20 @@ function stampId(date = new Date()): string {
   return `auto-${day}-${pad(date.getHours())}${pad(date.getMinutes())}`
 }
 
+/**
+ * 目录名直接用技能名：在 skills/ 里一眼能看出是干什么的。
+ * 去掉路径非法字符与首尾的点，限长 40；名字不可用时退回时间戳。
+ */
+function idFromName(name: string): string {
+  const id = name
+    .replace(/[\\/:*?"<>|]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/^[-.]+/, '')
+    .slice(0, 40)
+    .replace(/[-.]+$/, '')
+  return id || stampId()
+}
+
 /** 自动生成的技能永远新开目录：同名就加序号，宁可有重复也不能覆盖已有的手册 */
 function freeId(base: string): string {
   let id = base
@@ -87,9 +101,9 @@ export function saveSkill(input: {
   description: string
   body: string
 }): SkillSummary {
-  const id = freeId(stampId())
   const name = oneLine(input.name)
   const description = oneLine(input.description)
+  const id = freeId(idFromName(name))
   const dir = join(skillsRoot(), id)
   mkdirSync(dir, { recursive: true })
   const text = [
