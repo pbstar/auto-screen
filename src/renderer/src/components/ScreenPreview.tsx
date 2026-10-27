@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Box, Typography } from '@mui/material'
 import { snapToGrid } from '@shared/grid'
 import type { WindowInfo } from '@shared/types'
@@ -7,7 +7,7 @@ import { useWindowStream } from '../hooks/useWindowStream'
 import PreviewGrid from './PreviewGrid'
 import WindowSelect from './WindowSelect'
 import TogglePill from './TogglePill'
-import { GridIcon } from './icons'
+import { AlertIcon, GridIcon, MonitorIcon } from './icons'
 
 interface Props {
   windows: WindowInfo[]
@@ -149,31 +149,17 @@ export default function ScreenPreview({
         }}
       >
         {windowId == null ? (
-          <Box sx={{ textAlign: 'center' }}>
-            <Typography sx={{ fontSize: 12.5, fontWeight: 500 }}>还没有捕获窗口</Typography>
-            <Typography variant="caption" sx={{ display: 'block', mt: 0.75, color: 'text.secondary' }}>
-              从左上角选择一个窗口
-              <br />
-              画面会实时出现在这里
-            </Typography>
-          </Box>
-        ) : error ? (
-          <Box
-            sx={{
-              maxWidth: 420,
-              px: 2,
-              py: 1.5,
-              textAlign: 'center',
-              bgcolor: 'background.paper',
-              border: 1,
-              borderColor: 'divider',
-              borderRadius: '8px',
-            }}
+          <PreviewNotice
+            tone="empty"
+            title="还没有选择窗口"
+            hint="从左上角选择一个窗口，画面会实时出现在这里"
           >
-            <Typography variant="caption" sx={{ color: 'error.main' }}>
-              {error}
-            </Typography>
-          </Box>
+            <MonitorIcon />
+          </PreviewNotice>
+        ) : error ? (
+          <PreviewNotice tone="error" title="预览不可用" hint={error}>
+            <AlertIcon />
+          </PreviewNotice>
         ) : (
           <Box
             onPointerMove={handlePointerMove}
@@ -216,6 +202,44 @@ export default function ScreenPreview({
           </Box>
         )}
       </Box>
+    </Box>
+  )
+}
+
+interface NoticeProps {
+  tone: 'empty' | 'error'
+  title: string
+  hint: string
+  children: ReactNode
+}
+
+/** 预览区的空态与错误态：圆底图标 + 标题 + 说明，不再用带边框的小卡片 */
+function PreviewNotice({ tone, title, hint, children }: NoticeProps) {
+  const failed = tone === 'error'
+  return (
+    <Box sx={{ textAlign: 'center', maxWidth: 340, px: 3 }}>
+      <Box
+        sx={{
+          width: 44,
+          height: 44,
+          mx: 'auto',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: '50%',
+          bgcolor: failed ? 'rgba(207, 46, 46, 0.08)' : 'rgba(15, 23, 42, 0.05)',
+          color: failed ? 'error.main' : 'text.disabled',
+        }}
+      >
+        {children}
+      </Box>
+      <Typography sx={{ mt: 1.5, fontSize: 12.5, fontWeight: 500 }}>{title}</Typography>
+      <Typography
+        variant="caption"
+        sx={{ display: 'block', mt: 0.5, color: 'text.secondary', lineHeight: 1.7 }}
+      >
+        {hint}
+      </Typography>
     </Box>
   )
 }
