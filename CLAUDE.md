@@ -22,7 +22,10 @@ npm run dev   # 实跑界面前先征得同意
 | `electron/agent/` | 决策循环：`loop.ts` 主循环、`service.ts` 运行生命周期与事件广播、`llm.ts` DeepSeek 封装、`prompt.ts` 系统提示、`control.ts` 暂停闸门与失败收敛、`history.ts` 图片历史、`annotate.ts` 截图标注、`mark.ts` 落点准星 |
 | `electron/agent/tools/` | 一个工具一个文件，`index.ts` 汇总注册 |
 | `electron/skills.ts` | 扫描 `skills/*/SKILL.md`，解析 frontmatter，按勾选返回技能正文 |
+| `electron/rules.ts` | 内置规则常量 + 扫描 `rules/*.md`，规则始终注入、优先于技能 |
+| `electron/frontmatter.ts` | 技能与规则共用的 frontmatter 解析 |
 | `skills/` | 技能手册，一个目录一份 `SKILL.md`；`calculator/` 是示例 |
+| `rules/`（可选） | 自定义规则，一份 `.md` 一条，始终生效；目录不存在不报错 |
 | `src/core/` | 纯能力层：`screen.ts` 窗口与坐标换算、`input.ts` nut.js、`pointer.ts` 人工接管检测、`safety.ts` 前台激活 |
 | `src/shared/` | 类型、IPC 契约、网格常量（主进程与渲染进程共用） |
 | `renderer/src/` | React + MUI 界面，`components/`、`hooks/` |
@@ -39,10 +42,11 @@ npm run dev   # 实跑界面前先征得同意
 5. **图片历史只保留最近 2 张**（`KEEP_IMAGES`），更早的降级成一行文字。
 6. **工具只做动作**：失败一律抛错，日志、时间线、失败收敛都由循环层处理，工具里不要重复。
 7. **不泄露密钥**：`.env` 不入库；Key 不明文展示、不写日志（`run-store.ts` 已有脱敏）。
-8. **技能靠用户勾选注入**，不做自动匹配；手册追加在通用规则之后，不勾选时系统提示前缀保持不变。
+8. **技能靠用户勾选注入**，不做自动匹配；手册追加在规则层之后，不勾选时系统提示前缀保持不变。
 9. **技能只写策略不写死坐标**：用网格相对位置描述目标，要求每一步都用新截图核对，易错点写进「注意」。
-8. **暂停在步骤边界生效**；`wait` / `wait_until` / `wait_for_change` 内部每 500ms 检查暂停与终止，新增阻塞型工具必须同时接 `context.signal` 和 `context.gate`，长任务用 `context.report` 报进度。
-9. **`wait_for_change` 的基线必须是本步模型看到的那张截图**（`shot.frame`）。改成「开始等待那一刻」的截图，会在模型思考的两三秒里漏掉对手已经落子的情况。检测阈值集中在 `agent/watch.ts`，调整前先看那里的实测注释。
+10. **暂停在步骤边界生效**；`wait` / `wait_until` / `wait_for_change` 内部每 500ms 检查暂停与终止，新增阻塞型工具必须同时接 `context.signal` 和 `context.gate`，长任务用 `context.report` 报进度。
+11. **`wait_for_change` 的基线必须是本步模型看到的那张截图**（`shot.frame`）。改成「开始等待那一刻」的截图，会在模型思考的两三秒里漏掉对手已经落子的情况。检测阈值集中在 `agent/watch.ts`，调整前先看那里的实测注释。
+12. **规则始终注入、不参与勾选**：内置规则写在 `electron/rules.ts`，自定义规则读 `rules/*.md`；优先级高于技能手册。内置规则只从代码改，不要做成可关闭或可覆盖。
 
 ## 代码风格
 
@@ -56,6 +60,7 @@ npm run dev   # 实跑界面前先征得同意
 - 调模型行为：`prompt.ts`（策略）、`loop.ts`（分档与终止条件）、`control.ts`（失败收敛）。
 - 加动作能力：在 `tools/` 新建文件导出 `ToolDef`，再注册到 `tools/index.ts`；坐标用 `snapToGrid`，换算走 `core/screen.ts` 与 `core/input.ts`。
 - 长流程与技能：技能系统已接入，新增技能只需在 `skills/<id>/` 下写 `SKILL.md`（frontmatter 只认 `name`、`description`），不必改代码；步数上限在 `src/shared/agent.ts`，三种等待在 `tools/wait*.ts`（引擎 `wait-runner.ts`，画面差分 `agent/watch.ts`），时间线容量在 `useAgentRun.ts`。
+- 加规则：内置规则改 `electron/rules.ts`；自定义规则放 `rules/*.md`（frontmatter 可选，`name` 缺省用文件名），始终生效、不参与勾选。
 - 界面：`renderer/src/components/`；主进程与渲染进程之间新增字段先改 `src/shared/`。
 
 ## 验收
