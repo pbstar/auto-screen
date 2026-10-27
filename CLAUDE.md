@@ -18,7 +18,7 @@ npm run dev   # 实跑界面前先征得同意
 
 | 位置 | 职责 |
 |---|---|
-| `src/main/` | 主进程：`index.ts` 窗口与生命周期、`ipc.ts` IPC 注册、`capture-stream.ts` 预览视频流、`config.ts` 模型配置（`userData/model.json` 与 `.env`） |
+| `src/main/` | 主进程：`index.ts` 窗口与生命周期、`ipc.ts` IPC 注册、`capture-stream.ts` 预览视频流、`config.ts` 模型配置（`userData/model.json`） |
 | `src/preload/` | contextBridge 桥接，向渲染进程暴露 `window.autoScreen` |
 | `src/agent/` | 决策循环：`loop.ts` 主循环、`run-context.ts` 运行上下文、`plan.ts` 开始前定流程、`verify.ts` 完成后核对、`service.ts` 运行生命周期与事件广播、`llm.ts` 模型请求入口 `chat()`、`prompts/` 各类系统提示、`control.ts` 暂停闸门与失败收敛、`questions.ts` 提问挂起、`distill.ts` 技能沉淀、`event-log.ts` 事件落日志、`history.ts` 图片历史、`annotate.ts` 截图标注、`mark.ts` 落点准星 |
 | `src/agent/tools/` | 一个工具一个文件，`index.ts` 汇总注册并提供执行入口 |
@@ -43,7 +43,7 @@ npm run dev   # 实跑界面前先征得同意
 4. **思考强度分档写死在循环里**：规划与最终核对用 `high`，执行步只在失败恢复（工具失败或核对未通过）后用 `high`，其余 `low`，不做配置项。
 5. **图片历史只保留最近 2 张**（`KEEP_IMAGES`），更早的降级成一行文字。
 6. **工具只做动作**：失败一律抛错，日志、时间线、失败收敛都由循环层处理，工具里不要重复。
-7. **不泄露密钥**：`.env` 不入库；界面保存的模型配置写 `userData/model.json`（0600），优先于 `.env`；Key 不明文展示、不写日志（`run-store.ts` 已有脱敏），IPC 只回传脱敏后的提示。
+7. **不泄露密钥**：模型配置只存在 `userData/model.json`（0600），不随仓库走，不引入 `.env` 读取；Key 不明文展示、不写日志（`run-store.ts` 已有脱敏），IPC 只回传脱敏后的提示。
 8. **技能靠用户勾选注入**，不做自动匹配；手册追加在规则层之后，不勾选时系统提示前缀保持不变。
 9. **技能只写策略不写死坐标**：用网格相对位置描述目标，要求每一步都用新截图核对，易错点写进「注意」。
 10. **暂停在步骤边界生效**；`wait` / `wait_until` / `wait_for_change` 内部每 500ms 检查暂停与终止，新增阻塞型工具必须同时接 `context.signal` 和 `context.gate`，长任务用 `context.report` 报进度。
