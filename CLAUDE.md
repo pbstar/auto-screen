@@ -20,7 +20,7 @@ npm run dev   # 实跑界面前先征得同意
 |---|---|
 | `src/main/` | 主进程：`index.ts` 窗口与生命周期、`ipc.ts` IPC 注册、`capture-stream.ts` 预览视频流、`config.ts` 模型与环境配置 |
 | `src/preload/` | contextBridge 桥接，向渲染进程暴露 `window.autoScreen` |
-| `src/agent/` | 决策循环：`loop.ts` 主循环、`service.ts` 运行生命周期与事件广播、`llm.ts` DeepSeek 封装、`prompt.ts` 系统提示、`control.ts` 暂停闸门与失败收敛、`history.ts` 图片历史、`annotate.ts` 截图标注、`mark.ts` 落点准星 |
+| `src/agent/` | 决策循环：`loop.ts` 主循环、`service.ts` 运行生命周期与事件广播、`llm.ts` DeepSeek 封装、`prompt.ts` 系统提示、`control.ts` 暂停闸门与失败收敛、`questions.ts` 提问挂起、`history.ts` 图片历史、`annotate.ts` 截图标注、`mark.ts` 落点准星 |
 | `src/agent/tools/` | 一个工具一个文件，`index.ts` 汇总注册并提供执行入口 |
 | `src/agent/skills.ts` | 扫描 `skills/*/SKILL.md`，解析 frontmatter，按勾选返回技能正文 |
 | `src/agent/rules.ts` | 内置规则常量 + 扫描 `rules/*.md`，规则始终注入、优先于技能 |
@@ -49,6 +49,7 @@ npm run dev   # 实跑界面前先征得同意
 10. **暂停在步骤边界生效**；`wait` / `wait_until` / `wait_for_change` 内部每 500ms 检查暂停与终止，新增阻塞型工具必须同时接 `context.signal` 和 `context.gate`，长任务用 `context.report` 报进度。
 11. **`wait_for_change` 的基线必须是本步模型看到的那张截图**（`shot.frame`）。改成「开始等待那一刻」的截图，会在模型思考的两三秒里漏掉对手已经落子的情况。检测阈值集中在 `agent/watch.ts`，调整前先看那里的实测注释。
 12. **规则始终注入、不参与勾选**：内置规则写在 `src/agent/rules.ts`，自定义规则读 `rules/*.md`；优先级高于技能手册。内置规则只从代码改，不要做成可关闭或可覆盖。
+13. **提问等待期间压住接管检测**：`ask_user` 挂起时 `watcher.markBusy(true)`，答复或终止时释放；回答后先激活目标窗口再放行循环，否则下一步会截到本应用，或把用户点选项误判成人工接管。
 
 ## 代码风格
 
