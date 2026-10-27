@@ -20,7 +20,7 @@ npm run dev   # 实跑界面前先征得同意
 |---|---|
 | `src/main/` | 主进程：`index.ts` 窗口与生命周期、`ipc.ts` IPC 注册、`capture-stream.ts` 预览视频流、`config.ts` 模型与环境配置 |
 | `src/preload/` | contextBridge 桥接，向渲染进程暴露 `window.autoScreen` |
-| `src/agent/` | 决策循环：`loop.ts` 主循环、`service.ts` 运行生命周期与事件广播、`llm.ts` DeepSeek 封装、`prompt.ts` 系统提示、`control.ts` 暂停闸门与失败收敛、`questions.ts` 提问挂起、`history.ts` 图片历史、`annotate.ts` 截图标注、`mark.ts` 落点准星 |
+| `src/agent/` | 决策循环：`loop.ts` 主循环、`service.ts` 运行生命周期与事件广播、`llm.ts` DeepSeek 封装、`prompt.ts` 系统提示、`control.ts` 暂停闸门与失败收敛、`questions.ts` 提问挂起、`distill.ts` 技能沉淀、`event-log.ts` 事件落日志、`history.ts` 图片历史、`annotate.ts` 截图标注、`mark.ts` 落点准星 |
 | `src/agent/tools/` | 一个工具一个文件，`index.ts` 汇总注册并提供执行入口 |
 | `src/agent/skills.ts` | 扫描 `skills/*/SKILL.md`，解析 frontmatter，按勾选返回技能正文 |
 | `src/agent/rules.ts` | 内置规则常量 + 扫描 `rules/*.md`，规则始终注入、优先于技能 |
@@ -50,6 +50,7 @@ npm run dev   # 实跑界面前先征得同意
 11. **`wait_for_change` 的基线必须是本步模型看到的那张截图**（`shot.frame`）。改成「开始等待那一刻」的截图，会在模型思考的两三秒里漏掉对手已经落子的情况。检测阈值集中在 `agent/watch.ts`，调整前先看那里的实测注释。
 12. **规则始终注入、不参与勾选**：内置规则写在 `src/agent/rules.ts`，自定义规则读 `rules/*.md`；优先级高于技能手册。内置规则只从代码改，不要做成可关闭或可覆盖。
 13. **提问等待期间压住接管检测**：`ask_user` 挂起时 `watcher.markBusy(true)`，答复或终止时释放；回答后先激活目标窗口再放行循环，否则下一步会截到本应用，或把用户点选项误判成人工接管。
+14. **自动沉淀只读轨迹、绝不覆盖**：只在任务自然完成（`completed`）且步数 ≥ 3 时触发，材料只有文本轨迹（工具、参数、结果）与目标窗口标题，不喂截图；写到 `skills/auto-<时间>/`，撞名加序号，绝不覆盖已有技能，也不自动勾选；失败或跳过都不能改变任务结果（`finished` 先发、界面照常回到空闲）。任务已结束、只剩沉淀在跑时，暂停与终止只取消沉淀、不再发事件。
 
 ## 代码风格
 
@@ -62,7 +63,7 @@ npm run dev   # 实跑界面前先征得同意
 
 - 调模型行为：`prompt.ts`（策略）、`loop.ts`（分档与终止条件）、`control.ts`（失败收敛）。
 - 加动作能力：在 `tools/` 新建文件导出 `ToolDef`，再注册到 `tools/index.ts`；坐标用 `snapToGrid`，换算走 `core/screen.ts` 与 `core/input.ts`。
-- 长流程与技能：技能系统已接入，新增技能只需在 `skills/<id>/` 下写 `SKILL.md`（frontmatter 只认 `name`、`description`），不必改代码；步数上限在 `src/shared/agent.ts`，三种等待在 `tools/wait*.ts`（引擎 `wait-runner.ts`，画面差分 `agent/watch.ts`），时间线容量在 `useAgentRun.ts`。
+- 长流程与技能：技能系统已接入，新增技能只需在 `skills/<id>/` 下写 `SKILL.md`（frontmatter 只认 `name`、`description`），不必改代码；步数上限在 `src/shared/agent.ts`，三种等待在 `tools/wait*.ts`（引擎 `wait-runner.ts`，画面差分 `agent/watch.ts`），时间线容量在 `useAgentRun.ts`。自动沉淀的提示词与解析在 `src/agent/distill.ts`，写盘走 `src/agent/skills.ts` 的 `saveSkill()`，开关与结果提示在 `TaskBar.tsx`。
 - 加规则：内置规则改 `src/agent/rules.ts`；自定义规则放 `rules/*.md`（frontmatter 可选，`name` 缺省用文件名），始终生效、不参与勾选。
 - 界面：`src/renderer/src/components/`；主进程与渲染进程之间新增字段先改 `src/shared/`。
 
