@@ -3,7 +3,6 @@ import { join } from 'node:path'
 import { registerIpcHandlers } from './ipc'
 import { registerStreamHandler } from './capture-stream'
 import { stopAgent } from '../agent/service'
-import { loadEnv } from './config'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -41,7 +40,6 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  loadEnv()
   // Windows/Linux 的默认菜单没有任何有用项，还占一条横向空间；macOS 的菜单栏是系统级的，保留
   if (process.platform !== 'darwin') Menu.setApplicationMenu(null)
   registerStreamHandler()

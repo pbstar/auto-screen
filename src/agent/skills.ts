@@ -7,7 +7,7 @@ import { parseFrontmatter } from './frontmatter'
 
 const SKILL_FILE = 'SKILL.md'
 
-/** 开发时读项目根目录，打包后读 userData，与 .env 的取法一致 */
+/** 开发时读项目根目录，打包后读 userData */
 export function skillsRoot(): string {
   return app.isPackaged
     ? join(app.getPath('userData'), 'skills')

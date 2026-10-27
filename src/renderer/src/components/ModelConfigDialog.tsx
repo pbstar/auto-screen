@@ -101,7 +101,7 @@ export default function ModelConfigDialog({ open, onClose, onSaved }: Props) {
         />
         <Typography variant="caption" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
           Key 只保存在本机（userData/model.json），不会写进日志，也不会回显到界面；
-          这里保存的配置优先于 .env。保存后立即生效，不用重启。
+          保存后立即生效，不用重启。
         </Typography>
         {error && (
           <Typography variant="caption" sx={{ color: 'error.main' }}>

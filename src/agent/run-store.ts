@@ -15,7 +15,7 @@ const MAX_RUNS = 50
 
 let active: { runId: string; dir: string } | null = null
 
-/** 开发时放项目根目录，打包后放 userData，与 .env 的取法保持一致 */
+/** 开发时放项目根目录，打包后放 userData；runs/ 在 .gitignore 里 */
 export function runsRoot(): string {
   return app.isPackaged
     ? join(app.getPath('userData'), 'runs')

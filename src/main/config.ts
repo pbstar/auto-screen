@@ -1,7 +1,6 @@
 import { app } from 'electron'
-import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { chmodSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import dotenv from 'dotenv'
 import type { ModelSettings, ModelSettingsInput } from '../shared/types'
 
 export interface ModelConfig {
@@ -13,21 +12,7 @@ export interface ModelConfig {
 const DEFAULT_BASE_URL = 'https://api.deepseek.com'
 const DEFAULT_MODEL = 'deepseek-flash'
 
-let envLoaded = false
-
-/** 开发时读项目根目录，打包后读 userData；两处都支持，谁存在用谁 */
-export function loadEnv(): void {
-  if (envLoaded) return
-  envLoaded = true
-  const path = app.isPackaged
-    ? join(app.getPath('userData'), '.env')
-    : join(process.cwd(), '.env')
-  if (existsSync(path)) {
-    dotenv.config({ path })
-  }
-}
-
-/** 界面里填的配置存这里；Key 不放进仓库，所以始终落在 userData */
+/** 模型配置只保存在本机 userData，不随仓库走，避免 Key 被误提交 */
 function settingsPath(): string {
   return join(app.getPath('userData'), 'model.json')
 }
@@ -47,19 +32,17 @@ function readStored(): StoredSettings {
       typeof value === 'string' && value.trim() ? value.trim() : undefined
     return { baseUrl: text(record.baseUrl), model: text(record.model), apiKey: text(record.apiKey) }
   } catch {
-    // 文件不存在或损坏都按「没配过」处理，回退到环境变量
+    // 文件不存在或损坏都按「没配过」处理，界面里显示默认值
     return {}
   }
 }
 
-/** 优先级：界面保存的配置 > .env > 默认值，逐项回退 */
 function resolve(): ModelConfig {
-  loadEnv()
   const stored = readStored()
   return {
-    apiKey: stored.apiKey ?? process.env.DEEPSEEK_API_KEY?.trim() ?? '',
-    baseUrl: stored.baseUrl ?? process.env.DEEPSEEK_BASE_URL?.trim() ?? DEFAULT_BASE_URL,
-    model: stored.model ?? process.env.DEEPSEEK_MODEL?.trim() ?? DEFAULT_MODEL,
+    apiKey: stored.apiKey ?? '',
+    baseUrl: stored.baseUrl ?? DEFAULT_BASE_URL,
+    model: stored.model ?? DEFAULT_MODEL,
   }
 }
 
@@ -92,7 +75,7 @@ export function readModelSettings(): ModelSettings {
   }
 }
 
-/** 保存界面配置；apiKey 留空表示沿用已保存的 Key（可能来自 .env） */
+/** 保存界面配置；apiKey 留空表示沿用已经保存的 Key */
 export function saveModelSettings(input: ModelSettingsInput): ModelSettings {
   const baseUrl = input.baseUrl.trim()
   const model = input.model.trim()
