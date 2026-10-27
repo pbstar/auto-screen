@@ -1,5 +1,5 @@
 import { createCanvas, type Image } from '@napi-rs/canvas'
-import type { FrameSignature } from '../../src/shared/types'
+import type { FrameSignature } from '../shared/types'
 
 /**
  * 采样宽度：1280 宽的窗口缩到 320，一个块约等于原图 32px。

@@ -1,4 +1,4 @@
-import { pressCombo } from '../../../src/core/input'
+import { pressCombo } from '../../core/input'
 import type { ToolDef } from './types'
 import { requireString } from './helpers'
 

@@ -1,4 +1,4 @@
-import { clockText } from '../../src/shared/time'
+import { clockText } from '../shared/time'
 import type { AnnotatedShot } from './annotate'
 import type { AgentMessage, ContentPart } from './llm'
 

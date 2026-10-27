@@ -1,4 +1,4 @@
-import { listWindows } from '../../../src/core/screen'
+import { listWindows } from '../../core/screen'
 import type { ToolDef } from './types'
 
 export const listWindowsTool: ToolDef = {

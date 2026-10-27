@@ -1,14 +1,14 @@
 import { BrowserWindow, ipcMain, shell, systemPreferences } from 'electron'
-import { IPC } from '../src/shared/ipc'
-import type { AgentStartRequest } from '../src/shared/agent'
-import type { IpcResult, PermissionStatus } from '../src/shared/types'
-import { listWindows } from '../src/core/screen'
+import { IPC } from '../shared/ipc'
+import type { AgentStartRequest } from '../shared/agent'
+import type { IpcResult, PermissionStatus } from '../shared/types'
+import { listWindows } from '../core/screen'
 import { setStreamTarget } from './capture-stream'
-import { listToolSummaries } from './agent/tools'
-import { agentStatus, pauseAgent, resumeAgent, startAgent, stopAgent } from './agent/service'
-import { ensureRunsRoot, listRuns, readRun, readShot, runsRoot } from './agent/run-store'
-import { listRules } from './agent/rules'
-import { listSkills } from './agent/skills'
+import { listToolSummaries } from '../agent/tools'
+import { agentStatus, pauseAgent, resumeAgent, startAgent, stopAgent } from '../agent/service'
+import { ensureRunsRoot, listRuns, readRun, readShot, runsRoot } from '../agent/run-store'
+import { listRules } from '../agent/rules'
+import { listSkills } from '../agent/skills'
 
 function ok<T>(data: T): IpcResult<T> {
   return { ok: true, data }

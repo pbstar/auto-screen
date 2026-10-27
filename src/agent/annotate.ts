@@ -4,8 +4,8 @@ import {
   type Canvas,
   type SKRSContext2D,
 } from '@napi-rs/canvas'
-import { GRID, GRID_STYLE, gridMajor } from '../../src/shared/grid'
-import type { CaptureResult, FrameSignature } from '../../src/shared/types'
+import { GRID, GRID_STYLE, gridMajor } from '../shared/grid'
+import type { CaptureResult, FrameSignature } from '../shared/types'
 import { sampleFrame } from './watch'
 
 const MAX_EDGE = 1280

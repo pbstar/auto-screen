@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
-import { IPC } from '../src/shared/ipc'
-import type { AgentEvent, AgentStartRequest } from '../src/shared/agent'
-import type { AutoScreenApi } from '../src/shared/types'
+import { IPC } from '../shared/ipc'
+import type { AgentEvent, AgentStartRequest } from '../shared/agent'
+import type { AutoScreenApi } from '../shared/types'
 
 const api: AutoScreenApi = {
   listWindows: () => ipcRenderer.invoke(IPC.listWindows),

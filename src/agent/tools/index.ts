@@ -1,4 +1,4 @@
-import type { ToolContext, ToolResult, ToolSummary } from '../../../src/shared/types'
+import type { ToolContext, ToolResult, ToolSummary } from '../../shared/types'
 import type { ToolDef } from './types'
 import { clickTool } from './click'
 import { dragTool } from './drag'

@@ -1,4 +1,4 @@
-import { clockText, durationText } from '../../../src/shared/time'
+import { clockText, durationText } from '../../shared/time'
 import type { ToolDef } from './types'
 import { requireString } from './helpers'
 import { waitUntil } from './wait-runner'

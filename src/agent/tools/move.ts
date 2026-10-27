@@ -1,6 +1,6 @@
-import { moveAt } from '../../../src/core/input'
-import { findWindow, imageToPhysical, windowScaleFactor } from '../../../src/core/screen'
-import { snapToGrid } from '../../../src/shared/grid'
+import { moveAt } from '../../core/input'
+import { findWindow, imageToPhysical, windowScaleFactor } from '../../core/screen'
+import { snapToGrid } from '../../shared/grid'
 import type { ToolDef } from './types'
 import { requireNumber } from './helpers'
 

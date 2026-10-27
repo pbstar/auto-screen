@@ -1,4 +1,4 @@
-import type { ToolContext, ToolResult } from '../../../src/shared/types'
+import type { ToolContext, ToolResult } from '../../shared/types'
 
 export interface ToolDef {
   name: string

@@ -10,7 +10,7 @@ export default defineConfig({
     resolve: { alias: sharedAlias },
     build: {
       rollupOptions: {
-        input: { index: resolve(__dirname, 'electron/main.ts') },
+        input: { index: resolve(__dirname, 'src/main/index.ts') },
       },
     },
   },
@@ -19,17 +19,17 @@ export default defineConfig({
     resolve: { alias: sharedAlias },
     build: {
       rollupOptions: {
-        input: { index: resolve(__dirname, 'electron/preload.ts') },
+        input: { index: resolve(__dirname, 'src/preload/index.ts') },
       },
     },
   },
   renderer: {
-    root: resolve(__dirname, 'renderer'),
+    root: resolve(__dirname, 'src/renderer'),
     plugins: [react()],
     resolve: { alias: sharedAlias },
     build: {
       rollupOptions: {
-        input: { index: resolve(__dirname, 'renderer/index.html') },
+        input: { index: resolve(__dirname, 'src/renderer/index.html') },
       },
     },
   },

@@ -1,7 +1,7 @@
 import { app } from 'electron'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import type { SkillSummary } from '../../src/shared/types'
+import type { SkillSummary } from '../shared/types'
 import type { SkillPrompt } from './prompt'
 import { parseFrontmatter } from './frontmatter'
 

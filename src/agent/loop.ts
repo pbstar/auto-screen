@@ -5,9 +5,9 @@ import {
   type AgentRunReason,
   type ReasoningEffort,
   type TokenUsage,
-} from '../../src/shared/agent'
-import type { ToolContext } from '../../src/shared/types'
-import { captureWindow } from '../../src/core/screen'
+} from '../shared/agent'
+import type { ToolContext } from '../shared/types'
+import { captureWindow } from '../core/screen'
 import { annotateCapture, type AnnotatedShot, type ClickMark } from './annotate'
 import { appendShot, truncate, type ShotRef } from './history'
 import {

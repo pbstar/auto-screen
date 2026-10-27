@@ -1,4 +1,4 @@
-import type { PauseReason } from '../../src/shared/agent'
+import type { PauseReason } from '../shared/agent'
 
 /** 暂停闸门：循环在步骤边界挂起，直到继续或被中止 */
 export class PauseGate {

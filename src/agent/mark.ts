@@ -1,5 +1,5 @@
-import { snapToGrid } from '../../src/shared/grid'
-import type { ToolContext } from '../../src/shared/types'
+import { snapToGrid } from '../shared/grid'
+import type { ToolContext } from '../shared/types'
 import type { ClickMark } from './annotate'
 
 /** 只有指针动作的落点值得回显，键盘和滚动没有落点 */

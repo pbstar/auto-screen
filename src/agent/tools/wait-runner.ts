@@ -1,5 +1,5 @@
-import type { PauseControl } from '../../../src/shared/types'
-import { durationText } from '../../../src/shared/time'
+import type { PauseControl } from '../../shared/types'
+import { durationText } from '../../shared/time'
 
 const TICK_MS = 500
 /** 进度每十秒报一次：够界面看出在推进，又不至于刷屏 */

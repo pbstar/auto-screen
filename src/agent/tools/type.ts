@@ -1,4 +1,4 @@
-import { typeText } from '../../../src/core/input'
+import { typeText } from '../../core/input'
 import type { ToolDef } from './types'
 import { requireString } from './helpers'
 

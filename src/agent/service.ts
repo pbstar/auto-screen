@@ -8,11 +8,11 @@ import {
   type AgentStartRequest,
   type AgentStatus,
   type TokenUsage,
-} from '../../src/shared/agent'
-import { IPC } from '../../src/shared/ipc'
-import { activateWindow } from '../../src/core/safety'
-import { createPointerWatcher, type PointerWatcher } from '../../src/core/pointer'
-import { configReady, readModelConfig } from '../config'
+} from '../shared/agent'
+import { IPC } from '../shared/ipc'
+import { activateWindow } from '../core/safety'
+import { createPointerWatcher, type PointerWatcher } from '../core/pointer'
+import { configReady, readModelConfig } from '../main/config'
 import { appendLog, createRun, finishRun, saveShot } from './run-store'
 import { readRulePrompts } from './rules'
 import { readSkillPrompts } from './skills'

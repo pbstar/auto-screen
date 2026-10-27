@@ -2,7 +2,7 @@ import { app, BrowserWindow, Menu, shell } from 'electron'
 import { join } from 'node:path'
 import { registerIpcHandlers } from './ipc'
 import { registerStreamHandler } from './capture-stream'
-import { stopAgent } from './agent/service'
+import { stopAgent } from '../agent/service'
 import { loadEnv } from './config'
 
 let mainWindow: BrowserWindow | null = null
