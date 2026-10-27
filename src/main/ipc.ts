@@ -1,7 +1,8 @@
 import { BrowserWindow, ipcMain, shell, systemPreferences } from 'electron'
 import { IPC } from '../shared/ipc'
 import type { AgentAnswer, AgentStartRequest } from '../shared/agent'
-import type { IpcResult, PermissionStatus } from '../shared/types'
+import type { IpcResult, ModelSettingsInput, PermissionStatus } from '../shared/types'
+import { readModelSettings, saveModelSettings } from './config'
 import { listWindows } from '../core/screen'
 import { setStreamTarget } from './capture-stream'
 import { listToolSummaries } from '../agent/tools'
@@ -92,6 +93,22 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null): 
   ipcMain.handle(IPC.permissions, () => {
     try {
       return ok(getPermissions())
+    } catch (error) {
+      return fail(error)
+    }
+  })
+
+  ipcMain.handle(IPC.configGet, () => {
+    try {
+      return ok(readModelSettings())
+    } catch (error) {
+      return fail(error)
+    }
+  })
+
+  ipcMain.handle(IPC.configSave, (_event, input: ModelSettingsInput) => {
+    try {
+      return ok(saveModelSettings(input))
     } catch (error) {
       return fail(error)
     }

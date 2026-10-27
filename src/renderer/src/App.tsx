@@ -6,6 +6,7 @@ import TaskBar from './components/TaskBar'
 import QuestionCard from './components/QuestionCard'
 import Timeline from './components/Timeline'
 import LogDialog from './components/LogDialog'
+import ModelConfigDialog from './components/ModelConfigDialog'
 import { useAgentRun } from './hooks/useAgentRun'
 
 const api = window.autoScreen
@@ -29,6 +30,7 @@ export default function App() {
   const [autoSkill, setAutoSkill] = useState(false)
   const [gridVisible, setGridVisible] = useState(true)
   const [logOpen, setLogOpen] = useState(false)
+  const [modelOpen, setModelOpen] = useState(false)
   const [error, setError] = useState('')
   const agent = useAgentRun()
   const question = agent.state.question
@@ -134,6 +136,7 @@ export default function App() {
             onRefreshSkills={() => void loadSkills()}
             onAutoSkillChange={setAutoSkill}
             onOpenLogs={() => setLogOpen(true)}
+            onOpenModelConfig={() => setModelOpen(true)}
             onStart={async (task) => {
               if (selectedId == null) return
               await agent.start(selectedId, task, selectedSkills, autoSkill)
@@ -155,6 +158,11 @@ export default function App() {
       </Box>
 
       <LogDialog open={logOpen} onClose={() => setLogOpen(false)} />
+      <ModelConfigDialog
+        open={modelOpen}
+        onClose={() => setModelOpen(false)}
+        onSaved={() => void agent.refresh()}
+      />
     </Box>
   )
 }

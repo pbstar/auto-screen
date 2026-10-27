@@ -96,6 +96,22 @@ export interface PermissionStatus {
   accessibility: boolean
 }
 
+/** 界面展示的模型配置：Key 只回传脱敏提示，不回传明文 */
+export interface ModelSettings {
+  baseUrl: string
+  model: string
+  apiKeySet: boolean
+  /** 形如 sk-***abcd，未配置时为空串 */
+  apiKeyHint: string
+}
+
+export interface ModelSettingsInput {
+  baseUrl: string
+  model: string
+  /** 留空表示沿用已保存的 Key */
+  apiKey?: string
+}
+
 /** 一次运行在磁盘上的记录 */
 export interface RunMeta {
   /** 运行目录名，读取日志时作为标识 */
@@ -122,6 +138,8 @@ export interface AutoScreenApi {
   listSkills(): Promise<IpcResult<SkillSummary[]>>
   listRules(): Promise<IpcResult<RuleSummary[]>>
   permissions(): Promise<IpcResult<PermissionStatus>>
+  getModelSettings(): Promise<IpcResult<ModelSettings>>
+  saveModelSettings(input: ModelSettingsInput): Promise<IpcResult<ModelSettings>>
   startAgent(request: AgentStartRequest): Promise<IpcResult<null>>
   stopAgent(): Promise<IpcResult<null>>
   pauseAgent(): Promise<IpcResult<null>>

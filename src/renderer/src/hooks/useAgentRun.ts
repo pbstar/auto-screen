@@ -3,6 +3,7 @@ import {
   EMPTY_USAGE,
   MAX_STEPS,
   type AgentEvent,
+  type AgentStatus,
   type PauseReason,
   type PendingQuestion,
   type TokenUsage,
@@ -65,10 +66,30 @@ const INITIAL: AgentRunState = {
   skill: null,
 }
 
+function applyStatus(state: AgentRunState, status: AgentStatus): AgentRunState {
+  return {
+    ...state,
+    status: status.running ? (status.pauseReason ? 'paused' : 'running') : 'idle',
+    pauseReason: status.pauseReason,
+    step: status.step,
+    maxSteps: status.maxSteps,
+    usage: status.usage,
+    configReady: status.configReady,
+    question: status.question,
+  }
+}
+
 export function useAgentRun() {
   const [state, setState] = useState<AgentRunState>(INITIAL)
   const runIdRef = useRef<string | null>(null)
   const seqRef = useRef(0)
+
+  /** 重新对齐主进程状态：挂载时用一次，保存模型配置后也用它刷新 configReady */
+  const refresh = useCallback(async () => {
+    const result = await api.agentStatus()
+    if (!result.ok) return
+    setState((previous) => applyStatus(previous, result.data))
+  }, [])
 
   useEffect(() => {
     const handle = (event: AgentEvent) => {
@@ -86,22 +107,9 @@ export function useAgentRun() {
     }
 
     const unsubscribe = api.onAgentEvent(handle)
-    void api.agentStatus().then((result) => {
-      if (!result.ok) return
-      const status = result.data
-      setState((previous) => ({
-        ...previous,
-        status: status.running ? (status.pauseReason ? 'paused' : 'running') : 'idle',
-        pauseReason: status.pauseReason,
-        step: status.step,
-        maxSteps: status.maxSteps,
-        usage: status.usage,
-        configReady: status.configReady,
-        question: status.question,
-      }))
-    })
+    void refresh()
     return unsubscribe
-  }, [])
+  }, [refresh])
 
   const start = useCallback(
     async (windowId: number, task: string, skills: string[], autoSkill: boolean) => {
@@ -141,7 +149,7 @@ export function useAgentRun() {
     }
   }, [])
 
-  return { state, start, stop, pause, resume, answer }
+  return { state, start, stop, pause, resume, answer, refresh }
 }
 
 function applyEvent(state: AgentRunState, event: AgentEvent): AgentRunState {

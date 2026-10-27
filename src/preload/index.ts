@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import { IPC } from '../shared/ipc'
 import type { AgentAnswer, AgentEvent, AgentStartRequest } from '../shared/agent'
-import type { AutoScreenApi } from '../shared/types'
+import type { AutoScreenApi, ModelSettingsInput } from '../shared/types'
 
 const api: AutoScreenApi = {
   listWindows: () => ipcRenderer.invoke(IPC.listWindows),
@@ -11,6 +11,8 @@ const api: AutoScreenApi = {
   listSkills: () => ipcRenderer.invoke(IPC.skillsList),
   listRules: () => ipcRenderer.invoke(IPC.rulesList),
   permissions: () => ipcRenderer.invoke(IPC.permissions),
+  getModelSettings: () => ipcRenderer.invoke(IPC.configGet),
+  saveModelSettings: (input: ModelSettingsInput) => ipcRenderer.invoke(IPC.configSave, input),
   startAgent: (request: AgentStartRequest) => ipcRenderer.invoke(IPC.agentStart, request),
   stopAgent: () => ipcRenderer.invoke(IPC.agentStop),
   pauseAgent: () => ipcRenderer.invoke(IPC.agentPause),

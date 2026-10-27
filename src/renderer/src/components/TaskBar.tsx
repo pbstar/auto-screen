@@ -8,6 +8,7 @@ import SkillPill from './SkillPill'
 import RulePill from './RulePill'
 import ToolPill from './ToolPill'
 import AutoSkillToggle from './AutoSkillToggle'
+import MoreMenu from './MoreMenu'
 
 interface Props {
   windowSelected: boolean
@@ -19,6 +20,7 @@ interface Props {
   onRefreshSkills: () => void
   onAutoSkillChange: (on: boolean) => void
   onOpenLogs: () => void
+  onOpenModelConfig: () => void
   onStart: (task: string) => Promise<void>
   onStop: () => void
   onPause: () => void
@@ -49,7 +51,7 @@ function startHint(canStart: boolean, windowSelected: boolean, task: string): st
   if (canStart) return ''
   if (!windowSelected) return '先在左上角选择目标窗口'
   if (task.trim().length === 0) return '先输入任务'
-  return '先在 .env 里配置 DEEPSEEK_API_KEY'
+  return '点右上角 ⋮ → 配置模型，填写 API Key'
 }
 
 export default function TaskBar({
@@ -62,6 +64,7 @@ export default function TaskBar({
   onRefreshSkills,
   onAutoSkillChange,
   onOpenLogs,
+  onOpenModelConfig,
   onStart,
   onStop,
   onPause,
@@ -86,7 +89,7 @@ export default function TaskBar({
 
   return (
     <Box sx={{ p: 1.5, flex: 'none', borderBottom: 1, borderColor: 'divider' }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, height: 20 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, height: 24 }}>
         <Typography sx={{ fontSize: 12, fontWeight: 600 }}>任务</Typography>
         <Box sx={{ flex: 1 }} />
         {/* 步数与用量是任务的元信息，放标题行，不跟操作按钮抢位置 */}
@@ -100,14 +103,10 @@ export default function TaskBar({
         >
           {state.step}/{state.maxSteps} 步 · {formatTokens(state.usage)} tokens
         </Typography>
-        {/* 自带内边距，负外边距让文字和下面内容的 12px 右边界对齐 */}
-        <Button
-          size="small"
-          onClick={onOpenLogs}
-          sx={{ color: 'text.secondary', px: 1, mr: -1, minWidth: 0 }}
-        >
-          日志
-        </Button>
+        {/* 日志、模型配置这类不常用入口收进「更多」，标题行留给状态读数 */}
+        <Box sx={{ mr: -0.5 }}>
+          <MoreMenu onOpenLogs={onOpenLogs} onOpenModelConfig={onOpenModelConfig} />
+        </Box>
       </Box>
       <TextField
         fullWidth
@@ -205,7 +204,7 @@ export default function TaskBar({
       )}
       {!state.configReady && (
         <Typography variant="caption" sx={{ display: 'block', mt: 0.75, color: 'warning.main' }}>
-          未配置 DEEPSEEK_API_KEY，请先填写 .env
+          还没有配置 API Key，点右上角 ⋮ → 配置模型填写
         </Typography>
       )}
       {state.error && (

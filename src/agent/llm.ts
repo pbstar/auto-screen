@@ -157,7 +157,7 @@ export function isAbortError(error: unknown): boolean {
 
 export function describeError(error: unknown): string {
   if (error instanceof OpenAI.APIError) {
-    if (error.status === 401) return '模型接口鉴权失败，请检查 DEEPSEEK_API_KEY'
+    if (error.status === 401) return '模型接口鉴权失败，请检查 API Key（右上角 ⋮ → 配置模型）'
     if (error.status === 402) return '模型账户余额不足'
     if (error.status === 429) return '模型请求过于频繁，请稍后再试'
     if (error.status === 400) return `模型接口参数错误：${error.message}`

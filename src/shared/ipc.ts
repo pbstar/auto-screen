@@ -5,6 +5,8 @@ export const IPC = {
   skillsList: 'skills:list',
   rulesList: 'rules:list',
   permissions: 'app:permissions',
+  configGet: 'config:get',
+  configSave: 'config:save',
   agentStart: 'agent:start',
   agentStop: 'agent:stop',
   agentPause: 'agent:pause',
