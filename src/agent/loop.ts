@@ -14,6 +14,7 @@ import {
 } from './llm'
 import { executeTool, listToolSchemas } from './tools'
 import { markOf } from './mark'
+import { planTask } from './plan'
 import { createContext, type RunContext, type RunOptions, type RunOutcome } from './run-context'
 
 /** 动作执行后界面未必立刻重绘，截图前留一点时间，免得模型读到旧画面 */
@@ -34,6 +35,7 @@ export async function runAgent(options: RunOptions): Promise<RunOutcome> {
 
   ctx.emit({ type: 'started', task: options.task, maxSteps: MAX_STEPS })
   try {
+    await preparePlan(ctx)
     reason = await runLoop(ctx)
   } catch (caught) {
     if (isAbortError(caught)) {
@@ -63,6 +65,25 @@ async function runLoop(ctx: RunContext): Promise<AgentRunReason> {
   return 'max_steps'
 }
 
+/** 开始前先定流程：注入一条 user 消息，之后所有步骤共享这段前缀，缓存不受影响 */
+async function preparePlan(ctx: RunContext): Promise<void> {
+  const { plan, usage } = await planTask({
+    windowId: ctx.windowId,
+    task: ctx.task,
+    signal: ctx.signal,
+  })
+  ctx.usage = addUsage(ctx.usage, usage)
+  ctx.emit({ type: 'usage', usage: ctx.usage, effort: HEAVY_EFFORT })
+  if (!plan) return
+  ctx.plan = plan
+  ctx.messages.push({
+    role: 'user',
+    content:
+      `已定流程（照此执行；每步仍用新截图核对，画面与流程不符时以画面为准并自行调整）：\n${plan}`,
+  })
+  ctx.emit({ type: 'plan', text: plan })
+}
+
 /** 暂停在步骤边界生效：挂起期间既不截图也不调模型 */
 async function waitWhilePaused(ctx: RunContext): Promise<boolean> {
   await ctx.gate.wait(ctx.signal)
@@ -73,8 +94,8 @@ async function runStep(ctx: RunContext, step: number): Promise<AgentRunReason | 
   ctx.steps = step
   if (step > 1 && ctx.dirty) await delay(SETTLE_MS)
   ctx.dirty = false
-  // 第 1 步要读全屏拆任务、出错后要换策略，这两处值得多想；常规步骤只做即时判断
-  const effort = step === 1 || ctx.failed ? HEAVY_EFFORT : ROUTINE_EFFORT
+  // 规划已经替首步想过；执行步只在工具失败后需要重新推演
+  const effort = ctx.failed ? HEAVY_EFFORT : ROUTINE_EFFORT
   ctx.failed = false
   const shot = await annotateCapture(captureWindow(ctx.windowId), ctx.mark)
   ctx.saveShot(step, shot.dataUrl)

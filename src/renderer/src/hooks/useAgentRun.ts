@@ -13,7 +13,7 @@ const MAX_ITEMS = 300
 
 export interface TimelineItem {
   id: string
-  kind: 'shot' | 'reply' | 'tool'
+  kind: 'shot' | 'reply' | 'tool' | 'note'
   step: number
   name?: string
   detail?: string
@@ -23,6 +23,9 @@ export interface TimelineItem {
   progress?: string
   status?: 'running' | 'ok' | 'error'
   durationMs?: number
+  /** note 类条目的标题，如「已定流程」 */
+  label?: string
+  tone?: 'error'
 }
 
 /** 任务结束后沉淀技能的结果，非空时任务卡下方提示一行 */
@@ -155,6 +158,14 @@ function applyEvent(state: AgentRunState, event: AgentEvent): AgentRunState {
         question: null,
         skill: null,
       }
+    case 'plan':
+      return withNote(state, {
+        id: `plan-${event.seq}`,
+        kind: 'note',
+        step: state.step,
+        label: '已定流程',
+        text: event.text,
+      })
     case 'shot':
       return append(state, {
         id: `shot-${event.seq}`,
@@ -242,6 +253,14 @@ function append(state: AgentRunState, item: TimelineItem): AgentRunState {
     ? [...state.items.slice(-(MAX_ITEMS - 1)), item]
     : [...state.items, item]
   return { ...state, step: item.step, items }
+}
+
+/** 提示类条目只追加，不推进步数 */
+function withNote(state: AgentRunState, item: TimelineItem): AgentRunState {
+  const items = state.items.length >= MAX_ITEMS
+    ? [...state.items.slice(-(MAX_ITEMS - 1)), item]
+    : [...state.items, item]
+  return { ...state, items }
 }
 
 function summarize(input: Record<string, unknown>): string {

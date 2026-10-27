@@ -75,6 +75,11 @@ export interface AgentEventBase {
 export type AgentEvent =
   | (AgentEventBase & { type: 'started'; task: string; maxSteps: number })
   | (AgentEventBase & {
+      type: 'plan'
+      /** 规划阶段给出的流程与完成标准，原样展示 */
+      text: string
+    })
+  | (AgentEventBase & {
       type: 'shot'
       step: number
       /** 缩略图 data URL，避免把原图塞进事件通道 */

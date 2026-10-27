@@ -11,6 +11,9 @@ export function logEvent(runId: string, payload: AgentEventPayload): void {
     case 'started':
       appendLog(runId, `开始，最多 ${payload.maxSteps} 步`)
       break
+    case 'plan':
+      appendLog(runId, `流程：${oneLine(payload.text)}`)
+      break
     case 'shot':
       appendLog(runId, `第 ${payload.step} 步截图 ${payload.width}×${payload.height}`)
       break

@@ -4,6 +4,7 @@ import { CANVAS, HAIRLINE, MONO_FONT, SIGNAL } from '../theme'
 
 function dotColor(item: TimelineItem): string {
   if (item.kind === 'reply') return SIGNAL
+  if (item.kind === 'note') return item.tone === 'error' ? '#cf2e2e' : '#c9d1db'
   if (item.kind === 'tool') {
     if (item.status === 'error') return '#cf2e2e'
     if (item.status === 'running') return '#b6bdc8'
@@ -50,8 +51,39 @@ export default function TimelineEntry({ item, onPreview }: Props) {
       />
       {item.kind === 'shot' && <ShotEntry item={item} onPreview={onPreview} />}
       {item.kind === 'reply' && <ReplyEntry item={item} />}
+      {item.kind === 'note' && <NoteEntry item={item} />}
       {item.kind === 'tool' && <ToolEntry item={item} />}
     </Box>
+  )
+}
+
+function NoteEntry({ item }: { item: TimelineItem }) {
+  return (
+    <>
+      <Typography
+        sx={{
+          fontSize: 11,
+          fontWeight: 600,
+          color: item.tone === 'error' ? 'error.main' : 'text.secondary',
+        }}
+      >
+        {item.label}
+      </Typography>
+      {item.text && (
+        <Typography
+          variant="caption"
+          sx={{
+            display: 'block',
+            mt: 0.25,
+            color: 'text.secondary',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+          }}
+        >
+          {item.text}
+        </Typography>
+      )}
+    </>
   )
 }
 

@@ -43,6 +43,9 @@ export interface RunOutcome {
 /** 一次运行的内存状态：循环、工具执行与收尾都只看这一个对象 */
 export interface RunContext {
   windowId: number
+  task: string
+  /** 规划阶段给出的流程，后续步骤带着它执行，最终核对也用它 */
+  plan: string | null
   signal: AbortSignal
   emit: Emit
   saveShot: (step: number, dataUrl: string) => void
@@ -67,6 +70,8 @@ export interface RunContext {
 export function createContext(options: RunOptions): RunContext {
   return {
     windowId: options.windowId,
+    task: options.task,
+    plan: null,
     signal: options.signal,
     emit: options.emit,
     saveShot: options.saveShot,
