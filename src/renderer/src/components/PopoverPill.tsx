@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Box, Button, Popover } from '@mui/material'
-import { LINE_STRONG, WASH, monoText } from '../theme'
+import { LINE_STRONG, WASH } from '../theme'
 
 interface Props {
   label: string
@@ -12,9 +12,14 @@ interface Props {
   children: ReactNode
 }
 
+/** 胶囊右侧只放得下几个字，长摘要截断，完整名字在浮层里看 */
+const SUMMARY_MAX = 4
+
 /** 输入框下方的小胶囊：点开是一个轻量浮层，配置不常改，不该常驻占版面 */
 export default function PopoverPill({ label, detail, disabled, onOpen, children }: Props) {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
+  const summary =
+    detail && detail.length > SUMMARY_MAX ? `${detail.slice(0, SUMMARY_MAX)}…` : detail
 
   return (
     <>
@@ -27,6 +32,7 @@ export default function PopoverPill({ label, detail, disabled, onOpen, children 
         }}
         sx={{
           height: 26,
+          minWidth: 0,
           px: 1.25,
           borderRadius: 999,
           border: 1,
@@ -35,16 +41,26 @@ export default function PopoverPill({ label, detail, disabled, onOpen, children 
           fontSize: 11.5,
           fontWeight: 500,
           bgcolor: 'background.paper',
+          // 选中的技能名可能很长，窄窗口下胶囊会被挤扁：只允许右侧摘要省略，标签不换行
+          whiteSpace: 'nowrap',
           '&:hover': { borderColor: LINE_STRONG, bgcolor: WASH },
         }}
       >
         {label}
-        {detail && (
+        {summary && (
           <Box
             component="span"
-            sx={{ ...monoText(11), ml: 0.75, color: 'text.primary' }}
+            sx={{
+              ml: 0.75,
+              minWidth: 0,
+              // 摘要可能是技能名（中文）：不用等宽字体，等宽栈对中文的回退字形会显得比标签还大
+              fontSize: 11,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              color: 'text.primary',
+            }}
           >
-            {detail}
+            {summary}
           </Box>
         )}
       </Button>
