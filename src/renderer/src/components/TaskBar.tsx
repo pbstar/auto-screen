@@ -3,7 +3,7 @@ import { Box, Button, Stack, TextField, Tooltip, Typography } from '@mui/materia
 import type { TokenUsage } from '@shared/agent'
 import type { SkillSummary } from '@shared/types'
 import type { AgentRunState, SkillOutcome } from '../hooks/useAgentRun'
-import { MONO_FONT } from '../theme'
+import { LINE_STRONG, monoText } from '../theme'
 import SkillPill from './SkillPill'
 import RulePill from './RulePill'
 import ToolPill from './ToolPill'
@@ -95,10 +95,8 @@ export default function TaskBar({
         {/* 步数与用量是任务的元信息，放标题行，不跟操作按钮抢位置 */}
         <Typography
           sx={{
-            fontFamily: MONO_FONT,
-            fontSize: 11,
+            ...monoText(11),
             color: 'text.secondary',
-            fontVariantNumeric: 'tabular-nums',
           }}
         >
           {state.step}/{state.maxSteps} 步 · {formatTokens(state.usage)} tokens
@@ -127,7 +125,7 @@ export default function TaskBar({
             fontSize: 13,
             lineHeight: 1.6,
             '& fieldset': { borderColor: 'divider' },
-            '&:hover fieldset': { borderColor: '#c9d1db' },
+            '&:hover fieldset': { borderColor: LINE_STRONG },
             '&.Mui-focused fieldset': { borderColor: 'text.primary', borderWidth: 1 },
           },
         }}

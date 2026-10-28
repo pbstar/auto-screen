@@ -1,8 +1,15 @@
 import { createTheme } from '@mui/material/styles'
 
 /** 参数、坐标、耗时等读数统一用等宽字体，便于竖向对齐比较 */
-export const MONO_FONT =
+const MONO_FONT =
   'ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace'
+
+/** 等宽读数：坐标、步数、耗时、日志共用一套字号与数字对齐方式 */
+export const monoText = (size = 11) => ({
+  fontFamily: MONO_FONT,
+  fontSize: size,
+  fontVariantNumeric: 'tabular-nums' as const,
+})
 
 /** 界面本身保持无彩色，颜色留给被操作的窗口和截图上的网格 */
 export const CANVAS = '#eceef2'
@@ -13,6 +20,11 @@ const INK_SECONDARY = '#5c6573'
 const INK_FAINT = '#9aa3ae'
 /** 只用于焦点、运行态这类"正在发生"的信号 */
 export const SIGNAL = '#2b6cf6'
+
+/** 悬停时的边框与淡墨底：胶囊、幽灵按钮、输入框、菜单共用 */
+export const LINE_STRONG = '#c9d1db'
+export const WASH = 'rgba(15, 23, 42, 0.045)'
+export const WASH_STRONG = 'rgba(15, 23, 42, 0.06)'
 
 export const theme = createTheme({
   palette: {
@@ -53,8 +65,8 @@ export const theme = createTheme({
           '&.MuiButton-colorPrimary': {
             borderColor: HAIRLINE,
             '&:hover': {
-              borderColor: '#c9d1db',
-              backgroundColor: 'rgba(15, 23, 42, 0.045)',
+              borderColor: LINE_STRONG,
+              backgroundColor: WASH,
             },
           },
         },

@@ -11,7 +11,7 @@ import {
   Typography,
 } from '@mui/material'
 import type { RunMeta } from '@shared/types'
-import { CANVAS, MONO_FONT } from '../theme'
+import { CANVAS, monoText } from '../theme'
 
 const api = window.autoScreen
 
@@ -129,7 +129,7 @@ function RunList({ runs, selected, onSelect, error }: RunListProps) {
             onClick={() => onSelect(run.name)}
             sx={{ flexDirection: 'column', alignItems: 'flex-start', py: 0.75, px: 1 }}
           >
-            <Typography variant="caption" sx={{ fontFamily: MONO_FONT }}>
+            <Typography variant="caption" sx={monoText(11)}>
               {formatTime(run.startedAt)}
             </Typography>
             <Typography
@@ -159,8 +159,7 @@ function LogText({ text }: { text: string }) {
         overflow: 'auto',
         bgcolor: CANVAS,
         borderRadius: '6px',
-        fontFamily: MONO_FONT,
-        fontSize: 11.5,
+        ...monoText(11.5),
         lineHeight: 1.7,
         whiteSpace: 'pre-wrap',
         wordBreak: 'break-word',

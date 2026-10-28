@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Box, Button, Menu, MenuItem, Tooltip, Typography } from '@mui/material'
 import type { WindowInfo } from '@shared/types'
+import { WASH } from '../theme'
 import { ChevronDownIcon } from './icons'
 
 interface Props {
@@ -39,7 +40,7 @@ export default function WindowSelect({ windows, selectedId, disabled, onSelect, 
         gap: 0.5,
         color: selected ? 'text.primary' : 'text.secondary',
         fontWeight: 500,
-        '&:hover': { bgcolor: 'rgba(15, 23, 42, 0.045)' },
+        '&:hover': { bgcolor: WASH },
         '&.Mui-disabled': { color: 'text.disabled' },
       }}
     >

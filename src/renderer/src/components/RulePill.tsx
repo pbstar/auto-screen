@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Box, Typography } from '@mui/material'
 import type { RuleSummary } from '@shared/types'
+import { WASH_STRONG } from '../theme'
 import PopoverPill from './PopoverPill'
 
 const api = window.autoScreen
@@ -68,7 +69,7 @@ function RuleRow({ rule }: { rule: RuleSummary }) {
             borderRadius: 999,
             border: 1,
             borderColor: 'divider',
-            bgcolor: rule.builtin ? 'rgba(15, 23, 42, 0.06)' : 'transparent',
+            bgcolor: rule.builtin ? WASH_STRONG : 'transparent',
             color: 'text.secondary',
             fontSize: 10.5,
             lineHeight: '16px',

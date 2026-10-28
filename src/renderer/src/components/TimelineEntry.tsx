@@ -1,16 +1,16 @@
 import { Box, Typography } from '@mui/material'
 import type { TimelineItem } from '../hooks/useAgentRun'
-import { CANVAS, HAIRLINE, MONO_FONT, SIGNAL } from '../theme'
+import { CANVAS, HAIRLINE, LINE_STRONG, SIGNAL, monoText } from '../theme'
 
 function dotColor(item: TimelineItem): string {
   if (item.kind === 'reply') return SIGNAL
-  if (item.kind === 'note') return item.tone === 'error' ? '#cf2e2e' : '#c9d1db'
+  if (item.kind === 'note') return item.tone === 'error' ? 'error.main' : LINE_STRONG
   if (item.kind === 'tool') {
-    if (item.status === 'error') return '#cf2e2e'
+    if (item.status === 'error') return 'error.main'
     if (item.status === 'running') return '#b6bdc8'
-    return '#12895a'
+    return 'success.main'
   }
-  return '#c9d1db'
+  return LINE_STRONG
 }
 
 interface Props {
@@ -92,10 +92,8 @@ function ShotEntry({ item, onPreview }: Props) {
     <>
       <Typography
         sx={{
-          fontFamily: MONO_FONT,
-          fontSize: 11,
+          ...monoText(11),
           color: 'text.secondary',
-          fontVariantNumeric: 'tabular-nums',
         }}
       >
         第 {item.step} 步 · {item.detail}
@@ -147,16 +145,14 @@ function ToolEntry({ item }: { item: TimelineItem }) {
   return (
     <>
       <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-        <Typography sx={{ fontFamily: MONO_FONT, fontSize: 12, fontWeight: 600 }}>
+        <Typography sx={{ ...monoText(12), fontWeight: 600 }}>
           {item.name}
         </Typography>
         <Box sx={{ flex: 1 }} />
         <Typography
           sx={{
-            fontFamily: MONO_FONT,
-            fontSize: 11,
+            ...monoText(11),
             color: 'text.disabled',
-            fontVariantNumeric: 'tabular-nums',
           }}
         >
           {item.durationMs != null ? `${item.durationMs}ms` : '…'}
@@ -164,9 +160,8 @@ function ToolEntry({ item }: { item: TimelineItem }) {
       </Box>
       <Typography
         sx={{
+          ...monoText(11),
           display: 'block',
-          fontFamily: MONO_FONT,
-          fontSize: 11,
           color: 'text.secondary',
           overflow: 'hidden',
           textOverflow: 'ellipsis',

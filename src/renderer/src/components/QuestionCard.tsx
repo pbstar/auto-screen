@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Box, Button, Checkbox, Radio, Stack, TextField, Typography } from '@mui/material'
+import { WASH } from '../theme'
 import type { PendingQuestion } from '@shared/agent'
 
 interface Props {
@@ -75,7 +76,7 @@ export default function QuestionCard({ question, disabled, onAnswer }: Props) {
               py: 0.5,
               borderRadius: 1,
               cursor: disabled ? 'default' : 'pointer',
-              '&:hover': { bgcolor: disabled ? 'transparent' : 'rgba(15, 23, 42, 0.045)' },
+              '&:hover': { bgcolor: disabled ? 'transparent' : WASH },
             }}
           >
             {question.multiple ? (

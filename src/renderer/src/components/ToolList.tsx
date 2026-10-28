@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material'
 import type { ToolSummary } from '@shared/types'
-import { MONO_FONT } from '../theme'
+import { monoText } from '../theme'
 
 interface Props {
   tools: ToolSummary[]
@@ -28,7 +28,7 @@ export default function ToolList({ tools, error }: Props) {
     <>
       {tools.map((tool) => (
         <Box key={tool.name} sx={{ py: 0.5 }}>
-          <Typography sx={{ fontFamily: MONO_FONT, fontSize: 12, fontWeight: 600 }}>
+          <Typography sx={{ ...monoText(12), fontWeight: 600 }}>
             {tool.name}
           </Typography>
           <Typography

@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Box, Button, Popover } from '@mui/material'
-import { MONO_FONT } from '../theme'
+import { LINE_STRONG, WASH, monoText } from '../theme'
 
 interface Props {
   label: string
@@ -35,14 +35,14 @@ export default function PopoverPill({ label, detail, disabled, onOpen, children 
           fontSize: 11.5,
           fontWeight: 500,
           bgcolor: 'background.paper',
-          '&:hover': { borderColor: '#c9d1db', bgcolor: 'rgba(15, 23, 42, 0.045)' },
+          '&:hover': { borderColor: LINE_STRONG, bgcolor: WASH },
         }}
       >
         {label}
         {detail && (
           <Box
             component="span"
-            sx={{ ml: 0.75, fontFamily: MONO_FONT, fontSize: 11, color: 'text.primary' }}
+            sx={{ ...monoText(11), ml: 0.75, color: 'text.primary' }}
           >
             {detail}
           </Box>

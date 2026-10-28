@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Box, Typography } from '@mui/material'
 import { snapToGrid } from '@shared/grid'
 import type { WindowInfo } from '@shared/types'
-import { CANVAS, HAIRLINE, MONO_FONT } from '../theme'
+import { CANVAS, HAIRLINE, monoText } from '../theme'
 import { useWindowStream } from '../hooks/useWindowStream'
 import PreviewGrid from './PreviewGrid'
 import WindowSelect from './WindowSelect'
@@ -107,10 +107,8 @@ export default function ScreenPreview({
         <Box sx={{ flex: 1 }} />
         <Typography
           sx={{
-            fontFamily: MONO_FONT,
-            fontSize: 11,
+            ...monoText(11),
             color: 'text.secondary',
-            fontVariantNumeric: 'tabular-nums',
           }}
         >
           {size.width > 0 ? `${size.width}×${size.height}` : '—'}
@@ -119,10 +117,8 @@ export default function ScreenPreview({
         <Box sx={{ width: '1px', height: 14, bgcolor: 'divider', flex: 'none' }} />
         <Typography
           sx={{
-            fontFamily: MONO_FONT,
-            fontSize: 11,
+            ...monoText(11),
             color: hover ? 'text.primary' : 'text.disabled',
-            fontVariantNumeric: 'tabular-nums',
             minWidth: 88,
             textAlign: 'right',
           }}

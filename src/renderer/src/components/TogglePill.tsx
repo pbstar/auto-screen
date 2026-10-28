@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Button, Tooltip } from '@mui/material'
+import { LINE_STRONG, WASH_STRONG } from '../theme'
 
 interface Props {
   checked: boolean
@@ -36,8 +37,8 @@ export default function TogglePill({ checked, onChange, title, label, ghost, chi
           bgcolor: checked ? 'text.primary' : ghost ? 'transparent' : 'background.paper',
           color: checked ? 'background.paper' : 'text.secondary',
           '&:hover': {
-            bgcolor: checked ? '#3a424e' : 'rgba(15, 23, 42, 0.06)',
-            borderColor: checked ? 'transparent' : ghost ? 'transparent' : '#c9d1db',
+            bgcolor: checked ? 'primary.light' : WASH_STRONG,
+            borderColor: checked ? 'transparent' : ghost ? 'transparent' : LINE_STRONG,
           },
         }}
       >
