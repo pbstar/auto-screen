@@ -11,6 +11,7 @@ import {
   type TokenUsage,
 } from '../shared/agent'
 import { IPC } from '../shared/ipc'
+import { singleLine } from '../shared/text'
 import { activateWindow } from '../core/safety'
 import { createPointerWatcher, type PointerWatcher } from '../core/pointer'
 import { configReady, readModelConfig } from '../main/config'
@@ -246,13 +247,10 @@ function track(payload: AgentEventPayload): void {
     active.trace.push(traceLine(active.pending, payload))
     active.pending = null
   } else if (payload.type === 'reply' && payload.text) {
-    active.trace.push(`第 ${payload.step} 步 判断：${singleLine(payload.text).slice(0, 120)}`)
+    active.trace.push(`第 ${payload.step} 步 判断：${singleLine(payload.text, 120)}`)
   }
 }
 
-function singleLine(text: string): string {
-  return text.replace(/\s*\n\s*/g, ' ').trim()
-}
 
 function traceLine(
   start: NonNullable<ActiveRun['pending']>,
@@ -261,7 +259,7 @@ function traceLine(
   const args = Object.entries(start.input)
     .map(([key, value]) => `${key}=${String(value).slice(0, 40)}`)
     .join(' ')
-  const text = singleLine(end.text).slice(0, 120)
+  const text = singleLine(end.text, 120)
   return `第 ${start.step} 步 ${start.name}(${args}) → ${end.isError ? '失败' : '成功'}：${text}`
 }
 

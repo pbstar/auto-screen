@@ -2,6 +2,7 @@ import { app } from 'electron'
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { SkillSummary } from '../shared/types'
+import { singleLine } from '../shared/text'
 import type { SkillPrompt } from './prompts/agent'
 import { parseFrontmatter } from './frontmatter'
 
@@ -91,11 +92,6 @@ function freeId(base: string): string {
   return id
 }
 
-/** frontmatter 只写单行，正文里的换行原样保留 */
-function oneLine(value: string): string {
-  return value.replace(/\s+/g, ' ').trim().slice(0, 200)
-}
-
 /** 把沉淀出来的手册写成 skills/<slug>/SKILL.md，返回它在下一次扫描里的样子 */
 export function saveSkill(input: {
   /** 模型给出的英文目录名，不合规时回退到时间戳 */
@@ -104,8 +100,8 @@ export function saveSkill(input: {
   description: string
   body: string
 }): SkillSummary {
-  const name = oneLine(input.name)
-  const description = oneLine(input.description)
+  const name = singleLine(input.name, 200)
+  const description = singleLine(input.description, 200)
   const id = freeId(slugOf(input.id) ?? stampId())
   const dir = join(skillsRoot(), id)
   mkdirSync(dir, { recursive: true })

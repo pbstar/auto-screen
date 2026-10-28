@@ -8,6 +8,7 @@ import Timeline from './components/Timeline'
 import LogDialog from './components/LogDialog'
 import ModelConfigDialog from './components/ModelConfigDialog'
 import { useAgentRun } from './hooks/useAgentRun'
+import { messageOf } from './utils'
 
 const api = window.autoScreen
 
@@ -15,10 +16,6 @@ async function expectResult<T>(promise: Promise<IpcResult<T>>): Promise<T> {
   const result = await promise
   if (!result.ok) throw new Error(result.error)
   return result.data
-}
-
-function messageOf(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
 }
 
 export default function App() {

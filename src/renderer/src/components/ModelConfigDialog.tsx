@@ -9,6 +9,7 @@ import {
   Typography,
 } from '@mui/material'
 import type { ModelSettings } from '@shared/types'
+import { messageOf } from '../utils'
 
 const api = window.autoScreen
 
@@ -17,10 +18,6 @@ interface Props {
   onClose: () => void
   /** 保存成功后通知外层刷新状态，Key 是否就绪会变 */
   onSaved: () => void
-}
-
-function messageOf(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
 }
 
 export default function ModelConfigDialog({ open, onClose, onSaved }: Props) {

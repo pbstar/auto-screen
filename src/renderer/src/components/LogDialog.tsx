@@ -11,6 +11,7 @@ import {
   Typography,
 } from '@mui/material'
 import type { RunMeta } from '@shared/types'
+import { dateTimeText } from '@shared/time'
 import { CANVAS, monoText } from '../theme'
 
 const api = window.autoScreen
@@ -18,12 +19,6 @@ const api = window.autoScreen
 interface Props {
   open: boolean
   onClose: () => void
-}
-
-function formatTime(ms: number): string {
-  const date = new Date(ms)
-  const pad = (value: number) => String(value).padStart(2, '0')
-  return `${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
 }
 
 const REASON_TEXT: Record<string, string> = {
@@ -130,7 +125,7 @@ function RunList({ runs, selected, onSelect, error }: RunListProps) {
             sx={{ flexDirection: 'column', alignItems: 'flex-start', py: 0.75, px: 1 }}
           >
             <Typography variant="caption" sx={monoText(11)}>
-              {formatTime(run.startedAt)}
+              {dateTimeText(run.startedAt)}
             </Typography>
             <Typography
               variant="caption"
