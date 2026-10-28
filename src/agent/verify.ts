@@ -2,7 +2,7 @@ import type { TokenUsage } from '../shared/agent'
 import { chat } from './llm'
 import { VERIFY_PROMPT } from './prompts/verify'
 
-export interface VerifyInput {
+interface VerifyInput {
   task: string
   plan: string | null
   /** 模型宣布完成时的结论，核对时用来判断画面是否支持它 */
@@ -12,12 +12,12 @@ export interface VerifyInput {
   signal: AbortSignal
 }
 
-export interface Verdict {
+interface Verdict {
   ok: boolean
   problem: string
 }
 
-export interface VerifyResult {
+interface VerifyResult {
   /** 解析不出结论时为 null，调用方按通过处理，不让格式问题卡住任务 */
   verdict: Verdict | null
   usage: TokenUsage

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 const api = window.autoScreen
 
-export interface StreamSize {
+interface StreamSize {
   width: number
   height: number
 }

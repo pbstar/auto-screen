@@ -69,44 +69,6 @@ export function MoreIcon({ size = 16 }: IconProps) {
   )
 }
 
-/** 滑杆：配置模型 */
-export function SlidersIcon({ size = 14 }: IconProps) {
-  return (
-    <Glyph size={size}>
-      <path
-        d="M2.5 4.5h11M2.5 11.5h11"
-        stroke="currentColor"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-      />
-      <circle cx="6" cy="4.5" r="1.7" fill="currentColor" />
-      <circle cx="10" cy="11.5" r="1.7" fill="currentColor" />
-    </Glyph>
-  )
-}
-
-/** 文档：运行日志 */
-export function DocIcon({ size = 14 }: IconProps) {
-  return (
-    <Glyph size={size}>
-      <path
-        d="M4 2.5h5l3 3v8H4z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.2"
-        strokeLinejoin="round"
-      />
-      <path d="M9 2.5v3h3" fill="none" stroke="currentColor" strokeWidth="1.2" />
-      <path
-        d="M6 8.5h4M6 11h3"
-        stroke="currentColor"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-      />
-    </Glyph>
-  )
-}
-
 /** 显示器：预览区的空态 */
 export function MonitorIcon({ size = 20 }: IconProps) {
   return (

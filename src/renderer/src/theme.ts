@@ -6,11 +6,11 @@ export const MONO_FONT =
 
 /** 界面本身保持无彩色，颜色留给被操作的窗口和截图上的网格 */
 export const CANVAS = '#eceef2'
-export const SURFACE = '#ffffff'
+const SURFACE = '#ffffff'
 export const HAIRLINE = '#e2e6ec'
-export const INK = '#14181f'
-export const INK_SECONDARY = '#5c6573'
-export const INK_FAINT = '#9aa3ae'
+const INK = '#14181f'
+const INK_SECONDARY = '#5c6573'
+const INK_FAINT = '#9aa3ae'
 /** 只用于焦点、运行态这类"正在发生"的信号 */
 export const SIGNAL = '#2b6cf6'
 

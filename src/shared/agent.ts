@@ -64,7 +64,7 @@ export interface AgentStatus {
   question: PendingQuestion | null
 }
 
-export interface AgentEventBase {
+interface AgentEventBase {
   runId: string
   seq: number
 }

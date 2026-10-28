@@ -10,7 +10,7 @@ import { saveSkill } from './skills'
 const MAX_TRACE = 12_000
 const MAX_BODY = 4_000
 
-export interface DistillInput {
+interface DistillInput {
   task: string
   windowId: number
   /** 每步一行：工具、参数与结果 */
@@ -18,7 +18,7 @@ export interface DistillInput {
   signal: AbortSignal
 }
 
-export type DistillResult =
+type DistillResult =
   | { status: 'saved'; skill: SkillSummary; usage: TokenUsage }
   | { status: 'skipped'; usage: TokenUsage }
   | { status: 'failed'; error: string }

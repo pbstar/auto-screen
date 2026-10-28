@@ -1,7 +1,7 @@
 import type { AgentAnswer, AgentEventPayload, PendingQuestion } from '../shared/agent'
 
 /** 提问需要的运行环境：事件广播、接管检测开关、前后台切换 */
-export interface QuestionHost {
+interface QuestionHost {
   signal: AbortSignal
   /** 提问期间压住人工接管检测，否则用户点选项会被当成人工操作 */
   setBusy: (busy: boolean) => void

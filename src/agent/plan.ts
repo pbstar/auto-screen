@@ -6,13 +6,13 @@ import { PLAN_PROMPT } from './prompts/plan'
 
 const MAX_PLAN = 1_000
 
-export interface PlanInput {
+interface PlanInput {
   windowId: number
   task: string
   signal: AbortSignal
 }
 
-export interface PlanResult {
+interface PlanResult {
   /** 模型给出的流程；空回复时为 null，后续步骤照常执行 */
   plan: string | null
   usage: TokenUsage

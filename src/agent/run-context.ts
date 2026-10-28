@@ -11,7 +11,7 @@ import type { ShotRef } from './history'
 import type { AgentMessage } from './llm'
 import { buildSystemPrompt, type RulePrompt, type SkillPrompt } from './prompts/agent'
 
-export type Emit = (payload: AgentEventPayload) => void
+type Emit = (payload: AgentEventPayload) => void
 
 export interface RunOptions {
   windowId: number

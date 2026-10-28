@@ -24,7 +24,7 @@ export type AgentMessage =
     }
   | { role: 'tool'; tool_call_id: string; content: string }
 
-export interface AssistantTurn {
+interface AssistantTurn {
   content: string | null
   reasoning: string | null
   toolCalls: ToolCall[]
@@ -52,12 +52,12 @@ function getClient(cfg: ModelConfig): OpenAI {
 }
 
 /** 工具定义由调用方传入：只有执行步需要，规划和核对不带工具 */
-export interface ToolSchema {
+interface ToolSchema {
   type: 'function'
   function: { name: string; description: string; parameters: Record<string, unknown> }
 }
 
-export interface ChatRequest {
+interface ChatRequest {
   messages: AgentMessage[]
   signal: AbortSignal
   maxTokens: number

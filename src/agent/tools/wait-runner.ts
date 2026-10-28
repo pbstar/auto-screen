@@ -5,7 +5,7 @@ const TICK_MS = 500
 /** 进度每十秒报一次：够界面看出在推进，又不至于刷屏 */
 export const PROGRESS_MS = 10_000
 
-export interface WaitRun {
+interface WaitRun {
   signal: AbortSignal
   gate: PauseControl
   report?: (text: string) => void
