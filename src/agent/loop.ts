@@ -13,6 +13,7 @@ import {
   type ToolCall,
 } from './llm'
 import { executeTool, listToolSchemas } from './tools'
+import { countsAsEffect, judgeEffect } from './effect'
 import { markOf } from './mark'
 import { planTask } from './plan'
 import { verifyResult } from './verify'
@@ -101,9 +102,26 @@ async function runStep(ctx: RunContext, step: number): Promise<AgentRunReason | 
   const effort = ctx.failed ? HEAVY_EFFORT : ROUTINE_EFFORT
   ctx.failed = false
   const shot = await annotateCapture(captureWindow(ctx.windowId), ctx.mark)
+  // 上一步动作到这一步截图之间画面没变，就说明那个动作没生效；必须先判断再存新签名
+  const effect = judgeEffect(ctx.prevFrame, shot.frame, ctx.lastAction, ctx.noEffect)
+  ctx.prevFrame = shot.frame
+  ctx.lastAction = null
+  ctx.noEffect = effect.streak
+  if (effect.escalate) ctx.failed = true
   ctx.saveShot(step, shot.dataUrl)
-  appendShot(ctx.messages, ctx.shots, shot, step)
-  ctx.emit({ type: 'shot', step, image: shot.thumb, width: shot.width, height: shot.height })
+  ctx.emit({
+    type: 'shot',
+    step,
+    image: shot.thumb,
+    width: shot.width,
+    height: shot.height,
+    note: effect.note ?? undefined,
+  })
+  if (effect.abort) {
+    ctx.error = effect.abort
+    return 'failed'
+  }
+  appendShot(ctx.messages, ctx.shots, shot, step, effect.note ?? undefined)
 
   const turn = await chat({
     messages: ctx.messages,
@@ -228,6 +246,7 @@ async function runOneTool(
     durationMs: Date.now() - startedAt,
   })
   if (!outcome.isError) {
+    if (countsAsEffect(name, input)) ctx.lastAction = name
     const mark = markOf(name, input, context)
     if (mark) ctx.mark = mark
   }

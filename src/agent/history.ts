@@ -20,12 +20,15 @@ export function appendShot(
   shots: ShotRef[],
   shot: AnnotatedShot,
   step: number,
+  note?: string,
 ): void {
   const content: ContentPart[] = [
     {
       type: 'text',
       // 模型看不到时钟，按时刻行动（wait_until）或算间隔都要靠这里给的当前时间
-      text: `第 ${step} 步截图，尺寸 ${shot.width}×${shot.height}，当前时间 ${clockText()}，坐标以这张图为准。`,
+      text:
+        `第 ${step} 步截图，尺寸 ${shot.width}×${shot.height}，当前时间 ${clockText()}，坐标以这张图为准。` +
+        (note ? `\n${note}` : ''),
     },
     { type: 'image_url', image_url: { url: shot.dataUrl, detail: 'high' } },
   ]

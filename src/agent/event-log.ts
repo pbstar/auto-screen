@@ -13,6 +13,9 @@ export function logEvent(runId: string, payload: AgentEventPayload): void {
       break
     case 'shot':
       appendLog(runId, `第 ${payload.step} 步截图 ${payload.width}×${payload.height}`)
+      if (payload.note) {
+        appendLog(runId, `第 ${payload.step} 步观察：${singleLine(payload.note, 200)}`)
+      }
       break
     case 'reply':
       if (payload.text) appendLog(runId, `第 ${payload.step} 步模型：${singleLine(payload.text)}`)

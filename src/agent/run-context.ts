@@ -5,6 +5,7 @@ import {
   type PendingQuestion,
   type TokenUsage,
 } from '../shared/agent'
+import type { FrameSignature } from '../shared/types'
 import type { ClickMark } from './annotate'
 import { FailureGuard, type PauseGate } from './control'
 import type { ShotRef } from './history'
@@ -65,6 +66,12 @@ export interface RunContext {
   dirty: boolean
   /** 上一步是否有工具失败，失败后的下一步需要重新想 */
   failed: boolean
+  /** 上一步截图的原图签名，用来判断上一步动作有没有真的改变画面 */
+  prevFrame: FrameSignature | null
+  /** 上一步执行成功的输入类工具名，画面没变时据此告诉模型是哪个动作没生效 */
+  lastAction: string | null
+  /** 连续多少次输入动作没有引起画面变化，见 effect.ts */
+  noEffect: number
   /** 最终核对连续未通过的次数，到上限就以 unverified 收尾 */
   verifyFailures: number
 }
@@ -92,6 +99,9 @@ export function createContext(options: RunOptions): RunContext {
     mark: null,
     dirty: false,
     failed: false,
+    prevFrame: null,
+    lastAction: null,
+    noEffect: 0,
     verifyFailures: 0,
   }
 }

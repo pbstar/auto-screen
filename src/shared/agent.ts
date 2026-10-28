@@ -87,6 +87,8 @@ export type AgentEvent =
       image: string
       width: number
       height: number
+      /** 上一步动作没有改变画面时的观察，随这张截图一起给模型 */
+      note?: string
     })
   | (AgentEventBase & { type: 'reply'; step: number; text: string | null })
   | (AgentEventBase & {
