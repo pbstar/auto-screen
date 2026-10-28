@@ -129,6 +129,8 @@ export const theme = createTheme({
     },
     MuiCssBaseline: {
       styleOverrides: {
+        // 整页高度固定、滚动都在内部区域；Tooltip 这类挂到 body 的浮层一旦越界就会闪现整页滚动条，这里直接禁掉
+        'html, body, #root': { height: '100%', overflow: 'hidden' },
         '*::-webkit-scrollbar': { width: 8, height: 8 },
         '*::-webkit-scrollbar-thumb': { backgroundColor: '#ccd2db', borderRadius: 4 },
         '*::-webkit-scrollbar-thumb:hover': { backgroundColor: '#b5bdc9' },
