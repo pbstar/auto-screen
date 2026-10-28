@@ -31,6 +31,7 @@ const REASON_TEXT: Record<string, string> = {
   stopped: '已停止',
   max_steps: '超步数',
   failed: '失败',
+  unverified: '未通过核对',
 }
 
 export default function LogDialog({ open, onClose }: Props) {
@@ -83,7 +84,6 @@ export default function LogDialog({ open, onClose }: Props) {
       </DialogContent>
       <DialogActions sx={{ px: 2, py: 1.5 }}>
         <Button onClick={() => void api.openRunsDir()}>打开目录</Button>
-        <Button onClick={() => void loadRuns()}>刷新</Button>
         <Button variant="contained" onClick={onClose}>
           关闭
         </Button>
