@@ -137,8 +137,8 @@ export default function TaskBar({
           onToggle={onToggleSkill}
           onReload={onRefreshSkills}
         />
-        {/* 脚本、规则、工具都是只读参考，合成一个胶囊，才放得下技能与开始按钮 */}
-        <ReferencePill skills={skills} onReloadSkills={onRefreshSkills} />
+        {/* 脚本挂在技能下面，只读的规则与工具合成一个胶囊，才放得下技能与开始按钮 */}
+        <ReferencePill />
         <Box sx={{ flex: 1 }} />
         {/* 开关只影响下一次启动，运行中收起，给暂停/终止让出位置 */}
         {!running && <AutoSkillToggle checked={autoSkill} onChange={onAutoSkillChange} />}

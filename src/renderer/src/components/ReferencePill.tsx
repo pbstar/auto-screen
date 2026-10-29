@@ -1,22 +1,15 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Box, Typography } from '@mui/material'
-import type { RuleSummary, SkillSummary, ToolSummary } from '@shared/types'
+import type { RuleSummary, ToolSummary } from '@shared/types'
 import { WASH } from '../theme'
 import PopoverPill from './PopoverPill'
-import ScriptList from './ScriptList'
 import RuleList from './RuleList'
 import ToolList from './ToolList'
 
 const api = window.autoScreen
 
-interface Props {
-  skills: SkillSummary[]
-  /** 打开浮层时让上层重扫技能目录，新加的脚本才能立刻出现 */
-  onReloadSkills: () => void
-}
-
-/** 脚本、规则、工具都是只读参考：合成一个胶囊，浮层里用分段切换，三份清单不堆在一起 */
-export default function ReferencePill({ skills, onReloadSkills }: Props) {
+/** 规则与工具始终生效、只读，合成一个胶囊；脚本跟着技能走，放在「技能」浮层里 */
+export default function ReferencePill() {
   const [tab, setTab] = useState(0)
   const [tools, setTools] = useState<ToolSummary[]>([])
   const [rules, setRules] = useState<RuleSummary[]>([])
@@ -35,16 +28,12 @@ export default function ReferencePill({ skills, onReloadSkills }: Props) {
 
   useEffect(reload, [reload])
 
-  const scriptCount = skills.filter((skill) => skill.script).length
-  const segments = [`脚本 ${scriptCount}`, `规则 ${rules.length}`, `工具 ${tools.length}`]
+  const segments = [`规则 ${rules.length}`, `工具 ${tools.length}`]
 
   return (
     <PopoverPill
       label="参考"
-      onOpen={() => {
-        reload()
-        onReloadSkills()
-      }}
+      onOpen={reload}
       header={
         <Box sx={groupSx}>
           {segments.map((label, index) => (
@@ -61,9 +50,8 @@ export default function ReferencePill({ skills, onReloadSkills }: Props) {
         </Typography>
       )}
       <Box sx={{ pt: 0.5 }}>
-        {tab === 0 && <ScriptList skills={skills} />}
-        {tab === 1 && <RuleList rules={rules} />}
-        {tab === 2 && <ToolList tools={tools} />}
+        {tab === 0 && <RuleList rules={rules} />}
+        {tab === 1 && <ToolList tools={tools} />}
       </Box>
     </PopoverPill>
   )

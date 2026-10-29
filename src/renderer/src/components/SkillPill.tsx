@@ -52,6 +52,15 @@ export default function SkillPill({ skills, selected, disabled, onToggle, onRelo
                 >
                   {skill.description || '（没有描述）'}
                 </Typography>
+                {/* 脚本和 SKILL.md 在同一个目录里，界面上也挂在技能下面，不另立一类 */}
+                {skill.script && (
+                  <Typography
+                    variant="caption"
+                    sx={{ display: 'block', color: 'text.secondary', lineHeight: 1.5 }}
+                  >
+                    脚本《{skill.script.name}》 · {skill.script.steps} 步
+                  </Typography>
+                )}
               </Box>
             }
             sx={{
@@ -63,6 +72,22 @@ export default function SkillPill({ skills, selected, disabled, onToggle, onRelo
             }}
           />
         ))
+      )}
+      {skills.length > 0 && (
+        <Typography
+          variant="caption"
+          sx={{
+            display: 'block',
+            mt: 1,
+            pt: 1,
+            borderTop: 1,
+            borderColor: 'divider',
+            color: 'text.secondary',
+            lineHeight: 1.5,
+          }}
+        >
+          技能目录里放一份 script.json，勾选后会随技能注册成工具：模型在合适的时机一次调用跑完这段固定流程。
+        </Typography>
       )}
     </PopoverPill>
   )
