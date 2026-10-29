@@ -63,6 +63,8 @@ export interface ToolContext {
   baseline?: FrameSignature
   /** 向用户提问并等待回答，返回 null 表示用户跳过；没有通道时不给 */
   ask?: (input: AskInput) => Promise<string | null>
+  /** 标记鼠标键盘正在被 Agent 使用；脚本按步调用，步与步之间用户动鼠标仍会触发接管 */
+  busy?: (on: boolean) => void
 }
 
 export interface ToolResult {

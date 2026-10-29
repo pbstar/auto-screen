@@ -27,7 +27,7 @@ const INPUT_TOOLS = new Set(['click', 'move', 'drag', 'scroll', 'type', 'key'])
 /** 核对连续两次不通过就收尾：结果没被确认，不能当作完成 */
 const MAX_VERIFY_FAILURES = 2
 
-/** 脚本内部同样在动鼠标键盘：按同一套输入工具对待 */
+/** 脚本内部同样在动鼠标键盘：这类动作之后要等界面重绘再截图 */
 function movesInput(name: string): boolean {
   return INPUT_TOOLS.has(name) || isScriptTool(name)
 }
@@ -222,6 +222,7 @@ async function runToolCalls(
         }),
       baseline: shot.frame,
       ask: (input) => ctx.ask({ ...input, callId: call.id, step }),
+      busy: ctx.busy,
     }
     const result = await runOneTool(ctx, call, context, step)
     const abort = ctx.guard.observe(call.function.name, result.input, result.text, result.isError)
@@ -266,9 +267,9 @@ async function runOneTool(
   return { ...outcome, input }
 }
 
-/** 鼠标键盘由 Agent 自己动的时候，按住接管检测，避免误判 */
+/** 鼠标键盘由 Agent 自己动的时候，按住接管检测，避免误判；脚本按步自己管，见 script-runner */
 async function withBusy<T>(ctx: RunContext, name: string, action: () => Promise<T>): Promise<T> {
-  if (!movesInput(name)) return action()
+  if (!INPUT_TOOLS.has(name)) return action()
   ctx.busy(true)
   try {
     return await action()

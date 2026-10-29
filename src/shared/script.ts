@@ -71,7 +71,6 @@ export interface ScriptEntry {
 export interface ScriptSummary {
   name: string
   steps: number
-  params: string[]
 }
 
 const PLACEHOLDER = /\{\{\s*([\w-]+)\s*\}\}/g
@@ -100,7 +99,7 @@ export function fillPlaceholders(text: string, values: Record<string, string>): 
 }
 
 export function summarizeScript(script: ScriptDef): ScriptSummary {
-  return { name: script.name, steps: script.steps.length, params: Object.keys(script.params) }
+  return { name: script.name, steps: script.steps.length }
 }
 
 function fail(message: string): never {
@@ -124,21 +123,18 @@ function optionalText(value: unknown, field: string, max = 2000): string | undef
   return value.trim().slice(0, max)
 }
 
-/** 缺省时用 fallback，给了就必须是区间内的数：宁可拒绝执行，也不要带着可疑的值去点 */
+/** 缺省时报错，给了就必须是区间内的数：宁可拒绝执行，也不要带着可疑的值去点 */
 function numberIn(
   value: unknown,
   field: string,
   min: number,
   max: number,
-  options: { integer?: boolean; fallback?: number } = {},
+  integer = false,
 ): number {
-  if (value === undefined || value === null) {
-    if (options.fallback !== undefined) return options.fallback
-    fail(`缺少 ${field}`)
-  }
+  if (value === undefined || value === null) fail(`缺少 ${field}`)
   const num = Number(value)
   if (!Number.isFinite(num)) fail(`${field} 必须是数字`)
-  const result = options.integer ? Math.round(num) : num
+  const result = integer ? Math.round(num) : num
   if (result < min || result > max) fail(`${field} 必须在 ${min}~${max} 之间`)
   return result
 }
@@ -172,12 +168,10 @@ function readStep(raw: unknown, index: number): ScriptStep {
   if (step.action === 'type') step.text = textOf(raw.text, `${label}.text`, 10_000)
   if (step.action === 'key') step.combo = textOf(raw.combo, `${label}.combo`, 100)
   if (step.action === 'wait') {
-    step.ms = numberIn(raw.ms, `${label}.ms`, 0, MAX_WAIT_MS, { integer: true })
+    step.ms = numberIn(raw.ms, `${label}.ms`, 0, MAX_WAIT_MS, true)
   }
   if (raw.timeoutMs !== undefined && raw.timeoutMs !== null) {
-    step.timeoutMs = numberIn(raw.timeoutMs, `${label}.timeoutMs`, 100, MAX_STEP_TIMEOUT_MS, {
-      integer: true,
-    })
+    step.timeoutMs = numberIn(raw.timeoutMs, `${label}.timeoutMs`, 100, MAX_STEP_TIMEOUT_MS, true)
   }
   return step
 }

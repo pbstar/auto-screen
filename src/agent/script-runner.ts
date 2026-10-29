@@ -58,12 +58,16 @@ async function runStep(step: ScriptStep, index: number, context: ToolContext): P
 
 /** 复用现有工具执行：坐标换算、网格对齐、落点回显都只有一份实现 */
 async function apply(step: ScriptStep, index: number, context: ToolContext): Promise<void> {
+  // 只在自己动手的这一下压住接管检测：步与步之间用户移动鼠标仍能触发暂停
+  context.busy?.(true)
   try {
     await executeTool(step.action, stepInput(step, context), context)
   } catch (caught) {
     if (isAbort(caught)) throw caught
     const reason = caught instanceof Error ? caught.message : String(caught)
     throw stepError(step, index, `执行失败：${reason}`)
+  } finally {
+    context.busy?.(false)
   }
 }
 
