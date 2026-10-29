@@ -139,8 +139,8 @@ export default function TaskBar({
           onToggle={onToggleSkill}
           onReload={onRefreshSkills}
         />
-        {/* 没有脚本时不占位：这一行还有开始按钮，四个胶囊在 400px 面板里会挤 */}
-        {skills.some((skill) => skill.script) && <ScriptPill skills={skills} />}
+        {/* 常驻显示：没有脚本时浮层里说明怎么添加，不然这个能力没人找得到 */}
+        <ScriptPill skills={skills} />
         <RulePill />
         <ToolPill />
         <Box sx={{ flex: 1 }} />

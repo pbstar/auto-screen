@@ -19,7 +19,7 @@ export default function ScriptPill({ skills }: { skills: SkillSummary[] }) {
     <PopoverPill label="脚本" detail={entries.length > 0 ? String(entries.length) : undefined}>
       {entries.length === 0 ? (
         <Typography variant="caption" sx={{ display: 'block', px: 0.5, color: 'text.secondary' }}>
-          在技能目录里放一份 script.json，就能让模型用一次调用跑完固定流程
+          还没有脚本：把 script.json 放进技能目录、和 SKILL.md 同级，勾选该技能后模型就能一次调用跑完这条流程
         </Typography>
       ) : (
         entries.map((entry) => <ScriptRow key={entry.id} entry={entry} />)
