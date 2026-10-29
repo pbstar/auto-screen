@@ -11,6 +11,7 @@ import {
   type TokenUsage,
 } from '../shared/agent'
 import { IPC } from '../shared/ipc'
+import type { SkillScript } from '../shared/script'
 import { singleLine } from '../shared/text'
 import { activateWindow } from '../core/safety'
 import { createPointerWatcher, type PointerWatcher } from '../core/pointer'
@@ -61,6 +62,10 @@ export async function startAgent(
   const config = readModelConfig()
   const rules = readRulePrompts()
   const skills = readSkillPrompts(request.skills)
+  // 脚本随技能一起加载：勾了技能，它的脚本才注册成工具
+  const scripts: SkillScript[] = skills.flatMap((skill) =>
+    skill.script ? [{ skillId: skill.id, skillName: skill.name, script: skill.script }] : [],
+  )
   // 目标不在最前，鼠标就会点在自己身上；激活失败就不要开跑
   await activateWindow(request.windowId)
 
@@ -83,6 +88,10 @@ export async function startAgent(
     runId,
     `技能：${skills.length > 0 ? skills.map((skill) => skill.name).join('、') : '未勾选'}`,
   )
+  if (scripts.length > 0) {
+    const summary = scripts.map((item) => `${item.script.name}（${item.script.steps.length} 步）`)
+    appendLog(runId, `脚本：${summary.join('、')}`)
+  }
   if (request.autoSkill) appendLog(runId, '完成后自动沉淀技能：开启')
 
   const gate = new PauseGate()
@@ -119,6 +128,7 @@ export async function startAgent(
     task,
     rules,
     skills,
+    scripts,
     signal: controller.signal,
     emit: (payload) => broadcast(getWindow(), runId, payload),
     saveShot: (step, dataUrl) => saveShot(runId, step, dataUrl),

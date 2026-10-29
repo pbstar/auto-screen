@@ -10,7 +10,7 @@ const POLL_MS = 120
 const MOVE_THRESHOLD = 6
 
 export interface PointerWatcher {
-  /** Agent 自己操作鼠标期间调用，避免把自己的移动误判成人手 */
+  /** Agent 自己操作鼠标期间调用，避免把自己的移动误判成人手；可嵌套，按次数计 */
   markBusy(busy: boolean): void
   /** 重新对齐基线，继续后不会立刻把人手的位置当成新动作 */
   resync(): Promise<void>
@@ -28,7 +28,8 @@ async function pointerPosition(): Promise<PointerPoint> {
  */
 export function createPointerWatcher(onTakeover: () => void): PointerWatcher {
   let baseline: PointerPoint | null = null
-  let busy = false
+  // 脚本执行中会弹确认框：提问层还会 markBusy 一次，按次数计才不会提前放开检测
+  let busyCount = 0
   let armed = true
 
   const detect = (point: PointerPoint): void => {
@@ -52,7 +53,7 @@ export function createPointerWatcher(onTakeover: () => void): PointerWatcher {
   const sample = async (): Promise<void> => {
     try {
       const point = await pointerPosition()
-      if (busy) baseline = point
+      if (busyCount > 0) baseline = point
       else detect(point)
     } catch {
       // 读不到光标时保持上一次基线，不影响运行
@@ -64,10 +65,10 @@ export function createPointerWatcher(onTakeover: () => void): PointerWatcher {
 
   return {
     markBusy(next) {
-      busy = next
-      // 动作结束后丢一次基线，下一个采样点重新对齐，
+      busyCount = Math.max(0, busyCount + (next ? 1 : -1))
+      // 全部释放后丢一次基线，下一个采样点重新对齐，
       // 否则光标被自己移到落点会被当成人工接管
-      if (!next) baseline = null
+      if (busyCount === 0) baseline = null
     },
     async resync() {
       armed = false

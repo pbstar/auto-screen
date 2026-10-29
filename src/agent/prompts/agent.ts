@@ -1,3 +1,5 @@
+import { scriptToolName, type SkillScript } from '../../shared/script'
+
 /** 注入系统提示的规则正文：内置规则与 rules/*.md 都在这里 */
 export interface RulePrompt {
   name: string
@@ -12,7 +14,11 @@ export interface SkillPrompt {
   body: string
 }
 
-export function buildSystemPrompt(rules: RulePrompt[], skills: SkillPrompt[]): string {
+export function buildSystemPrompt(
+  rules: RulePrompt[],
+  skills: SkillPrompt[],
+  scripts: SkillScript[] = [],
+): string {
   const lines = [
     '你是一个桌面操作助手。用户已经替你选定了一个目标窗口，每一轮你都会收到这个窗口的最新截图。',
     '',
@@ -60,5 +66,32 @@ export function buildSystemPrompt(rules: RulePrompt[], skills: SkillPrompt[]): s
     for (const skill of skills) lines.push('', `### ${skill.name}`, skill.body)
   }
 
+  // 脚本是技能的确定性版本：只有勾选的技能带脚本时才追加，未勾选时前缀不变
+  if (scripts.length > 0) {
+    lines.push(
+      '',
+      '## 脚本',
+      '- 下面的脚本把固定流程固化成了工具，一次调用跑完整条序列；当前画面符合适用条件时优先调用它，不要自己逐步重复同样的动作。',
+      '- 调用后以返回结果和下一步截图为准：成功就接着做后面的事；报错会说明停在第几步，按手册和截图继续。',
+    )
+    for (const item of scripts) lines.push('', ...scriptLines(item))
+  }
+
   return lines.join('\n')
+}
+
+function scriptLines(item: SkillScript): string[] {
+  const { script } = item
+  const params = Object.keys(script.params)
+  const lines = [
+    `### 脚本《${script.name}》（工具 ${scriptToolName(item.skillId)}，所属技能：${item.skillName}）`,
+    `- 用途：${script.description || '已经固化的操作序列'}`,
+  ]
+  if (script.when) lines.push(`- 适用：${script.when}`)
+  lines.push(
+    `- 共 ${script.steps.length} 步` +
+      (params.length > 0 ? `；参数：${params.join('、')}` : '；不需要参数') +
+      (script.confirm ? '；执行前会请用户确认' : ''),
+  )
+  return lines
 }

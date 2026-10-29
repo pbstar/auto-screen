@@ -113,6 +113,8 @@ export type AgentEvent =
       callId: string
       /** 长任务的进度文案，如「已等待 00:30 / 05:00」 */
       text: string
+      /** 来自脚本内部的步骤：每步一条、要落日志，等待类进度则不必 */
+      script?: boolean
     })
   | (AgentEventBase & {
       type: 'question'

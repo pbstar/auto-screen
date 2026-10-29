@@ -33,15 +33,17 @@ export async function executeTool(
   name: string,
   input: Record<string, unknown>,
   context: ToolContext,
+  extra: ToolDef[] = [],
 ): Promise<ToolResult> {
-  const tool = registry.get(name)
+  // 技能脚本是运行期才存在的工具，排在静态工具前面按名字找
+  const tool = extra.find((item) => item.name === name) ?? registry.get(name)
   if (!tool) throw new Error(`未知工具：${name}`)
   return tool.execute(input, context)
 }
 
-/** OpenAI function 格式的工具定义，模型请求直接使用 */
-export function listToolSchemas() {
-  return tools.map((tool) => ({
+/** OpenAI function 格式的工具定义，模型请求直接使用；extra 是本次运行可用的技能脚本 */
+export function listToolSchemas(extra: ToolDef[] = []) {
+  return [...tools, ...extra].map((tool) => ({
     type: 'function' as const,
     function: {
       name: tool.name,

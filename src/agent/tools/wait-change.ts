@@ -1,8 +1,7 @@
-import { loadImage } from '@napi-rs/canvas'
-import { captureWindow } from '../../core/screen'
 import { durationText } from '../../shared/time'
 import type { FrameSignature, ToolContext } from '../../shared/types'
-import { framesDiffer, sampleFrame } from '../watch'
+import { readFrame } from '../frame'
+import { framesDiffer } from '../watch'
 import type { ToolDef } from './types'
 import { optionalNumber } from './helpers'
 import { PROGRESS_MS, sleepOrAbort } from './wait-runner'
@@ -14,11 +13,6 @@ const TICK_MS = 1_000
 const SETTLE_MS = 800
 const SETTLE_TICK_MS = 250
 
-async function readFrame(windowId: number): Promise<FrameSignature> {
-  const capture = captureWindow(windowId)
-  const png = Buffer.from(capture.image.split(',')[1] ?? '', 'base64')
-  return sampleFrame(await loadImage(png))
-}
 /** 画面刚变化时可能还在动画中，等它连续两帧一致再交给模型 */
 async function settle(context: ToolContext, first: FrameSignature): Promise<void> {
   const deadline = Date.now() + SETTLE_MS

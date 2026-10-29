@@ -6,6 +6,7 @@ import type {
   AskOption,
   PauseReason,
 } from './agent'
+import type { ScriptSummary } from './script'
 
 /** 窗口列表只给界面用来认出目标，坐标换算在 core/screen.ts 内部完成 */
 export interface WindowInfo {
@@ -80,6 +81,8 @@ export interface SkillSummary {
   id: string
   name: string
   description: string
+  /** 同目录的 script.json 解析成功时才有，界面据此展示「脚本」胶囊 */
+  script?: ScriptSummary
 }
 
 /** 规则始终生效、不参与勾选；内置规则来自代码，自定义规则来自 rules/ 目录 */

@@ -5,6 +5,7 @@ import type { SkillSummary } from '@shared/types'
 import type { AgentRunState, SkillOutcome } from '../hooks/useAgentRun'
 import { LINE_STRONG, monoText } from '../theme'
 import SkillPill from './SkillPill'
+import ScriptPill from './ScriptPill'
 import RulePill from './RulePill'
 import ToolPill from './ToolPill'
 import AutoSkillToggle from './AutoSkillToggle'
@@ -138,6 +139,8 @@ export default function TaskBar({
           onToggle={onToggleSkill}
           onReload={onRefreshSkills}
         />
+        {/* 没有脚本时不占位：这一行还有开始按钮，四个胶囊在 400px 面板里会挤 */}
+        {skills.some((skill) => skill.script) && <ScriptPill skills={skills} />}
         <RulePill />
         <ToolPill />
         <Box sx={{ flex: 1 }} />

@@ -12,8 +12,9 @@ import {
   parseArguments,
   type ToolCall,
 } from './llm'
-import { executeTool, listToolSchemas } from './tools'
+import { executeTool, listToolSchemas, type ToolDef } from './tools'
 import { countsAsEffect, judgeEffect } from './effect'
+import { isScriptTool } from './scripts'
 import { markOf } from './mark'
 import { planTask } from './plan'
 import { verifyResult } from './verify'
@@ -25,6 +26,11 @@ const SETTLE_MS = 150
 const INPUT_TOOLS = new Set(['click', 'move', 'drag', 'scroll', 'type', 'key'])
 /** 核对连续两次不通过就收尾：结果没被确认，不能当作完成 */
 const MAX_VERIFY_FAILURES = 2
+
+/** 脚本内部同样在动鼠标键盘：按同一套输入工具对待 */
+function movesInput(name: string): boolean {
+  return INPUT_TOOLS.has(name) || isScriptTool(name)
+}
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
@@ -127,7 +133,7 @@ async function runStep(ctx: RunContext, step: number): Promise<AgentRunReason | 
     messages: ctx.messages,
     signal: ctx.signal,
     maxTokens: 8192,
-    tools: listToolSchemas(),
+    tools: listToolSchemas(ctx.scriptTools),
     effort,
   })
   ctx.usage = addUsage(ctx.usage, turn.usage)
@@ -206,7 +212,14 @@ async function runToolCalls(
       imageHeight: shot.height,
       signal: ctx.signal,
       gate: ctx.gate,
-      report: (text) => ctx.emit({ type: 'tool_progress', step, callId: call.id, text }),
+      report: (text) =>
+        ctx.emit({
+          type: 'tool_progress',
+          step,
+          callId: call.id,
+          text,
+          script: isScriptTool(call.function.name) || undefined,
+        }),
       baseline: shot.frame,
       ask: (input) => ctx.ask({ ...input, callId: call.id, step }),
     }
@@ -232,8 +245,8 @@ async function runOneTool(
   const startedAt = Date.now()
   ctx.emit({ type: 'tool_started', step, callId: call.id, name, input })
 
-  const outcome = await withBusy(ctx, name, () => invokeTool(name, input, context))
-  if (INPUT_TOOLS.has(name)) ctx.dirty = true
+  const outcome = await withBusy(ctx, name, () => invokeTool(name, input, context, ctx.scriptTools))
+  if (movesInput(name)) ctx.dirty = true
   if (outcome.isError) ctx.failed = true
   ctx.messages.push({ role: 'tool', tool_call_id: call.id, content: outcome.text })
   ctx.emit({
@@ -255,7 +268,7 @@ async function runOneTool(
 
 /** 鼠标键盘由 Agent 自己动的时候，按住接管检测，避免误判 */
 async function withBusy<T>(ctx: RunContext, name: string, action: () => Promise<T>): Promise<T> {
-  if (!INPUT_TOOLS.has(name)) return action()
+  if (!movesInput(name)) return action()
   ctx.busy(true)
   try {
     return await action()
@@ -268,9 +281,10 @@ async function invokeTool(
   name: string,
   input: Record<string, unknown>,
   context: ToolContext,
+  scripts: ToolDef[],
 ): Promise<{ text: string; isError: boolean }> {
   try {
-    const result = await executeTool(name, input, context)
+    const result = await executeTool(name, input, context, scripts)
     return { text: truncate(result.text), isError: false }
   } catch (caught) {
     // 终止时不要把中断伪装成工具失败，交给外层按 stopped 收敛
