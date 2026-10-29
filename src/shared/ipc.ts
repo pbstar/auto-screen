@@ -3,7 +3,6 @@ export const IPC = {
   streamTarget: 'stream:target',
   toolsList: 'tools:list',
   skillsList: 'skills:list',
-  rulesList: 'rules:list',
   permissions: 'app:permissions',
   configGet: 'config:get',
   configSave: 'config:save',

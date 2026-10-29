@@ -87,14 +87,6 @@ export interface SkillSummary {
   scripts?: ScriptSummary[]
 }
 
-/** 规则始终生效、不参与勾选；内置规则来自代码，自定义规则来自 rules/ 目录 */
-export interface RuleSummary {
-  id: string
-  name: string
-  description: string
-  builtin: boolean
-}
-
 export interface PermissionStatus {
   platform: string
   screen: string
@@ -141,7 +133,6 @@ export interface AutoScreenApi {
   setStreamTarget(windowId: number | null): Promise<IpcResult<boolean>>
   listTools(): Promise<IpcResult<ToolSummary[]>>
   listSkills(): Promise<IpcResult<SkillSummary[]>>
-  listRules(): Promise<IpcResult<RuleSummary[]>>
   permissions(): Promise<IpcResult<PermissionStatus>>
   getModelSettings(): Promise<IpcResult<ModelSettings>>
   saveModelSettings(input: ModelSettingsInput): Promise<IpcResult<ModelSettings>>
