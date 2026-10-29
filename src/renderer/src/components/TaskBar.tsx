@@ -5,7 +5,7 @@ import type { SkillSummary } from '@shared/types'
 import type { AgentRunState, SkillOutcome } from '../hooks/useAgentRun'
 import { LINE_STRONG, monoText } from '../theme'
 import SkillPill from './SkillPill'
-import InventoryPill from './InventoryPill'
+import ReferencePill from './ReferencePill'
 import AutoSkillToggle from './AutoSkillToggle'
 import MoreMenu from './MoreMenu'
 
@@ -137,8 +137,8 @@ export default function TaskBar({
           onToggle={onToggleSkill}
           onReload={onRefreshSkills}
         />
-        {/* 脚本、规则、工具都是只读清单，合成一个胶囊，才放得下技能与开始按钮 */}
-        <InventoryPill skills={skills} onReloadSkills={onRefreshSkills} />
+        {/* 脚本、规则、工具都是只读参考，合成一个胶囊，才放得下技能与开始按钮 */}
+        <ReferencePill skills={skills} onReloadSkills={onRefreshSkills} />
         <Box sx={{ flex: 1 }} />
         {/* 开关只影响下一次启动，运行中收起，给暂停/终止让出位置 */}
         {!running && <AutoSkillToggle checked={autoSkill} onChange={onAutoSkillChange} />}

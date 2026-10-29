@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
-import { Box, Typography } from '@mui/material'
+import { useCallback, useEffect, useState } from 'react'
+import { Box, Tab, Tabs, Typography } from '@mui/material'
 import type { RuleSummary, SkillSummary, ToolSummary } from '@shared/types'
 import PopoverPill from './PopoverPill'
 import ScriptList from './ScriptList'
@@ -14,8 +14,9 @@ interface Props {
   onReloadSkills: () => void
 }
 
-/** 脚本、规则、工具都是只读的「当前加载了什么」，合成一个胶囊，把位置让给技能与开始按钮 */
-export default function InventoryPill({ skills, onReloadSkills }: Props) {
+/** 脚本、规则、工具都是只读参考：合成一个胶囊，浮层用页签分开，三份清单不堆在一起 */
+export default function ReferencePill({ skills, onReloadSkills }: Props) {
+  const [tab, setTab] = useState(0)
   const [tools, setTools] = useState<ToolSummary[]>([])
   const [rules, setRules] = useState<RuleSummary[]>([])
   const [error, setError] = useState('')
@@ -37,7 +38,7 @@ export default function InventoryPill({ skills, onReloadSkills }: Props) {
 
   return (
     <PopoverPill
-      label="清单"
+      label="参考"
       onOpen={() => {
         reload()
         onReloadSkills()
@@ -48,34 +49,33 @@ export default function InventoryPill({ skills, onReloadSkills }: Props) {
           加载失败：{error}
         </Typography>
       )}
-      <Section title="脚本" count={scriptCount}>
-        <ScriptList skills={skills} />
-      </Section>
-      <Section title="规则" count={rules.length}>
-        <RuleList rules={rules} />
-      </Section>
-      <Section title="工具" count={tools.length}>
-        <ToolList tools={tools} />
-      </Section>
+      <Tabs
+        value={tab}
+        onChange={(_, next: number) => setTab(next)}
+        variant="fullWidth"
+        sx={tabsSx}
+      >
+        <Tab label={`脚本 ${scriptCount}`} />
+        <Tab label={`规则 ${rules.length}`} />
+        <Tab label={`工具 ${tools.length}`} />
+      </Tabs>
+      <Box sx={{ pt: 1 }}>
+        {tab === 0 && <ScriptList skills={skills} />}
+        {tab === 1 && <RuleList rules={rules} />}
+        {tab === 2 && <ToolList tools={tools} />}
+      </Box>
     </PopoverPill>
   )
 }
 
-function Section({
-  title,
-  count,
-  children,
-}: {
-  title: string
-  count: number
-  children: ReactNode
-}) {
-  return (
-    <Box sx={{ pt: 1, mt: 1, borderTop: 1, borderColor: 'divider' }}>
-      <Typography sx={{ fontSize: 11.5, fontWeight: 600, color: 'text.secondary', mb: 0.25 }}>
-        {title} {count}
-      </Typography>
-      {children}
-    </Box>
-  )
-}
+/** 页签吸顶：工具清单会滚动，页签跟着滚走就分不清当前在哪个分类 */
+const tabsSx = {
+  minHeight: 32,
+  mx: -1.25,
+  px: 1.25,
+  position: 'sticky',
+  top: 0,
+  zIndex: 1,
+  bgcolor: 'background.paper',
+  '& .MuiTab-root': { minHeight: 32, minWidth: 0, px: 1, fontSize: 12, fontWeight: 500 },
+} as const
