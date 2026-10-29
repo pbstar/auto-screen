@@ -1,0 +1,16 @@
+{
+  "name": "算出 12×34",
+  "description": "在 macOS 计算器里点出 12×34，按等号后显示 408；界面标题为「计算器」",
+  "when": "任务是算出 12×34，且当前画面是 macOS 计算器：能看到上方显示区和下方 5 行按键，窗口标题为「计算器」",
+  "confirm": false,
+  "precheck": { "titleContains": ["计算器"] },
+  "steps": [
+    { "action": "click", "point": [0.136, 0.374], "expect": "any", "note": "按 AC 清空（已经是 0 时画面不变，所以不校验）" },
+    { "action": "click", "point": [0.136, 0.774], "expect": "change", "note": "点 1" },
+    { "action": "click", "point": [0.379, 0.774], "expect": "change", "note": "点 2" },
+    { "action": "click", "point": [0.848, 0.507], "expect": "change", "note": "点 ×" },
+    { "action": "click", "point": [0.614, 0.774], "expect": "change", "note": "点 3" },
+    { "action": "click", "point": [0.136, 0.641], "expect": "change", "note": "点 4" },
+    { "action": "click", "point": [0.848, 0.907], "expect": "change", "note": "点 =，显示 408" }
+  ]
+}
