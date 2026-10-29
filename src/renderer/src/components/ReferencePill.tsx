@@ -45,14 +45,7 @@ export default function ReferencePill({ skills, onReloadSkills }: Props) {
         reload()
         onReloadSkills()
       }}
-    >
-      {error && (
-        <Typography variant="caption" sx={{ display: 'block', color: 'error.main' }}>
-          加载失败：{error}
-        </Typography>
-      )}
-      {/* 吸顶：工具清单要滚动，分段跟着滚走就分不清当前在看哪一类 */}
-      <Box sx={stickySx}>
+      header={
         <Box sx={groupSx}>
           {segments.map((label, index) => (
             <Segment key={label} active={tab === index} onClick={() => setTab(index)}>
@@ -60,7 +53,13 @@ export default function ReferencePill({ skills, onReloadSkills }: Props) {
             </Segment>
           ))}
         </Box>
-      </Box>
+      }
+    >
+      {error && (
+        <Typography variant="caption" sx={{ display: 'block', color: 'error.main' }}>
+          加载失败：{error}
+        </Typography>
+      )}
       <Box sx={{ pt: 0.5 }}>
         {tab === 0 && <ScriptList skills={skills} />}
         {tab === 1 && <RuleList rules={rules} />}
@@ -77,16 +76,6 @@ const groupSx = {
   p: '2px',
   bgcolor: WASH,
   borderRadius: 999,
-} as const
-
-const stickySx = {
-  position: 'sticky',
-  top: 0,
-  zIndex: 1,
-  bgcolor: 'background.paper',
-  mx: -1.25,
-  px: 1.25,
-  pb: 0.75,
 } as const
 
 function Segment({
