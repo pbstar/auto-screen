@@ -20,14 +20,14 @@ npm run dev   # 实跑界面前先征得同意
 |---|---|
 | `src/main/` | 主进程：`index.ts` 窗口与生命周期、`ipc.ts` IPC 注册、`capture-stream.ts` 预览视频流、`config.ts` 模型配置（`userData/model.json`） |
 | `src/preload/` | contextBridge 桥接，向渲染进程暴露 `window.autoScreen` |
-| `src/agent/` | 决策循环：`loop.ts` 主循环、`run-context.ts` 运行上下文、`effect.ts` 动作效果核对、`plan.ts` 开始前定流程、`verify.ts` 完成后核对、`service.ts` 运行生命周期与事件广播、`llm.ts` 模型请求入口 `chat()`、`prompts/` 各类系统提示、`control.ts` 暂停闸门与失败收敛、`questions.ts` 提问挂起、`distill.ts` 技能沉淀、`event-log.ts` 事件落日志、`history.ts` 图片历史、`annotate.ts` 截图标注、`mark.ts` 落点准星 |
+| `src/agent/` | 决策循环：`loop.ts` 主循环、`run-context.ts` 运行上下文、`effect.ts` 动作效果核对、`scripts.ts` 技能脚本注册、`script-runner.ts` 脚本逐步执行、`frame.ts` 单帧采样、`plan.ts` 开始前定流程、`verify.ts` 完成后核对、`service.ts` 运行生命周期与事件广播、`llm.ts` 模型请求入口 `chat()`、`prompts/` 各类系统提示、`control.ts` 暂停闸门与失败收敛、`questions.ts` 提问挂起、`distill.ts` 技能沉淀、`event-log.ts` 事件落日志、`history.ts` 图片历史、`annotate.ts` 截图标注、`mark.ts` 落点准星 |
 | `src/agent/tools/` | 一个工具一个文件，`index.ts` 汇总注册并提供执行入口 |
-| `src/agent/skills.ts` | 扫描 `skills/*/SKILL.md`，解析 frontmatter，按勾选返回技能正文 |
+| `src/agent/skills.ts` | 扫描 `skills/*/SKILL.md`，解析 frontmatter，按勾选返回技能正文（同目录的 `script.json` 一并读取） |
 | `src/agent/rules.ts` | 内置规则常量 + 扫描 `rules/*.md`，规则始终注入、优先于技能 |
 | `src/agent/frontmatter.ts` | 技能与规则共用的 frontmatter 解析 |
 | `src/agent/run-store.ts` | 运行日志与每步截图的落盘、读取（`runs/`） |
 | `src/core/` | 纯能力层：`screen.ts` 窗口与坐标换算、`input.ts` nut.js、`pointer.ts` 人工接管检测、`safety.ts` 前台激活 |
-| `src/shared/` | 类型、IPC 契约、网格常量（主进程与渲染进程共用） |
+| `src/shared/` | 类型、IPC 契约、网格常量、脚本格式（`script.ts`，主进程与渲染进程共用） |
 | `src/renderer/` | React + MUI 界面，`components/`、`hooks/` |
 | `skills/` | 技能手册，一个目录一份 `SKILL.md`；`calculator/` 是示例 |
 | `rules/`（可选） | 自定义规则，一份 `.md` 一条，始终生效；目录不存在不报错 |
@@ -53,6 +53,7 @@ npm run dev   # 实跑界面前先征得同意
 14. **自动沉淀只读轨迹、绝不覆盖**：只在任务自然完成（`completed`）且步数 ≥ 3 时触发，材料只有文本轨迹（工具、参数、结果，以及每步对界面的判断）与目标窗口标题，不喂截图；写到 `skills/<slug>/`（slug 由模型给出，2~5 个英文小写词、短横线连接；缺失或不合规时回退 `auto-<时间>`），撞名加序号，绝不覆盖已有技能，也不自动勾选；目录与文件名用英文 slug，界面和手册里仍用中文名；手册只写通用流程，不写本次的收件人、账号、文件名、数值等具体数据（用「任务给定的…」描述）；失败或跳过都不能改变任务结果（`finished` 先发、界面照常回到空闲）。任务已结束、只剩沉淀在跑时，暂停与终止只取消沉淀、不再发事件。
 15. **完成必须经核对裁决**：模型不再调用工具后必须再请求一次核对（任务、流程、结论、最后一张截图），不通过就把差距回灌继续修，连续两次不通过以 `unverified` 结束且不得自动沉淀；解析不出结论时按通过处理，格式问题不能卡死任务。规划与核对的用量同样计入时间线与日志。
 16. **动作要核对效果**：每步用 `agent/effect.ts` 比对上一动作前后的原始画面签名（`annotateCapture` 在画网格前采样）。click / type / key / drag 之后画面完全没变，就把「上一步没有生效」写进下一步的截图说明并升级到 `high`——模型会把「画面没变」解释成没焦点然后原地重试。连续 2 次无变化要求换方式、4 次建议 `ask_user`、6 次以 `failed` 收尾；滚动与悬停不参与判定。只认画面比对，不靠光标判断焦点，缩采样会抹平闪烁。
+17. **脚本是技能的确定性版本**：`skills/<id>/script.json` 与 `SKILL.md` 同目录、一对一，勾选技能后才注册成 `run_script_<技能 id>` 工具，由模型判断时机调用，界面不提供手动运行入口。脚本只有 `click` / `type` / `key` / `wait` / `wait_for_change` 五种动作，坐标是 0~1 归一化值，线性执行、不做分支与循环（判断交给模型）。任一步 `expect` 不符就抛错并写明第几步，按普通工具失败计数；不可逆流程标 `confirm`，确认按调用次数生效。脚本工具不参与 `effect.ts` 的画面变化判定；`run_script_` 前缀在循环层按输入工具对待（压住接管检测、截图前等重绘）。`script.json` 解析失败只当这个技能没有脚本，不能影响技能本身。格式见 `docs/脚本方案.md`。
 
 ## 代码风格
 
@@ -66,6 +67,7 @@ npm run dev   # 实跑界面前先征得同意
 - 调模型行为：`prompts/agent.ts`（执行策略）、`prompts/plan.ts` 与 `prompts/verify.ts`（规划、核对）、`loop.ts`（分档与终止条件）、`effect.ts`（动作效果核对）、`control.ts`（失败收敛）。
 - 加动作能力：在 `tools/` 新建文件导出 `ToolDef`，再注册到 `tools/index.ts`；坐标用 `snapToGrid`，换算走 `core/screen.ts` 与 `core/input.ts`。
 - 长流程与技能：技能系统已接入，新增技能只需在 `skills/<id>/` 下写 `SKILL.md`（frontmatter 只认 `name`、`description`），不必改代码；步数上限在 `src/shared/agent.ts`，三种等待在 `tools/wait*.ts`（引擎 `wait-runner.ts`，画面差分 `agent/watch.ts`），时间线容量在 `useAgentRun.ts`。自动沉淀的提示词与解析在 `src/agent/distill.ts`，写盘走 `src/agent/skills.ts` 的 `saveSkill()`，开关与结果提示在 `TaskBar.tsx`。
+- 脚本：格式与校验在 `src/shared/script.ts`，注册成工具与参数处理在 `src/agent/scripts.ts`，逐步执行在 `src/agent/script-runner.ts`；新增一种动作要先在 `tools/` 实现，再加进脚本动作白名单（`SCRIPT_ACTIONS` 与 `stepInput`），不要另写一套坐标换算。
 - 加规则：内置规则改 `src/agent/rules.ts`；自定义规则放 `rules/*.md`（frontmatter 可选，`name` 缺省用文件名），始终生效、不参与勾选。
 - 界面：`src/renderer/src/components/`；主进程与渲染进程之间新增字段先改 `src/shared/`。
 
