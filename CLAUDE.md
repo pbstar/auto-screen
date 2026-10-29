@@ -22,7 +22,7 @@ npm run dev   # 实跑界面前先征得同意
 | `src/preload/` | contextBridge 桥接，向渲染进程暴露 `window.autoScreen` |
 | `src/agent/` | 决策循环：`loop.ts` 主循环、`run-context.ts` 运行上下文、`effect.ts` 动作效果核对、`scripts.ts` 技能脚本注册、`script-runner.ts` 脚本逐步执行、`frame.ts` 单帧采样、`plan.ts` 开始前定流程、`verify.ts` 完成后核对、`service.ts` 运行生命周期与事件广播、`llm.ts` 模型请求入口 `chat()`、`prompts/` 各类系统提示、`control.ts` 暂停闸门与失败收敛、`questions.ts` 提问挂起、`distill.ts` 技能沉淀、`event-log.ts` 事件落日志、`history.ts` 图片历史、`annotate.ts` 截图标注、`mark.ts` 落点准星 |
 | `src/agent/tools/` | 一个工具一个文件，`index.ts` 汇总注册并提供执行入口 |
-| `src/agent/skills.ts` | 扫描 `skills/*/SKILL.md`，解析 frontmatter，按勾选返回技能正文（同目录的 `script.json` 一并读取） |
+| `src/agent/skills.ts` | 扫描 `skills/*/SKILL.md`，解析 frontmatter，按勾选返回技能正文（`scripts/*.json` 一并读取） |
 | `src/agent/rules.ts` | 内置规则常量 + 扫描 `rules/*.md`，规则始终注入、优先于技能 |
 | `src/agent/frontmatter.ts` | 技能与规则共用的 frontmatter 解析 |
 | `src/agent/run-store.ts` | 运行日志与每步截图的落盘、读取（`runs/`） |
@@ -53,7 +53,7 @@ npm run dev   # 实跑界面前先征得同意
 14. **自动沉淀只读轨迹、绝不覆盖**：只在任务自然完成（`completed`）且步数 ≥ 3 时触发，材料只有文本轨迹（工具、参数、结果，以及每步对界面的判断）与目标窗口标题，不喂截图；写到 `skills/<slug>/`（slug 由模型给出，2~5 个英文小写词、短横线连接；缺失或不合规时回退 `auto-<时间>`），撞名加序号，绝不覆盖已有技能，也不自动勾选；目录与文件名用英文 slug，界面和手册里仍用中文名；手册只写通用流程，不写本次的收件人、账号、文件名、数值等具体数据（用「任务给定的…」描述）；失败或跳过都不能改变任务结果（`finished` 先发、界面照常回到空闲）。任务已结束、只剩沉淀在跑时，暂停与终止只取消沉淀、不再发事件。
 15. **完成必须经核对裁决**：模型不再调用工具后必须再请求一次核对（任务、流程、结论、最后一张截图），不通过就把差距回灌继续修，连续两次不通过以 `unverified` 结束且不得自动沉淀；解析不出结论时按通过处理，格式问题不能卡死任务。规划与核对的用量同样计入时间线与日志。
 16. **动作要核对效果**：每步用 `agent/effect.ts` 比对上一动作前后的原始画面签名（`annotateCapture` 在画网格前采样）。click / type / key / drag 之后画面完全没变，就把「上一步没有生效」写进下一步的截图说明并升级到 `high`——模型会把「画面没变」解释成没焦点然后原地重试。连续 2 次无变化要求换方式、4 次建议 `ask_user`、6 次以 `failed` 收尾；滚动与悬停不参与判定。只认画面比对，不靠光标判断焦点，缩采样会抹平闪烁。
-17. **脚本是技能的确定性版本**：`skills/<id>/script.json` 与 `SKILL.md` 同目录、一对一，勾选技能后才注册成 `run_script_<技能 id>` 工具，由模型判断时机调用，界面不提供手动运行入口。脚本只有 `click` / `type` / `key` / `wait` / `wait_for_change` 五种动作，坐标是 0~1 归一化值，线性执行、不做分支与循环（判断交给模型）。任一步 `expect` 不符就抛错并写明第几步，按普通工具失败计数；不可逆流程标 `confirm`，确认按调用次数生效。脚本工具不参与 `effect.ts` 的画面变化判定；`run_script_` 前缀在循环层按输入工具对待（压住接管检测、截图前等重绘）。`script.json` 解析失败只当这个技能没有脚本，不能影响技能本身。格式见 `docs/脚本方案.md`。
+17. **脚本是技能的确定性版本**：`skills/<id>/scripts/<脚本 id>.json`，一个技能可以有零到多个；文件名是脚本 id（工具名要用），勾选技能后才逐个注册成 `run_script_<技能 id>_<脚本 id>` 工具，由模型判断时机调用，界面不提供手动运行入口。脚本只有 `click` / `type` / `key` / `wait` / `wait_for_change` 五种动作，坐标是 0~1 归一化值，线性执行、不做分支与循环（判断交给模型）。任一步 `expect` 不符就抛错并写明第几步，按普通工具失败计数；不可逆流程标 `confirm`，确认按调用次数生效。脚本工具不参与 `effect.ts` 的画面变化判定；`run_script_` 前缀在循环层按输入工具对待（压住接管检测、截图前等重绘）。某个脚本文件解析失败只当它不存在，不能影响技能和其它脚本。格式见 `docs/脚本方案.md`。
 
 ## 代码风格
 

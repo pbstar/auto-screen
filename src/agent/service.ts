@@ -62,9 +62,14 @@ export async function startAgent(
   const config = readModelConfig()
   const rules = readRulePrompts()
   const skills = readSkillPrompts(request.skills)
-  // 脚本随技能一起加载：勾了技能，它的脚本才注册成工具
+  // 脚本随技能一起加载：勾了技能，它 scripts/ 下的脚本才逐个注册成工具
   const scripts: SkillScript[] = skills.flatMap((skill) =>
-    skill.script ? [{ skillId: skill.id, skillName: skill.name, script: skill.script }] : [],
+    skill.scripts.map((item) => ({
+      skillId: skill.id,
+      skillName: skill.name,
+      scriptId: item.id,
+      script: item.script,
+    })),
   )
   // 目标不在最前，鼠标就会点在自己身上；激活失败就不要开跑
   await activateWindow(request.windowId)

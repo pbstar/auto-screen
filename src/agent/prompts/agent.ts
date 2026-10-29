@@ -84,7 +84,7 @@ function scriptLines(item: SkillScript): string[] {
   const { script } = item
   const params = Object.keys(script.params)
   const lines = [
-    `### 脚本《${script.name}》（工具 ${scriptToolName(item.skillId)}，所属技能：${item.skillName}）`,
+    `### 脚本《${script.name}》（工具 ${scriptToolName(item.skillId, item.scriptId)}，所属技能：${item.skillName}）`,
     `- 用途：${script.description || '已经固化的操作序列'}`,
   ]
   if (script.when) lines.push(`- 适用：${script.when}`)

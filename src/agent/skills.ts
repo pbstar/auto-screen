@@ -1,12 +1,12 @@
 import { app } from 'electron'
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { summarizeScript, type ScriptDef } from '../shared/script'
+import { summarizeScript, type ScriptEntry } from '../shared/script'
 import type { SkillSummary } from '../shared/types'
 import { singleLine } from '../shared/text'
 import type { SkillPrompt } from './prompts/agent'
 import { parseFrontmatter } from './frontmatter'
-import { loadScript } from './scripts'
+import { loadScripts } from './scripts'
 
 const SKILL_FILE = 'SKILL.md'
 
@@ -20,8 +20,8 @@ export function skillsRoot(): string {
 interface ParsedSkill {
   summary: SkillSummary
   body: string
-  /** 技能目录里同放一份 script.json 时才有 */
-  script: ScriptDef | null
+  /** 技能目录 scripts/ 下的脚本，一个技能可以有多个 */
+  scripts: ScriptEntry[]
 }
 
 function readOne(id: string): ParsedSkill | null {
@@ -32,17 +32,19 @@ function readOne(id: string): ParsedSkill | null {
     const { meta, body } = parseFrontmatter(readFileSync(path, 'utf8'))
     // 没有 name 的 SKILL.md 算不上技能，跳过，免得界面出现一条空白
     if (!meta.name) return null
-    // 脚本解析失败只当这个技能没有脚本，不影响手册本身
-    const script = loadScript(dir)
+    // 单个脚本解析失败只当它不存在，不影响手册和其它脚本
+    const scripts = loadScripts(dir)
     return {
       summary: {
         id,
         name: meta.name,
         description: meta.description ?? '',
-        ...(script ? { script: summarizeScript(script) } : {}),
+        ...(scripts.length > 0
+          ? { scripts: scripts.map((item) => summarizeScript(item.script)) }
+          : {}),
       },
       body,
-      script,
+      scripts,
     }
   } catch {
     return null
@@ -71,8 +73,8 @@ export function listSkills(): SkillSummary[] {
 
 export interface SkillPromptEntry extends SkillPrompt {
   id: string
-  /** 技能目录里带的脚本，没有时为 null */
-  script: ScriptDef | null
+  /** 技能目录 scripts/ 下的脚本，可能为空 */
+  scripts: ScriptEntry[]
 }
 
 /** 只取用户勾选的那些；重名或已删除的目录按 id 过滤，调用方不用再校验 */
@@ -84,7 +86,7 @@ export function readSkillPrompts(ids: string[]): SkillPromptEntry[] {
       id: skill.summary.id,
       name: skill.summary.name,
       body: skill.body,
-      script: skill.script,
+      scripts: skill.scripts,
     }))
 }
 

@@ -1,10 +1,11 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   fillPlaceholders,
   parseScript,
   scriptToolName,
   type ScriptDef,
+  type ScriptEntry,
   type ScriptStep,
   type SkillScript,
 } from '../shared/script'
@@ -13,17 +14,32 @@ import { findWindow } from '../core/screen'
 import { runScriptSteps } from './script-runner'
 import type { ToolDef } from './tools/types'
 
-const SCRIPT_FILE = 'script.json'
+const SCRIPT_DIR = 'scripts'
 export const SCRIPT_TOOL_PREFIX = 'run_script_'
 
 export function isScriptTool(name: string): boolean {
   return name.startsWith(SCRIPT_TOOL_PREFIX)
 }
 
-/** 读技能目录下的 script.json；不存在、读不动或格式不对都按「没有脚本」处理 */
-export function loadScript(dir: string): ScriptDef | null {
-  const path = join(dir, SCRIPT_FILE)
-  if (!existsSync(path)) return null
+/** 读技能目录下 scripts/*.json：一个文件一个脚本，坏掉的文件只跳过它自己，不影响技能 */
+export function loadScripts(dir: string): ScriptEntry[] {
+  const scriptDir = join(dir, SCRIPT_DIR)
+  let names: string[] = []
+  try {
+    names = readdirSync(scriptDir, { withFileTypes: true })
+      .filter((entry) => entry.isFile() && entry.name.endsWith('.json'))
+      .map((entry) => entry.name)
+      .sort()
+  } catch {
+    return []
+  }
+  return names.flatMap((name) => {
+    const script = readScriptFile(join(scriptDir, name))
+    return script ? [{ id: name.replace(/\.json$/, ''), script }] : []
+  })
+}
+
+function readScriptFile(path: string): ScriptDef | null {
   try {
     return parseScript(JSON.parse(readFileSync(path, 'utf8')))
   } catch {
@@ -31,14 +47,14 @@ export function loadScript(dir: string): ScriptDef | null {
   }
 }
 
-/** 把勾选技能的脚本注册成工具：测不准的脚本宁可拒绝注册，也不要在错误页面点下去 */
+/** 把勾选技能带的脚本逐个注册成工具：一次运行里工具名不能重复，重名加序号 */
 export function scriptTools(scripts: SkillScript[]): ToolDef[] {
   const taken = new Set<string>()
-  return scripts.map((entry) => buildTool(entry, uniqueName(entry.skillId, taken)))
+  return scripts.map((entry) => buildTool(entry, uniqueName(entry, taken)))
 }
 
-function uniqueName(skillId: string, taken: Set<string>): string {
-  const base = scriptToolName(skillId)
+function uniqueName(entry: SkillScript, taken: Set<string>): string {
+  const base = scriptToolName(entry.skillId, entry.scriptId)
   let name = base
   for (let n = 2; taken.has(name); n += 1) name = `${base}-${n}`
   taken.add(name)

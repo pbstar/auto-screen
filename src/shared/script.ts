@@ -53,10 +53,17 @@ export interface ScriptDef {
   steps: ScriptStep[]
 }
 
-/** 一份被勾选技能的脚本，执行前只差参数 */
+/** 一份被勾选技能的脚本，执行前只差参数；scriptId 是文件名，用来拼工具名 */
 export interface SkillScript {
   skillId: string
   skillName: string
+  scriptId: string
+  script: ScriptDef
+}
+
+/** 技能目录下 scripts/ 里的一个脚本文件 */
+export interface ScriptEntry {
+  id: string
   script: ScriptDef
 }
 
@@ -69,15 +76,22 @@ export interface ScriptSummary {
 
 const PLACEHOLDER = /\{\{\s*([\w-]+)\s*\}\}/g
 
-/** 脚本注册成工具的名字：技能 id 就是目录名，先转成小写 slug；工具名必须稳定，界面与提示词都按这个拼 */
-export function scriptToolName(skillId: string): string {
-  const slug = skillId
+/**
+ * 脚本注册成工具的名字：一个技能可以有多个脚本，所以技能、脚本两级都进名字，
+ * 模型才分得清调的是哪个。「run_script_ + 24 + 1 + 20」控制长度，给去重后缀留余量。
+ */
+export function scriptToolName(skillId: string, scriptId: string): string {
+  const skill = slugOf(skillId).slice(0, 24) || 'skill'
+  const script = slugOf(scriptId).slice(0, 20) || 'script'
+  return `run_script_${skill}_${script}`
+}
+
+/** 目录名与文件名都转成工具名可用的 slug；中文目录名会退化成固定词 */
+function slugOf(value: string): string {
+  return value
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-    .slice(0, 40)
-  // 目录名全中文时 slug 为空，退化成固定词；同一批里重名由注册处加序号
-  return `run_script_${slug || 'script'}`
 }
 
 /** 把 {{param}} 换成实参，缺失的按空串处理（required 参数在执行前已经拦过） */

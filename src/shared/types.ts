@@ -81,8 +81,8 @@ export interface SkillSummary {
   id: string
   name: string
   description: string
-  /** 同目录的 script.json 解析成功时才有，界面据此展示「脚本」胶囊 */
-  script?: ScriptSummary
+  /** 技能目录 scripts/ 下的脚本摘要，一个技能可以有多个；没有脚本时缺省 */
+  scripts?: ScriptSummary[]
 }
 
 /** 规则始终生效、不参与勾选；内置规则来自代码，自定义规则来自 rules/ 目录 */
