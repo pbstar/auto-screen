@@ -6,11 +6,14 @@ import {
   type TokenUsage,
 } from '../shared/agent'
 import type { FrameSignature } from '../shared/types'
+import type { SkillScript } from '../shared/script'
 import type { ClickMark } from './annotate'
 import { FailureGuard, type PauseGate } from './control'
 import type { ShotRef } from './history'
 import type { AgentMessage } from './llm'
 import { buildSystemPrompt, type RulePrompt, type SkillPrompt } from './prompts/agent'
+import { scriptTools } from './scripts'
+import type { ToolDef } from './tools'
 
 type Emit = (payload: AgentEventPayload) => void
 
@@ -21,6 +24,8 @@ export interface RunOptions {
   rules: RulePrompt[]
   /** 用户勾选的技能正文，直接拼进系统提示 */
   skills: SkillPrompt[]
+  /** 勾选技能里带的脚本，注册成 run_script_* 工具 */
+  scripts: SkillScript[]
   signal: AbortSignal
   emit: Emit
   /** 把标注后的完整截图落到运行记录里，供大图查看 */
@@ -52,6 +57,8 @@ export interface RunContext {
   saveShot: (step: number, dataUrl: string) => void
   gate: PauseGate
   guard: FailureGuard
+  /** 本次运行可用的脚本工具，与静态工具一起下发给模型 */
+  scriptTools: ToolDef[]
   busy: (on: boolean) => void
   /** 向用户提问并等待回答 */
   ask: (request: PendingQuestion) => Promise<string | null>
@@ -86,10 +93,14 @@ export function createContext(options: RunOptions): RunContext {
     saveShot: options.saveShot,
     gate: options.gate,
     guard: new FailureGuard(),
+    scriptTools: scriptTools(options.scripts),
     busy: options.busy,
     ask: options.ask,
     messages: [
-      { role: 'system', content: buildSystemPrompt(options.rules, options.skills) },
+      {
+        role: 'system',
+        content: buildSystemPrompt(options.rules, options.skills, options.scripts),
+      },
       { role: 'user', content: options.task },
     ],
     shots: [],

@@ -6,6 +6,7 @@ import type {
   AskOption,
   PauseReason,
 } from './agent'
+import type { ScriptSummary } from './script'
 
 /** 窗口列表只给界面用来认出目标，坐标换算在 core/screen.ts 内部完成 */
 export interface WindowInfo {
@@ -62,6 +63,8 @@ export interface ToolContext {
   baseline?: FrameSignature
   /** 向用户提问并等待回答，返回 null 表示用户跳过；没有通道时不给 */
   ask?: (input: AskInput) => Promise<string | null>
+  /** 标记鼠标键盘正在被 Agent 使用；脚本按步调用，步与步之间用户动鼠标仍会触发接管 */
+  busy?: (on: boolean) => void
 }
 
 export interface ToolResult {
@@ -80,6 +83,8 @@ export interface SkillSummary {
   id: string
   name: string
   description: string
+  /** 技能目录 scripts/ 下的脚本摘要，一个技能可以有多个；没有脚本时缺省 */
+  scripts?: ScriptSummary[]
 }
 
 /** 规则始终生效、不参与勾选；内置规则来自代码，自定义规则来自 rules/ 目录 */

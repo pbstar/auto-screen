@@ -1,10 +1,12 @@
 import { app } from 'electron'
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { summarizeScript, type ScriptEntry } from '../shared/script'
 import type { SkillSummary } from '../shared/types'
 import { singleLine } from '../shared/text'
 import type { SkillPrompt } from './prompts/agent'
 import { parseFrontmatter } from './frontmatter'
+import { loadScripts } from './scripts'
 
 const SKILL_FILE = 'SKILL.md'
 
@@ -18,18 +20,31 @@ export function skillsRoot(): string {
 interface ParsedSkill {
   summary: SkillSummary
   body: string
+  /** 技能目录 scripts/ 下的脚本，一个技能可以有多个 */
+  scripts: ScriptEntry[]
 }
 
 function readOne(id: string): ParsedSkill | null {
-  const path = join(skillsRoot(), id, SKILL_FILE)
+  const dir = join(skillsRoot(), id)
+  const path = join(dir, SKILL_FILE)
   if (!existsSync(path)) return null
   try {
     const { meta, body } = parseFrontmatter(readFileSync(path, 'utf8'))
     // 没有 name 的 SKILL.md 算不上技能，跳过，免得界面出现一条空白
     if (!meta.name) return null
+    // 单个脚本解析失败只当它不存在，不影响手册和其它脚本
+    const scripts = loadScripts(dir)
     return {
-      summary: { id, name: meta.name, description: meta.description ?? '' },
+      summary: {
+        id,
+        name: meta.name,
+        description: meta.description ?? '',
+        ...(scripts.length > 0
+          ? { scripts: scripts.map((item) => summarizeScript(item.script)) }
+          : {}),
+      },
       body,
+      scripts,
     }
   } catch {
     return null
@@ -56,12 +71,23 @@ export function listSkills(): SkillSummary[] {
   return readAll().map((skill) => skill.summary)
 }
 
+export interface SkillPromptEntry extends SkillPrompt {
+  id: string
+  /** 技能目录 scripts/ 下的脚本，可能为空 */
+  scripts: ScriptEntry[]
+}
+
 /** 只取用户勾选的那些；重名或已删除的目录按 id 过滤，调用方不用再校验 */
-export function readSkillPrompts(ids: string[]): SkillPrompt[] {
+export function readSkillPrompts(ids: string[]): SkillPromptEntry[] {
   const wanted = new Set(ids)
   return readAll()
     .filter((skill) => wanted.has(skill.summary.id))
-    .map((skill) => ({ name: skill.summary.name, body: skill.body }))
+    .map((skill) => ({
+      id: skill.summary.id,
+      name: skill.summary.name,
+      body: skill.body,
+      scripts: skill.scripts,
+    }))
 }
 
 function stampId(date = new Date()): string {

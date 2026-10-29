@@ -34,7 +34,10 @@ export function logEvent(runId: string, payload: AgentEventPayload): void {
       )
       break
     case 'tool_progress':
-      // 进度每十秒一条，落盘只会把 run.log 冲垮；总耗时看 tool_finished
+      // 脚本每一步都要留痕，事后才能对上停在哪一步；等待类进度每十秒一条，落盘只会把 run.log 冲垮
+      if (payload.script) {
+        appendLog(runId, `第 ${payload.step} 步脚本 ${singleLine(payload.text, 200)}`)
+      }
       break
     case 'question': {
       const labels = payload.options.map((option) => option.label).join(' / ')
