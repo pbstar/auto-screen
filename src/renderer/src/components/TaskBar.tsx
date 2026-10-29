@@ -5,9 +5,7 @@ import type { SkillSummary } from '@shared/types'
 import type { AgentRunState, SkillOutcome } from '../hooks/useAgentRun'
 import { LINE_STRONG, monoText } from '../theme'
 import SkillPill from './SkillPill'
-import ScriptPill from './ScriptPill'
-import RulePill from './RulePill'
-import ToolPill from './ToolPill'
+import InventoryPill from './InventoryPill'
 import AutoSkillToggle from './AutoSkillToggle'
 import MoreMenu from './MoreMenu'
 
@@ -139,10 +137,8 @@ export default function TaskBar({
           onToggle={onToggleSkill}
           onReload={onRefreshSkills}
         />
-        {/* 常驻显示：没有脚本时浮层里说明怎么添加，不然这个能力没人找得到 */}
-        <ScriptPill skills={skills} />
-        <RulePill />
-        <ToolPill />
+        {/* 脚本、规则、工具都是只读清单，合成一个胶囊，才放得下技能与开始按钮 */}
+        <InventoryPill skills={skills} onReloadSkills={onRefreshSkills} />
         <Box sx={{ flex: 1 }} />
         {/* 开关只影响下一次启动，运行中收起，给暂停/终止让出位置 */}
         {!running && <AutoSkillToggle checked={autoSkill} onChange={onAutoSkillChange} />}

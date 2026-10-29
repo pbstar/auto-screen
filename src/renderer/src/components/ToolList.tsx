@@ -2,23 +2,11 @@ import { Box, Typography } from '@mui/material'
 import type { ToolSummary } from '@shared/types'
 import { monoText } from '../theme'
 
-interface Props {
-  tools: ToolSummary[]
-  error: string
-}
-
-export default function ToolList({ tools, error }: Props) {
-  if (error) {
-    return (
-      <Typography variant="caption" sx={{ display: 'block', color: 'error.main', mt: 0.5 }}>
-        工具列表加载失败：{error}
-      </Typography>
-    )
-  }
-
+/** 工具清单是静态参考，只读展示模型能用的动作 */
+export default function ToolList({ tools }: { tools: ToolSummary[] }) {
   if (tools.length === 0) {
     return (
-      <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mt: 0.5 }}>
+      <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'text.secondary' }}>
         加载中…
       </Typography>
     )

@@ -1,7 +1,6 @@
 import { Box, Typography } from '@mui/material'
 import type { ScriptSummary } from '@shared/script'
 import type { SkillSummary } from '@shared/types'
-import PopoverPill from './PopoverPill'
 
 interface Entry {
   id: string
@@ -9,35 +8,25 @@ interface Entry {
   script: ScriptSummary
 }
 
-/** 脚本随技能一起加载；怎么调用由模型判断，这里只回答「当前有哪些脚本」 */
-export default function ScriptPill({ skills }: { skills: SkillSummary[] }) {
+/** 只读清单：脚本随技能加载，什么时候调用由模型判断，这里没有运行入口 */
+export default function ScriptList({ skills }: { skills: SkillSummary[] }) {
   const entries: Entry[] = skills.flatMap((skill) =>
     skill.script ? [{ id: skill.id, skillName: skill.name, script: skill.script }] : [],
   )
 
-  return (
-    <PopoverPill label="脚本" detail={entries.length > 0 ? String(entries.length) : undefined}>
-      {entries.length === 0 ? (
-        <Typography variant="caption" sx={{ display: 'block', px: 0.5, color: 'text.secondary' }}>
-          还没有脚本：把 script.json 放进技能目录、和 SKILL.md 同级，勾选该技能后模型就能一次调用跑完这条流程
-        </Typography>
-      ) : (
-        entries.map((entry) => <ScriptRow key={entry.id} entry={entry} />)
-      )}
-      <Typography
-        variant="caption"
-        sx={{
-          display: 'block',
-          mt: 1,
-          pt: 1,
-          borderTop: 1,
-          borderColor: 'divider',
-          color: 'text.secondary',
-        }}
-      >
-        脚本内置于技能目录，由模型在合适的时机调用，不在这里手动运行。
+  if (entries.length === 0) {
+    return (
+      <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'text.secondary' }}>
+        还没有脚本：把 script.json 放进技能目录、和 SKILL.md 同级
       </Typography>
-    </PopoverPill>
+    )
+  }
+  return (
+    <>
+      {entries.map((entry) => (
+        <ScriptRow key={entry.id} entry={entry} />
+      ))}
+    </>
   )
 }
 
