@@ -5,12 +5,12 @@
   "confirm": false,
   "precheck": { "titleContains": ["计算器"] },
   "steps": [
-    { "action": "click", "point": [0.136, 0.374], "expect": "any", "note": "按 AC 清空（已经是 0 时画面不变，所以不校验）" },
-    { "action": "click", "point": [0.136, 0.774], "expect": "change", "note": "点 1" },
-    { "action": "click", "point": [0.379, 0.774], "expect": "change", "note": "点 2" },
-    { "action": "click", "point": [0.848, 0.507], "expect": "change", "note": "点 ×" },
-    { "action": "click", "point": [0.614, 0.774], "expect": "change", "note": "点 3" },
-    { "action": "click", "point": [0.136, 0.641], "expect": "change", "note": "点 4" },
-    { "action": "click", "point": [0.848, 0.907], "expect": "change", "note": "点 =，显示 408" }
+    { "action": "click", "point": [30, 130], "expect": "any", "note": "按 AC 清空（已经是 0 时画面不变，所以不校验）" },
+    { "action": "click", "point": [30, 270], "expect": "change", "note": "点 1" },
+    { "action": "click", "point": [80, 270], "expect": "change", "note": "点 2" },
+    { "action": "click", "point": [170, 180], "expect": "change", "note": "点 ×" },
+    { "action": "click", "point": [120, 270], "expect": "change", "note": "点 3" },
+    { "action": "click", "point": [30, 220], "expect": "change", "note": "点 4" },
+    { "action": "click", "point": [170, 320], "expect": "change", "note": "点 =，显示 408" }
   ]
 }

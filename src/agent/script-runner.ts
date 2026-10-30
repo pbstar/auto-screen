@@ -61,7 +61,7 @@ async function apply(step: ScriptStep, index: number, context: ToolContext): Pro
   // 只在自己动手的这一下压住接管检测：步与步之间用户移动鼠标仍能触发暂停
   context.busy?.(true)
   try {
-    await executeTool(step.action, stepInput(step, context), context)
+    await executeTool(step.action, stepInput(step), context)
   } catch (caught) {
     if (isAbort(caught)) throw caught
     const reason = caught instanceof Error ? caught.message : String(caught)
@@ -104,12 +104,12 @@ async function ensureSame(
   }
 }
 
-function stepInput(step: ScriptStep, context: ToolContext): Record<string, unknown> {
+function stepInput(step: ScriptStep): Record<string, unknown> {
   switch (step.action) {
     case 'click': {
-      // 归一化坐标乘截图宽高，网格对齐交给 click 工具，坐标只有一套换算
-      const [nx, ny] = step.point ?? [0, 0]
-      return { x: nx * context.imageWidth, y: ny * context.imageHeight }
+      // 坐标就是截图坐标，与 click 工具同一套；对齐与越界裁剪交给工具统一处理
+      const [x, y] = step.point ?? [0, 0]
+      return { x, y }
     }
     case 'type':
       return { text: step.text ?? '' }
@@ -136,10 +136,8 @@ function describeStep(step: ScriptStep, context: ToolContext): string {
 function actionDetail(step: ScriptStep, context: ToolContext): string {
   switch (step.action) {
     case 'click': {
-      const [nx, ny] = step.point ?? [0, 0]
-      const x = snapToGrid(nx * context.imageWidth, context.imageWidth)
-      const y = snapToGrid(ny * context.imageHeight, context.imageHeight)
-      return `点击 (${x}, ${y})`
+      const [x, y] = step.point ?? [0, 0]
+      return `点击 (${snapToGrid(x, context.imageWidth)}, ${snapToGrid(y, context.imageHeight)})`
     }
     case 'type':
       return `输入 ${preview(step.text ?? '')}`

@@ -31,7 +31,7 @@ export interface ScriptPrecheck {
 
 export interface ScriptStep {
   action: ScriptAction
-  /** 归一化坐标 0~1，乘截图宽高得到截图坐标：窗口尺寸变了照样成立 */
+  /** 截图坐标（像素，10 的倍数），与页面和工具坐标同一套；按目标窗口当前截图量出 */
   point?: [number, number]
   text?: string
   combo?: string
@@ -130,10 +130,12 @@ function numberIn(
 }
 
 function pointOf(value: unknown, field: string): [number, number] {
-  if (!Array.isArray(value) || value.length !== 2) fail(`${field} 必须是 [x, y] 两个 0~1 的数`)
-  const x = Number(value[0])
-  const y = Number(value[1])
-  if (!(x >= 0 && x <= 1 && y >= 0 && y <= 1)) fail(`${field} 的坐标必须在 0~1 之间`)
+  if (!Array.isArray(value) || value.length !== 2) fail(`${field} 必须是 [x, y] 两个坐标`)
+  const [x, y] = value.map(Number)
+  if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0) {
+    fail(`${field} 必须是非负整数`)
+  }
+  if (x % 10 !== 0 || y % 10 !== 0) fail(`${field} 的坐标必须是 10 的倍数`)
   return [x, y]
 }
 
