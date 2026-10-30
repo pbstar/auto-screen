@@ -6,7 +6,6 @@ import type {
   AskOption,
   PauseReason,
 } from './agent'
-import type { ScriptSummary } from './script'
 
 /** 窗口列表只给界面用来认出目标，坐标换算在 core/screen.ts 内部完成 */
 export interface WindowInfo {
@@ -83,8 +82,6 @@ export interface SkillSummary {
   id: string
   name: string
   description: string
-  /** 技能目录 scripts/ 下的脚本摘要，一个技能可以有多个；没有脚本时缺省 */
-  scripts?: ScriptSummary[]
 }
 
 export interface PermissionStatus {

@@ -67,12 +67,6 @@ export interface ScriptEntry {
   script: ScriptDef
 }
 
-/** 界面展示用的脚本摘要，不含步骤 */
-export interface ScriptSummary {
-  name: string
-  steps: number
-}
-
 const PLACEHOLDER = /\{\{\s*([\w-]+)\s*\}\}/g
 
 /**
@@ -96,10 +90,6 @@ function slugOf(value: string): string {
 /** 把 {{param}} 换成实参，缺失的按空串处理（required 参数在执行前已经拦过） */
 export function fillPlaceholders(text: string, values: Record<string, string>): string {
   return text.replace(PLACEHOLDER, (_, name: string) => values[name] ?? '')
-}
-
-export function summarizeScript(script: ScriptDef): ScriptSummary {
-  return { name: script.name, steps: script.steps.length }
 }
 
 function fail(message: string): never {

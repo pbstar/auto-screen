@@ -137,7 +137,7 @@ export default function TaskBar({
           onToggle={onToggleSkill}
           onReload={onRefreshSkills}
         />
-        {/* 脚本挂在技能下面；工具是只读清单，紧跟技能放，才放得下开关与开始按钮 */}
+        {/* 工具是只读清单，紧跟技能放，才放得下开关与开始按钮 */}
         <ToolPill />
         <Box sx={{ flex: 1 }} />
         {/* 开关只影响下一次启动，运行中收起，给暂停/终止让出位置 */}
