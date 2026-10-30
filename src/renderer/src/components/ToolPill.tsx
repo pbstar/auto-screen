@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Box, Typography } from '@mui/material'
 import type { ToolSummary } from '@shared/types'
+import { monoText } from '../theme'
 import PopoverPill from './PopoverPill'
-import ToolList from './ToolList'
 
 const api = window.autoScreen
 
@@ -32,8 +32,31 @@ export default function ToolPill() {
         </Typography>
       )}
       <Box sx={{ pt: 0.5 }}>
-        <ToolList tools={tools} />
+        {tools.length === 0 ? (
+          <Typography
+            variant="caption"
+            sx={{ display: 'block', mt: 0.5, color: 'text.secondary' }}
+          >
+            加载中…
+          </Typography>
+        ) : (
+          tools.map((tool) => <ToolRow key={tool.name} tool={tool} />)
+        )}
       </Box>
     </PopoverPill>
+  )
+}
+
+function ToolRow({ tool }: { tool: ToolSummary }) {
+  return (
+    <Box sx={{ py: 0.5 }}>
+      <Typography sx={{ ...monoText(12), fontWeight: 600 }}>{tool.name}</Typography>
+      <Typography
+        variant="caption"
+        sx={{ display: 'block', color: 'text.secondary', lineHeight: 1.5 }}
+      >
+        {tool.description}
+      </Typography>
+    </Box>
   )
 }
