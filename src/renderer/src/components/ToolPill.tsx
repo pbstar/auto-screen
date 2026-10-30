@@ -12,6 +12,8 @@ export default function ToolPill() {
   const [error, setError] = useState('')
 
   const reload = useCallback(() => {
+    // 重新打开时先清掉上一次的失败提示，否则成功加载后红字还挂着
+    setError('')
     void api.listTools().then((result) => {
       if (result.ok) setTools(result.data)
       else setError(result.error)
@@ -32,16 +34,18 @@ export default function ToolPill() {
         </Typography>
       )}
       <Box sx={{ pt: 0.5 }}>
-        {tools.length === 0 ? (
+        {/* 失败时只显示错误，不再并排一行「加载中」 */}
+        {tools.length === 0 && !error && (
           <Typography
             variant="caption"
             sx={{ display: 'block', mt: 0.5, color: 'text.secondary' }}
           >
             加载中…
           </Typography>
-        ) : (
-          tools.map((tool) => <ToolRow key={tool.name} tool={tool} />)
         )}
+        {tools.map((tool) => (
+          <ToolRow key={tool.name} tool={tool} />
+        ))}
       </Box>
     </PopoverPill>
   )
