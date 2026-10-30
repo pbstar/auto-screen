@@ -1,7 +1,7 @@
 import { app } from 'electron'
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { summarizeScript, type ScriptEntry } from '../shared/script'
+import type { ScriptEntry } from '../shared/script'
 import type { SkillSummary } from '../shared/types'
 import { singleLine } from '../shared/text'
 import type { SkillPrompt } from './prompts/agent'
@@ -39,9 +39,6 @@ function readOne(id: string): ParsedSkill | null {
         id,
         name: meta.name,
         description: meta.description ?? '',
-        ...(scripts.length > 0
-          ? { scripts: scripts.map((item) => summarizeScript(item.script)) }
-          : {}),
       },
       body,
       scripts,

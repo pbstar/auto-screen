@@ -50,7 +50,7 @@ export const theme = createTheme({
     MuiButton: {
       defaultProps: { size: 'small', disableElevation: true },
       styleOverrides: {
-        // 按钮统一胶囊形，和技能/规则/工具胶囊同一套语言
+        // 按钮统一胶囊形，和技能/工具胶囊同一套语言
         root: { borderRadius: 999, paddingInline: 14 },
         contained: {
           '&:hover': { backgroundColor: '#3a424e' },

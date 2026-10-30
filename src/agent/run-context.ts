@@ -11,7 +11,7 @@ import type { ClickMark } from './annotate'
 import { FailureGuard, type PauseGate } from './control'
 import type { ShotRef } from './history'
 import type { AgentMessage } from './llm'
-import { buildSystemPrompt, type RulePrompt, type SkillPrompt } from './prompts/agent'
+import { buildSystemPrompt, type SkillPrompt } from './prompts/agent'
 import { scriptTools } from './scripts'
 import type { ToolDef } from './tools'
 
@@ -20,8 +20,6 @@ type Emit = (payload: AgentEventPayload) => void
 export interface RunOptions {
   windowId: number
   task: string
-  /** 始终生效的规则，内置与自定义都在里面 */
-  rules: RulePrompt[]
   /** 用户勾选的技能正文，直接拼进系统提示 */
   skills: SkillPrompt[]
   /** 勾选技能里带的脚本，注册成 run_script_* 工具 */
@@ -99,7 +97,7 @@ export function createContext(options: RunOptions): RunContext {
     messages: [
       {
         role: 'system',
-        content: buildSystemPrompt(options.rules, options.skills, options.scripts),
+        content: buildSystemPrompt(options.skills, options.scripts),
       },
       { role: 'user', content: options.task },
     ],

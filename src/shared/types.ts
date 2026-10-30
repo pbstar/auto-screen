@@ -6,7 +6,6 @@ import type {
   AskOption,
   PauseReason,
 } from './agent'
-import type { ScriptSummary } from './script'
 
 /** 窗口列表只给界面用来认出目标，坐标换算在 core/screen.ts 内部完成 */
 export interface WindowInfo {
@@ -83,16 +82,6 @@ export interface SkillSummary {
   id: string
   name: string
   description: string
-  /** 技能目录 scripts/ 下的脚本摘要，一个技能可以有多个；没有脚本时缺省 */
-  scripts?: ScriptSummary[]
-}
-
-/** 规则始终生效、不参与勾选；内置规则来自代码，自定义规则来自 rules/ 目录 */
-export interface RuleSummary {
-  id: string
-  name: string
-  description: string
-  builtin: boolean
 }
 
 export interface PermissionStatus {
@@ -141,7 +130,6 @@ export interface AutoScreenApi {
   setStreamTarget(windowId: number | null): Promise<IpcResult<boolean>>
   listTools(): Promise<IpcResult<ToolSummary[]>>
   listSkills(): Promise<IpcResult<SkillSummary[]>>
-  listRules(): Promise<IpcResult<RuleSummary[]>>
   permissions(): Promise<IpcResult<PermissionStatus>>
   getModelSettings(): Promise<IpcResult<ModelSettings>>
   saveModelSettings(input: ModelSettingsInput): Promise<IpcResult<ModelSettings>>

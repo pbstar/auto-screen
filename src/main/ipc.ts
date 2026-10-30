@@ -15,7 +15,6 @@ import {
   stopAgent,
 } from '../agent/service'
 import { ensureRunsRoot, listRuns, readRun, readShot, runsRoot } from '../agent/run-store'
-import { listRules } from '../agent/rules'
 import { listSkills } from '../agent/skills'
 
 function ok<T>(data: T): IpcResult<T> {
@@ -77,14 +76,6 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null): 
   ipcMain.handle(IPC.skillsList, () => {
     try {
       return ok(listSkills())
-    } catch (error) {
-      return fail(error)
-    }
-  })
-
-  ipcMain.handle(IPC.rulesList, () => {
-    try {
-      return ok(listRules())
     } catch (error) {
       return fail(error)
     }
