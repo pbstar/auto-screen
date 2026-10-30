@@ -7,10 +7,8 @@ interface Props {
   /** 胶囊右侧的摘要，比如已选技能名或工具数量 */
   detail?: string
   disabled?: boolean
-  /** 打开时触发，用于重新扫描技能目录 */
+  /** 打开时触发，用于重新加载数据，比如重新扫描技能目录或工具清单 */
   onOpen?: () => void
-  /** 固定在浮层顶部、不随内容滚动的一行，例如分段切换 */
-  header?: ReactNode
   children: ReactNode
 }
 
@@ -18,7 +16,7 @@ interface Props {
 const SUMMARY_MAX = 4
 
 /** 输入框下方的小胶囊：点开是一个轻量浮层，配置不常改，不该常驻占版面 */
-export default function PopoverPill({ label, detail, disabled, onOpen, header, children }: Props) {
+export default function PopoverPill({ label, detail, disabled, onOpen, children }: Props) {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   const summary =
     detail && detail.length > SUMMARY_MAX ? `${detail.slice(0, SUMMARY_MAX)}…` : detail
@@ -75,18 +73,8 @@ export default function PopoverPill({ label, detail, disabled, onOpen, header, c
         transformOrigin={{ vertical: 'top', horizontal: 'left' }}
         slotProps={{ paper: { sx: { mt: 0.75, width: 320 } } }}
       >
-        {/* 头部在滚动区之外：滚动条只跟着内容走，不会压在分段切换上 */}
         <Box sx={{ p: 1.25 }}>
-          {header}
-          <Box
-            sx={{
-              maxHeight: header ? 300 : 340,
-              overflowY: 'auto',
-              ...(header ? { mt: 0.75 } : {}),
-            }}
-          >
-            {children}
-          </Box>
+          <Box sx={{ maxHeight: 340, overflowY: 'auto' }}>{children}</Box>
         </Box>
       </Popover>
     </>
